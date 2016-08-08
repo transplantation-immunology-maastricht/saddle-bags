@@ -46,7 +46,6 @@ gctagctagctag
 For more information on EMBL's ENA format:
 
 http://www.ebi.ac.uk/ena/submit/sequence-submission
-
 http://www.ebi.ac.uk/ena/submit/entry-upload-templates
 
 ftp://ftp.ebi.ac.uk/pub/databases/embl/doc/usrman.txt
