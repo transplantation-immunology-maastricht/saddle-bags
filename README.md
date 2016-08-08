@@ -1,13 +1,16 @@
 #EMBL-HLA-SUBMISSION
 A tool for generating an EMBL-formatted submission of a standard novel HLA allele. 
 
+##Download the executable
+When the compiled executable is available, i'll put a link for the file download here.
+
 ##Run using Python
 Run this program using standard python call:  
 ```
 python AlleleSubmissionEMBL.py
 ```
 
-##To configure Anaconda:
+##To configure Anaconda
 Anaconda uses separate environments to run your programs in.  
 Install Anaconda for python 2.7.  
 https://www.continuum.io/downloads  
