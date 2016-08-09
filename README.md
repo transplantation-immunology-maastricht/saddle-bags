@@ -14,9 +14,19 @@ python AlleleSubmissionEMBL.py
 Anaconda uses separate environments to run your programs in.  
 Install Anaconda for python 2.7.  
 https://www.continuum.io/downloads  
-To set up the environment in anaconda, run this in console:  
+To set up the environment in anaconda:  
+
+Linux/Mac:  
 ```
-conda create --name AlleleSubEnvironment biopython
+conda create --name AlleleSubEnvironment biopython six  
+source activate AlleleSubEnvironment  
+pip install pyinstaller packaging  
+source deactivate  
+```  
+Windows:  
+```  
+conda create --name AlleleSubEnvironment biopython six pywin32  
+call activate AlleleSubEnvironment && pip install pyinstaller packaging && call deactivate  
 ```
 
 ##Run using a bash or .bat script using anaconda
@@ -52,6 +62,9 @@ AGCTAGC
 tagctagct  
 AGCTAGCTA  
 gctagctagctag  
+
+##Output Data
+The resulting report is in the form of an EMBL HLA Novel Allele submission flatfile.  You can submit this to EMBL as a new allele.
 
 ##For more information on EMBL's ENA format:  
 http://www.ebi.ac.uk/ena/submit/sequence-submission  
