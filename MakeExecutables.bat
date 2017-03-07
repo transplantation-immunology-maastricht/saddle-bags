@@ -20,12 +20,8 @@
 
 :: See the file README.MD for how to set up your anaconda environment.
 
-:: Please verify that your files are set up such that the files exist here::
-:: C:\MinIONScripts\AlleleSubmission\MakeExecutables.bat
-:: If that is a problem, Modify the spec file "AlleleSubInstallerOptions_Windows.spec" as your needs require.
-
-SET CodePath=C:\MUMCScripts\EMBL-HLA-Submission\src
-SET BinPath=C:\MUMCScripts\EMBL-HLA-Submission\bin
+SET CodePath=src
+SET BinPath=..\bin
 SET SpecFile=AlleleSubInstallerOptions_Windows.spec
 SET CondaEnvironment=AlleleSubEnvironment
 

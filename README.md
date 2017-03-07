@@ -41,12 +41,12 @@ Run_allele_submission.bat
 ```
 
 ##Input Data
-Input data sequence consists of  
+Input data sequence must consist of  
 1) 5' UTR  
-2) An odd number of Exons, with an Even number of introns between them.  
+2) Any number of Exons, with an introns distributed between them.  
 3) 3' UTR
 
-Introns, Exons, and UTRs are to be specified using capital or lowercase letters.  
+Introns, Exons, and UTRs are to be distinguished using capital or lowercase nuclotide letters.  
 Exons are capital, while introns and UTRs are lowercase.
 
 Like this:  
@@ -54,7 +54,8 @@ fiveprimeutrEXONONEintrononeEXONTWOintrontwoEXONTHREEthreeprimeutr
 agctagctagctAGCTAGCtagctagctAGCTAGCtagctagctAGCTAGCTAgctagctagctag
 
 All spaces, tabs, and newlines are not interpreted by this program,  They are removed.
-If you wish, you may use those characters for more convenient visualization of splice sites:
+If you wish, you may use those characters for convenient visualization of splice sites, like this:
+
 agctagctagct  
 AGCTAGC  
 tagctagct  
@@ -64,7 +65,7 @@ AGCTAGCTA
 gctagctagctag  
 
 ##Output Data
-The resulting report is in the form of an EMBL HLA Novel Allele submission flatfile.  You can submit this to EMBL as a new allele.
+The resulting report is in the form of an EMBL HLA Novel Allele submission flatfile.  You can submit this to EMBL as a new HLA allele.
 
 ##For more information on EMBL's ENA format:  
 http://www.ebi.ac.uk/ena/submit/sequence-submission  
