@@ -17,5 +17,5 @@
 
 :: See the file README.MD for how to set up your anaconda environment.
 
-activate AlleleSubEnvironment && python AlleleSubmissionEMBL.py && deactivate
+activate AlleleSubEnvironment && cd src && python AlleleSubmissionEMBL.py && deactivate
 
