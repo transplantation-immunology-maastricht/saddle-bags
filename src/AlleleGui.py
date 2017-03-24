@@ -32,18 +32,26 @@ class AlleleGui(Tkinter.Frame):
         Tkinter.Frame.__init__(self, root)
         root.title("EMBL Novel HLA Allele Submission Tool")
         self.parent = root
+        
+        # Ctrl-A doesn't work by default in TK.  I guess I need to do it myself.
+        root.bind_class("Text","<Control-a>", self.selectall)
+
         self.initialize()
-    
+        
+    # I shouldn't need to write a select-All method but TK is kind of annoying.
+    def selectall(self, event):
+
+        event.widget.tag_add("sel","1.0","end")
+        
     # Initialize GUI elements
     def initialize(self):
 
         button_opt = {'fill': Tkconstants.BOTH, 'padx': 35, 'pady': 5}
 
-
         self.cellNumInstrText = Tkinter.StringVar()
         self.cellNumInstrText.set('Sample ID:')
         self.inputCellNummer = Tkinter.StringVar()
-        self.inputCellNummer.set('11111')
+        self.inputCellNummer.set('Donor_12345')
 
         self.geneInstrText = Tkinter.StringVar()
         self.geneInstrText.set('Gene:')
@@ -53,7 +61,7 @@ class AlleleGui(Tkinter.Frame):
         self.alleleInstrText = Tkinter.StringVar()
         self.alleleInstrText.set('Allele:')
         self.inputAllele = Tkinter.StringVar()   
-        self.inputAllele.set('C0213ext')     
+        self.inputAllele.set('Allele:01:02')     
 
         #self.inputFeature = Tkinter.StringVar()
         #self.inputFeature.set('AGC[AGT]CCG[GGC]AAT')
@@ -179,6 +187,13 @@ class AlleleGui(Tkinter.Frame):
             + 'including 5\' and 3\' UTRs.\n'
             + 'Use capital letters for exons,\n'
             + 'lowercase for introns & UTRs.\n\n'
+            
+            + 'Paste your formatted sequence in the\n'
+            + 'first text area, and push the button\n'
+            + 'to generate a submission.\n\n'     
+            
+            + 'You can copy the submission from the GUI\n'
+            + 'or save it as text to your computer.\n\n'        
             
             + 'An example is included in the form,\n'
             + 'Sequences should follow this pattern:\n'

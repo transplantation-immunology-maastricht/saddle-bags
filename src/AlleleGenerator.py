@@ -17,6 +17,7 @@
 
 from Bio.Seq import Seq
 from Bio.Alphabet import generic_dna
+import sys
 import tkMessageBox
 
 import math
@@ -26,63 +27,73 @@ from HLAGene import *
 # The AlleleGenerator class contains logic to generate an EMBL HLA allele submission 
 # In ENA format.  
 class AlleleGenerator():   
+    
+    def __init__(self):
  
-    inputFileName = ''
-    outputFileName = ''
-    sequenceAnnotation = HLAGene()
-    inputCellNummer = 0#12345
-    inputGene = ''#HLA-C'
-    inputAllele = ''#C0316ext'  
+        self.inputFileName = ''
+        self.outputFileName = ''
+        self.sequenceAnnotation = HLAGene()
+        self.inputCellNummer = 0#12345
+        self.inputGene = ''#HLA-C'
+        self.inputAllele = ''#C0316ext'  
 
     # This is a short wrapper method to use biopython's translation method. 
     def translateSequence(self,inputSequence):
 
-        coding_dna = Seq(inputSequence, generic_dna)
+        try:
+            coding_dna = Seq(inputSequence, generic_dna)        
+            proteinSequence = str(coding_dna.translate())   
+            print ('Exon Sequence before translation:' + coding_dna)     
+            print ('Translated Protein:' + proteinSequence)
+            
+            # Perform Sanity Checks.
+            # Stop codon *should* be at the end of the protein.  
+            stopCodonLocation = proteinSequence.find('*')
+            
+            # If no stop codon was found
+            if (stopCodonLocation == -1):
+                if(len(coding_dna) % 3 == 0):
+                    tkMessageBox.showinfo('No Stop Codon Found', 
+                        'The translated protein does not contain a stop codon.' )
+                else:
+                    tkMessageBox.showinfo('No Stop Codon Found', 
+                        'The translated protein does not contain a stop codon.\n' + 
+                        'The coding nucleotide sequence length (' + str(len(coding_dna))  + ') is not a multiple of 3.')
+            
+            # This happens if the coding sequence is the wrong length
+            elif (not len(coding_dna) % 3 == 0):
+                tkMessageBox.showinfo('Check your coding sequence length.', 
+                    'The coding nucleotide sequence length (' + str(len(coding_dna))  + ') is not a multiple of 3.')
         
-        peptideSequence = str(coding_dna.translate())
-        print ('Translated Protein:' + peptideSequence)
-        
-        #Stop codon *should* be at the end of the protein.  
-        stopCodonLocation = peptideSequence.find('*')
-        
-        if (stopCodonLocation == -1):
-            if(len(coding_dna) % 3 == 0):
-                tkMessageBox.showinfo('No Stop Codon Found', 
-                    'The translated protein does not contain a stop codon.' )
+            # This is normal and expected.
             else:
-                tkMessageBox.showinfo('No Stop Codon Found', 
-                    'The translated protein does not contain a stop codon.\n' + 
-                    'It looks like a frame shift,\n' +
-                    'The coding nucleotide sequence has length: ' + str(len(coding_dna)) + '.')
-        else:
-            if (stopCodonLocation == len(peptideSequence) - 1):
-                #Stop codon is the last character in the peptide sequence.  That's just fine, but trim off the stop codon.
-                peptideSequence = peptideSequence[0:stopCodonLocation]
-                pass
-            else:
-                tkMessageBox.showinfo('Premature Stop Codon Detected',
-                    'Premature stop codon found:\nPeptide Position (' + 
-                    str(stopCodonLocation + 1) + '/' +
-                    str(len(peptideSequence)) + ')\n\n' +
-                    'Double check your peptide sequence,\n' + 
-                    'Some aminos from the 3\' / C-Terminus\nwere spliced out.\n\n' + 
-                    'Before : ' + peptideSequence + 
-                    '\nAfter  : ' + peptideSequence[0:stopCodonLocation] + 
-                    '\n'
-                    )
-                peptideSequence = peptideSequence[0:stopCodonLocation]
-
-        return peptideSequence
-
-    # 
-    def readInputSequence(self):
-
-        print('Reading file: ' + self.inputFileName)
-
-        fileObject = open(self.inputFileName, 'r')        
-        fullFile = fileObject.read()
-
-        self.processInputSequence(fullFile)        
+                if (stopCodonLocation == len(proteinSequence) - 1):
+                    # Stop codon is the last character in the peptide sequence.  
+                    # That's just fine, but trim off the stop codon.
+                    proteinSequence = proteinSequence[0:stopCodonLocation]
+                    pass
+                else:
+                    tkMessageBox.showinfo('Premature Stop Codon Detected',
+                        'Premature stop codon found:\nProtein Position (' + 
+                        str(stopCodonLocation + 1) + '/' +
+                        str(len(proteinSequence)) + ')\n\n' +
+                        'Double check your protein sequence,\n' + 
+                        'because some aminos from the\n3\' / C-Terminus end\nwere spliced out.\n\n' + 
+                        'Protein Before Splicing:\n' + proteinSequence + 
+                        '\n\nProtein After Splicing:\n' + proteinSequence[0:stopCodonLocation] + 
+                        '\n'
+                        )
+                    proteinSequence = proteinSequence[0:stopCodonLocation]
+    
+            return proteinSequence
+        
+        except Exception:
+            print 'Problem when translating protein:'
+            print sys.exc_info()[1]
+            tkMessageBox.showinfo('Protein Translation Error', 
+                'I could not translate your protein:\n' +  str(sys.exc_info()[1]))
+            
+            raise
 
     # The input file should be a string of nucleotides, with capital letters to identify exons and introns.
     # Annotations are expected and read in this format:
@@ -92,77 +103,305 @@ class AlleleGenerator():
     def processInputSequence(self, inputSequenceText):
 
         resultGeneLoci = HLAGene()
-        # Why do I need to initialize loci array?  I would have thought calling Gene() would do it.  
-        resultGeneLoci.loci = []
-
+        
         # Trim out any spaces, tabs, newlines.  Uppercase.
         cleanedGene = inputSequenceText.replace(' ','').replace('\n','').replace('\t','').replace('\r','')
 
-        # Trim out the annotation marks, and capitalize, so I have a copy of the full sequence.
+        # Capitalize, so I can store a copy of the full unannotated sequence.
         unannotatedGene = cleanedGene.upper()
         resultGeneLoci.fullSequence = unannotatedGene
         print('Total Sequence Length = ' + str(len(unannotatedGene)))
 
         # Loop through the cleaned and annotated input sequence, 
-        # to search for exon annotation characters ( '[' and ']' )
-        # I assume that the first and last loci are the 5' and 3' UTR, 
-        # I assume that Exons and Introns will alternate beyond that.
-        # It no longer uses ( '[' and ']' ) to specify exons.  I check for 
         # capitals and lowercase letters to determine exon start and end
-        insideAnExon = False
-        locusBeginPosition = 0
-        for x in range(0, len(cleanedGene)):
-            currentChar = cleanedGene[x]
+        if(len(cleanedGene) > 0):
             
-            # Is this a standard nucleotide character?
-            if(currentChar.upper() in ('A','G','C','T')):
-
-                if(currentChar.isupper()):
-                    if(insideAnExon):
-                        #We're STILL in an exon.  In this case, I should just do nothing and continue.  
-                        pass
-                    else:
-                        #In this case, we're just starting an EXON.
-                        #Store the last Intron in the list.
-                        currentIntron = GeneLocus()
-                        currentIntron.sequence = cleanedGene[locusBeginPosition:x].upper()
-                        currentIntron.exon = False
-                        resultGeneLoci.loci.append(currentIntron)                    
-                        insideAnExon=True
-                        locusBeginPosition = x
-                        pass
-                        
-                else:
-                    if not (insideAnExon):
-                        #We're STILL in an intron.  Continue.
-                        pass
-                    else:
-                        # Store an Exon in the list.
-                        currentExon = GeneLocus()
-                        currentExon.sequence = cleanedGene[locusBeginPosition:x].upper()
-                        currentExon.exon = True
-                        resultGeneLoci.loci.append(currentExon)     
-                        insideAnExon = False
-                        locusBeginPosition=x
-
-                        #Starting a new Intron.
-                        pass
+            # Is the first feature an exon or an intron?
+            # If we begin in an Exon
+            if( cleanedGene[0] in ('A','G','C','T')):                
+                insideAnExon = True
+            # If we begin in an Intron/UTR
+            elif( cleanedGene[0] in ('a','g','c','t')):  
+                insideAnExon = False
             else:
-                print('Nonstandard nucleotide detected at position ' + str(x) + ' : ' + currentChar 
-                    + '.  If this is a wildcard character, you might be ok.')
-
-        # Store the last(3') UTR as an intron.
-        currentIntron = GeneLocus()
-        currentIntron.sequence = cleanedGene[locusBeginPosition:len(cleanedGene)].upper()
-        currentIntron.exon = False
-        resultGeneLoci.loci.append(currentIntron)    
-
-        # Annotate the loci (name them) and print the results of the read file.
-        resultGeneLoci.annotateLoci()
-        resultGeneLoci.printGeneSummary()
-
+                # Nonstandard nucleotide? I should start panicking.
+                #raise Exception('Nonstandard Nucleotide, not sure how to handle it')
+                print('Nonstandard Nucleotide at the beginning of the sequence, not sure how to handle it')
+                insideAnExon = False
+            
+            
+            locusBeginPosition = 0
+            for x in range(0, len(cleanedGene)):
+                currentChar = cleanedGene[x]
+                
+                # Is this a standard nucleotide character?
+                if(currentChar.upper() in ('A','G','C','T')):
+    
+                    if(currentChar.isupper()):
+                        if(insideAnExon):
+                            #We're STILL in an exon.  In this case, I should just do nothing and continue.  
+                            pass
+                        else:
+                            #In this case, we're just starting an EXON.
+                            #Store the last Intron in the list.
+                            currentIntron = GeneLocus()
+                            currentIntron.sequence = cleanedGene[locusBeginPosition:x].upper()
+                            currentIntron.exon = False
+                            resultGeneLoci.loci.append(currentIntron)                    
+                            insideAnExon=True
+                            locusBeginPosition = x
+                            pass
+                            
+                    else:
+                        if not (insideAnExon):
+                            #We're STILL in an intron.  Continue.
+                            pass
+                        else:
+                            #Starting a new Intron.
+                            # Store an Exon in the list.
+                            currentExon = GeneLocus()
+                            currentExon.sequence = cleanedGene[locusBeginPosition:x].upper()
+                            currentExon.exon = True
+                            resultGeneLoci.loci.append(currentExon)     
+                            insideAnExon = False
+                            locusBeginPosition=x
+                            pass
+                else:
+                    print('Nonstandard nucleotide detected at position ' + str(x) + ' : ' + currentChar 
+                        + '.  If this is a wildcard character, you might be ok.')
+    
+            # We've reached the end of the loop and we still need to store the last feature.
+            # Should be a 3' UTR, but I can't be sure, people like to put in weird sequences.
+            currentIntron = GeneLocus()
+            currentIntron.sequence = cleanedGene[locusBeginPosition:len(cleanedGene)].upper()
+            currentIntron.exon = insideAnExon
+            resultGeneLoci.loci.append(currentIntron)    
+    
+            # Annotate the loci (name them) and print the results of the read file.
+            resultGeneLoci.annotateLoci()
+            resultGeneLoci.printGeneSummary()
+        
+        # If the sequence is empty
+        else:
+            print('Empty sequence, I don\'t have anything to do.')
+            
         self.sequenceAnnotation = resultGeneLoci
 
+    
+
+    def printHeader(self):
+        headerText = ''
+        
+        # Print header
+        headerText += 'ID   XXX; XXX; linear; genomic DNA; XXX; XXX; ' + str(self.sequenceAnnotation.totalLength()) + ' BP.\n'
+        headerText += 'XX\n'
+        # A valid document should have an AC (Accession Number) and DE (Description) field.
+        # I don't have an AC number available, so it's blank.
+        headerText += 'AC   \n'
+        headerText += 'XX\n'
+        headerText += 'DE   Human Leukocyte Antigen\n'
+        headerText += 'XX\n'
+
+        # Print key
+        headerText += ('FH   Key             Location/Qualifiers\n')
+        headerText += ('FH\n')
+        
+        # Print source
+        # It's from a human.
+        headerText += ('FT   source          1..' + str(self.sequenceAnnotation.totalLength()) + '\n')
+        headerText += ('FT                   /organism="Homo sapiens"\n')
+        headerText += ('FT                   /db_xref="taxon:9606"\n')
+        headerText += ('FT                   /mol_type="genomic DNA"\n')
+        headerText += ('FT                   /chromosome="6"\n')
+        headerText += ('FT                   /isolate="' + str(self.inputCellNummer) + '"\n')    
+        
+        return headerText
+    
+    def printMRNA(self):
+        mRNAText = ''
+        # Print mRNA
+        mRNAText += ('FT   mRNA            join(')
+        
+        # Iterate through the indices of the UTRs and exons.
+        # The 3' and 5' UTR are included in the mRNA
+        for x in range(0,len(self.sequenceAnnotation.loci)):
+            geneLocus = self.sequenceAnnotation.loci[x]
+            # If it is an exon or UTR
+            if (geneLocus.exon or 'UT' in geneLocus.name):
+                mRNAText += str(geneLocus.beginIndex) + '..' + str(geneLocus.endIndex) + ','
+
+        # Trim off the last comma and add a parenthese
+        mRNAText = mRNAText[0:len(mRNAText)-1] + ')\n'
+
+        mRNAText += ('FT                   /gene="' + str(self.inputGene) + '"\n') 
+        mRNAText += ('FT                   /allele="' + str(self.inputAllele) + '"\n')  
+        mRNAText += ('FT                   /product=\"MHC class I antigen\"\n')  
+        
+        return mRNAText
+    
+    
+    def printCDS(self):
+        cdsText = ''
+        
+        # Print CDS
+        # CDS is the coding sequence.  It should include the exons, but not the UTRs/Introns
+        # The range 1:featureCount-1 will exclude the UTRs.
+        cdsText += ('FT   CDS             join(') 
+        for x in range(0,len(self.sequenceAnnotation.loci)):
+            geneLocus = self.sequenceAnnotation.loci[x]
+            if (geneLocus.exon):
+                cdsText += str(geneLocus.beginIndex) + '..' + str(geneLocus.endIndex)
+                if not x==len(self.sequenceAnnotation.loci)-2:
+                    cdsText += ','
+                else:
+                    cdsText += ')\n'
+
+        cdsText += ('FT                   /transl_table=1\n')
+        cdsText += ('FT                   /codon_start=1\n')
+        cdsText += ('FT                   /gene="' + str(self.inputGene) + '"\n') 
+        cdsText += ('FT                   /allele="' + str(self.inputAllele) + '"\n')  
+        cdsText += ('FT                   /product=\"MHC class I antigen\"\n')  
+        cdsText += ('FT                   /translation=\"')
+
+        # Some simple formatting for the peptide sequence, making it human and computer readable.  
+        # 80 peptides per line.  Except the first line, which is 66.
+        # 66 is 80-14, where 14 is the length of { /translation=" }
+        peptideSequence = self.translateSequence(self.sequenceAnnotation.getExonSequence())
+        if(len(peptideSequence) < 66):
+            cdsText += (peptideSequence) + '\"\n'
+        else:
+            cdsText += peptideSequence[0:66] + '\n'
+            i=66
+            while (i < len(peptideSequence)):
+                cdsText += 'FT                   ' + peptideSequence[i:i+80] + '\n'   
+                i += 80
+                
+        return cdsText
+    
+    def printFeatures(self):
+        featureText = ''
+        
+        exonIndex = 1
+        intronIndex = 1
+        
+        geneHas3UTR = False
+        geneHas5UTR = False
+            
+        for x in range(0,len(self.sequenceAnnotation.loci)):
+            currentFeature = self.sequenceAnnotation.loci[x]
+
+            # 3' UTR
+            if(currentFeature.name == '3UT'):
+                featureText += ('FT   3\'UTR           ' + str(currentFeature.beginIndex) + '..' + str(currentFeature.endIndex) + '\n')
+                featureText += ('FT                   /note=\"3\'UTR\"\n')
+                featureText += ('FT                   /gene="' + str(self.inputGene) + '"\n') 
+                featureText += ('FT                   /allele="' + str(self.inputAllele) + '"\n')
+                geneHas3UTR = True  
+                
+            # 5' UTR
+            elif(currentFeature.name == '5UT'):
+                featureText += ('FT   5\'UTR           ' + str(currentFeature.beginIndex) + '..' + str(currentFeature.endIndex) + '\n')
+                featureText += ('FT                   /note=\"5\'UTR\"\n')
+                featureText += ('FT                   /gene="' + str(self.inputGene) + '"\n') 
+                featureText += ('FT                   /allele="' + str(self.inputAllele) + '"\n')
+                geneHas5UTR = True   
+            
+            # Exon
+            elif(currentFeature.exon):
+                featureText += ('FT   exon            ' + str(currentFeature.beginIndex) 
+                    + '..' + str(currentFeature.endIndex) + '\n')
+                featureText += ('FT                   /number=' + str(exonIndex) + '\n') 
+                featureText += ('FT                   /gene="' + str(self.inputGene) + '"\n') 
+                featureText += ('FT                   /allele="' + str(self.inputAllele) + '"\n')  
+                exonIndex += 1
+            
+            # Intron
+            else:
+                featureText += ('FT   intron          ' + str(currentFeature.beginIndex) 
+                    + '..' + str(currentFeature.endIndex) + '\n')   
+                featureText += ('FT                   /number=' + str(intronIndex) + '\n') 
+                featureText += ('FT                   /gene="' + str(self.inputGene) + '"\n') 
+                featureText += ('FT                   /allele="' + str(self.inputAllele) + '"\n') 
+                intronIndex += 1
+
+       
+        featureText += ('XX\n')
+        
+        # Do a quick sanity check.  If we are missing either UTR I should warn the user.
+        # But move on with your life, this is not worth getting upset over.
+        if (not geneHas3UTR and not geneHas5UTR):
+            tkMessageBox.showinfo('Missing UTRs', 
+                'This sequence has no 5\' or 3\' UTR.\n\n' + 
+                'Use lowercase nucleotides at the\n' + 
+                'beginning and end of your DNA\n' +
+                'sequence to specify the 5\' and 3\' UTRs.' )
+        elif (not geneHas5UTR):
+            tkMessageBox.showinfo('Missing 5\' UTR', 
+                'This sequence has no 5\' UTR.\n\n' + 
+                'Use lowercase nucleotides at the\n' + 
+                'beginning and end of your DNA\n' +
+                'sequence to specify the 5\' and 3\' UTRs.' )            
+        elif (not geneHas3UTR):
+            tkMessageBox.showinfo('Missing 3\' UTR', 
+                'This sequence has no 3\' UTR.\n\n' + 
+                'Use lowercase nucleotides at the\n' + 
+                'beginning and end of your DNA\n' +
+                'sequence to specify the 5\' and 3\' UTRs.' )    
+        else:
+            print('The UTRs look fine.')
+            pass
+        
+        return featureText
+    
+    def printSequence(self):
+        sequenceText = ''
+ 
+        completeSequence = self.sequenceAnnotation.getCompleteSequence().upper()
+                
+        cCount = completeSequence.count('C')
+        gCount = completeSequence.count('G')
+        tCount = completeSequence.count('T')
+        aCount = completeSequence.count('A')
+        otherCount = self.sequenceAnnotation.totalLength() - (cCount + gCount + tCount + aCount)
+
+        sequenceText += ('SQ   Sequence ' + str(self.sequenceAnnotation.totalLength()) + ' BP; ' 
+            + str(aCount) + ' A; ' + str(cCount) + ' C; ' 
+            + str(gCount) + ' G; ' + str(tCount) + ' T; ' 
+            + str(otherCount) + ' other;\n')
+
+        # Here's some logic to print the sequence information in groups of 10.
+        # This format is specified in the User manual specified by EMBL.
+        currentSeqIndex = 0
+
+        while (currentSeqIndex < self.sequenceAnnotation.totalLength()):
+            # The character code for a sequence region is two blank spaces,
+            # followed by three blank spaces, for a total of 5 blanks.
+            sequenceText += '     '
+            sequenceRow = self.sequenceAnnotation.getCompleteSequence()[currentSeqIndex : currentSeqIndex + 60]
+
+            # A sequenceChunk is 10 nucleotides in this context.
+            # Format specifies up to six "chunks" per line.
+            for i in range(0,6):
+                sequenceChunk = sequenceRow[i*10 : (i+1)*10]
+                sequenceText += sequenceChunk + ' '
+
+            # If line is complete (=60 bp), we can print the nucleotide index and move on to the next row.
+            if(len(sequenceRow) == 60):
+                sequenceText += str(currentSeqIndex + 60) + '\n'
+            # but if line is not complete (this is more likely, and more complicated.)
+            else:
+                # Fill with spaces to align the nucleotide indices at the end of the sequence.
+                numberSpaces = 60-len(sequenceRow)
+                for n in range (0, numberSpaces):
+                    sequenceText += ' '
+                sequenceText += (str(len(sequenceRow) + currentSeqIndex) + '\n')
+            
+            # The next row of the sequence
+            currentSeqIndex += 60     
+            
+        return sequenceText
+            
+        
     # Create the text submission based on the ENA format.
     def buildENASubmission(self):    
         
@@ -175,185 +414,16 @@ class AlleleGenerator():
 
         documentBuffer = ''
 
-        # These variables are for test data, they should be filled in by GUI.
-        #self.inputCellNummer = 23445
-        #self.inputGene = 'HLA-C'
-        #self.inputAllele = 'C0316ext'        
-
-        completeSequence = self.sequenceAnnotation.getCompleteSequence()
-        exonSequence = self.sequenceAnnotation.getExonSequence()
         totalLength = self.sequenceAnnotation.totalLength()
-        featureCount = len(self.sequenceAnnotation.loci)
         print('total calculated length = ' + str(totalLength))
 
-        # Print header
-        documentBuffer += ('ID   XXX; XXX; linear; genomic DNA; XXX; XXX; ' + str(totalLength) + ' BP.\n')
-        documentBuffer += ('XX\n')
+        # These are the main sections of the ENA submission.
+        documentBuffer += self.printHeader()
+        documentBuffer += self.printMRNA()
+        documentBuffer += self.printCDS()
+        documentBuffer += self.printFeatures()
+        documentBuffer += self.printSequence()
 
-        # A valid document should have an AC (Accession Number) and DE (Description) field.
-        # I don't have an AC number available, so it's blank.
-        documentBuffer += ('AC   \n')
-        documentBuffer += ('XX\n')
-
-        documentBuffer += ('DE   Human Leukocyte Antigen\n')
-        documentBuffer += ('XX\n')
-
-        # Print key
-        documentBuffer += ('FH   Key             Location/Qualifiers\n')
-        documentBuffer += ('FH\n')
-
-        # Print source
-        # It's from a human.
-        documentBuffer += ('FT   source          1..' + str(totalLength) + '\n')
-        documentBuffer += ('FT                   /organism="Homo sapiens"\n')
-        documentBuffer += ('FT                   /db_xref="taxon:9606"\n')
-        documentBuffer += ('FT                   /mol_type="genomic DNA"\n')
-        documentBuffer += ('FT                   /chromosome="6"\n')
-        documentBuffer += ('FT                   /isolate="' + str(self.inputCellNummer) + '"\n')    
-
-        # Print mRNA
-        documentBuffer += ('FT   mRNA            join(')
-        # Iterate through the indices of the UTRs and exons.
-        # The 3' and 5' UTR are included in the mRNA
-        # But not in the CDS (coding sequence), since they're untranslated.
-        documentBuffer += (str(self.sequenceAnnotation.loci[0].beginIndex) 
-            + '..' + str(self.sequenceAnnotation.loci[0].endIndex) + ',')
-
-        for x in range(1,featureCount-1):
-            geneLocus = self.sequenceAnnotation.loci[x]
-            if (geneLocus.exon):
-                documentBuffer += str(geneLocus.beginIndex) + '..' + str(geneLocus.endIndex) + ','
-
-        documentBuffer += (str(self.sequenceAnnotation.loci[featureCount-1].beginIndex) 
-            + '..' + str(self.sequenceAnnotation.loci[featureCount-1].endIndex) + ')\n')
-
-        documentBuffer += ('FT                   /gene="' + str(self.inputGene) + '"\n') 
-        documentBuffer += ('FT                   /allele="' + str(self.inputAllele) + '"\n')  
-        documentBuffer += ('FT                   /product=\"MHC class I antigen\"\n')  
-                
-        # Print CDS
-        # CDS is the coding sequence.  It should include the exons, but not the UTRs/Introns
-        # The range 1:featureCount-1 will exclude the UTRs.
-        documentBuffer += ('FT   CDS             join(') 
-        for x in range(1,featureCount-1):
-            geneLocus = self.sequenceAnnotation.loci[x]
-            if (geneLocus.exon):
-                documentBuffer += str(geneLocus.beginIndex) + '..' + str(geneLocus.endIndex)
-                if not x==featureCount-2:
-                    documentBuffer += ','
-                else:
-                    documentBuffer += ')\n'
-
-        documentBuffer += ('FT                   /transl_table=1\n')
-        documentBuffer += ('FT                   /codon_start=1\n')
-        documentBuffer += ('FT                   /gene="' + str(self.inputGene) + '"\n') 
-        documentBuffer += ('FT                   /allele="' + str(self.inputAllele) + '"\n')  
-        documentBuffer += ('FT                   /product=\"MHC class I antigen\"\n')  
-        documentBuffer += ('FT                   /translation=\"')
-
-        # Some simple formatting for the peptide sequence, making it human and computer readable.  
-        # 80 peptides per line.  Except the first line, which is 66.
-        # 66 is 80-14, where 14 is the length of { /translation=" }
-        peptideSequence = self.translateSequence(exonSequence)
-        if(len(peptideSequence) < 66):
-            documentBuffer += (peptideSequence) + '\"\n'
-        else:
-            documentBuffer += peptideSequence[0:66] + '\n'
-            i=66
-            while (i < len(peptideSequence)):
-                documentBuffer += 'FT                   ' + peptideSequence[i:i+80] + '\n'   
-                i += 80
- 
-        # Print 5'UTR        
-        utr = self.sequenceAnnotation.loci[0]
-        documentBuffer += ('FT   5\'UTR           ' + str(utr.beginIndex) + '..' + str(utr.endIndex) + '\n')
-        documentBuffer += ('FT                   /note=\"5\'UTR\"\n')
-        documentBuffer += ('FT                   /gene="' + str(self.inputGene) + '"\n') 
-        documentBuffer += ('FT                   /allele="' + str(self.inputAllele) + '"\n')  
-
-        # Print alternating Ex/Int/Ex
-        for x in range(1,featureCount-1):
-            currentFeature = self.sequenceAnnotation.loci[x]
-
-            if(currentFeature.exon):
-                documentBuffer += ('FT   exon            ' + str(currentFeature.beginIndex) 
-                    + '..' + str(currentFeature.endIndex) + '\n')
-            else:
-                documentBuffer += ('FT   intron          ' + str(currentFeature.beginIndex) 
-                    + '..' + str(currentFeature.endIndex) + '\n')
-
-            geneNumber = int(math.ceil(x / 2.0))
-            documentBuffer += ('FT                   /number=' + str(geneNumber) + '\n') 
-            documentBuffer += ('FT                   /gene="' + str(self.inputGene) + '"\n') 
-            documentBuffer += ('FT                   /allele="' + str(self.inputAllele) + '"\n')  
-                
-
-        # Print 3'UTR
-        utr = self.sequenceAnnotation.loci[len(self.sequenceAnnotation.loci)-1]
-        documentBuffer += ('FT   3\'UTR           ' + str(utr.beginIndex) + '..' + str(utr.endIndex) + '\n')
-        documentBuffer += ('FT                   /note=\"3\'UTR\"\n')
-        documentBuffer += ('FT                   /gene="' + str(self.inputGene) + '"\n') 
-        documentBuffer += ('FT                   /allele="' + str(self.inputAllele) + '"\n')  
-        documentBuffer += ('XX\n')
-
-        # Print sequence
-        # There's a sweet biopython method which can count the nucleotides.
-        # Bio.Seq.count('A')
-        # I didn't use it. 
-        cCount = 0
-        gCount = 0
-        tCount = 0
-        aCount = 0
-        otherCount = 0
-        for nucleotide in completeSequence:
-            if nucleotide == 'C':
-                cCount+=1
-            elif nucleotide == 'G':
-                gCount+=1
-            elif nucleotide == 'T':
-                tCount+=1
-            elif nucleotide == 'A':
-                aCount+=1
-            else:
-                otherCount+=1
-
-        documentBuffer += ('SQ   Sequence ' + str(totalLength) + ' BP; ' 
-            + str(aCount) + ' A; ' + str(cCount) + ' C; ' 
-            + str(gCount) + ' G; ' + str(tCount) + ' T; ' 
-            + str(otherCount) + ' other;\n')
-
-        # Here's some logic to print the sequence information in groups of 10.
-        # This format is specified in the User manual specified by EMBL.
-        rowCount = 0
-        columnCount = 0
-        currentSeqIndex = 0
-
-        while (currentSeqIndex < totalLength):
-            # The character code for a sequence region is two blank spaces,
-            # followed by three blank spaces, for a total of 5 blanks.
-            documentBuffer += '     '
-            sequenceRow = completeSequence[currentSeqIndex : currentSeqIndex + 60]
-
-            # A sequenceChunk is 10 nucleotides in this context.
-            # Format specifies up to six "chunks" per line.
-            for i in range(0,6):
-                sequenceChunk = sequenceRow[i*10 : (i+1)*10]
-                documentBuffer += sequenceChunk + ' '
-
-            # If line is complete (=60 bp), we can print the nucleotide index and move on to the next row.
-            if(len(sequenceRow) == 60):
-                documentBuffer += str(currentSeqIndex + 60) + '\n'
-            # but if line is not complete (this is more likely, and more complicated.)
-            else:
-                # Fill with spaces to align the nucleotide indices at the end of the sequence.
-                numberSpaces = 60-len(sequenceRow)
-                for n in range (0, numberSpaces):
-                    documentBuffer += ' '
-                documentBuffer += (str(len(sequenceRow) + currentSeqIndex) + '\n')
-            
-            # The next row of the sequence
-            currentSeqIndex += 60     
-   
         # Print entry terminator.  The last line of an ENA entry.
         documentBuffer += ('//\n')
 

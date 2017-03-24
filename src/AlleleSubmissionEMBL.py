@@ -24,9 +24,9 @@ from AlleleGui import AlleleGui
 
 if __name__=='__main__':
     try:
-
         # This is a really simple way to read commandline args, 
         # because there really shouldn't be any.
+        # TODO: Be more graceful with this, there are better ways to read args.
 
         # No parameters are expected at all.  sys.argv[0] doesn't count.
         if (len(sys.argv) == 1):
