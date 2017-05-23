@@ -17,13 +17,14 @@
 
 # The GeneLocus class specifies a locus on a Gene, 
 # Either an Exon, intron, or UTR.
-class GeneLocus(): 
-  
-    name = ''
-    sequence = ''
-    exon = False
-    beginIndex = 0
-    endIndex = 0
+class GeneLocus():
+    
+    def __init__(self):
+        self.name = ''
+        self.sequence = ''
+        self.exon = False
+        self.beginIndex = 0
+        self.endIndex = 0
 
     def length(self):
         return 1 + self.endIndex - self.beginIndex     
@@ -31,16 +32,15 @@ class GeneLocus():
 # The Gene class represents an entire HLA Gene, consisting of a series of loci.
 class HLAGene():
 
-    fullSequence = ''
-    loci = []
+    def __init__(self):
+        self.fullSequence = ''
+        self.loci = []
 
     def totalLength(self):
-
         return len(self.getCompleteSequence())
 
     # Combine the UTRs, Exons, and Introns into a contiguous sequence.
     def getCompleteSequence(self):
-
         sequence=''
         for i in range(0, len(self.loci)):
             sequence += self.loci[i].sequence
@@ -50,7 +50,7 @@ class HLAGene():
     def getExonSequence(self):
 
         sequence=''
-        for i in range(1, len(self.loci)-1):
+        for i in range(0, len(self.loci)):
             if(self.loci[i].exon):
                 sequence += self.loci[i].sequence
         return sequence
@@ -58,38 +58,50 @@ class HLAGene():
     # This method names the UTRs, Exons, and Introns, and records their indices.
     # A HLA gene is always expected to have the pattern
     # # 5UT -> EX1 -> IN1 -> EX2 -> IN2 -> ... -> EXN -> 3UT
+    # But I can't assume this so I will check.
     def annotateLoci(self):
         
         print('Annotating Gene Now')
 
+        # An index for the nucleotide position
         lociBeginIndex = 1
-        if(len(self.loci) > 2):
-            for x in range(0, len(self.loci)):
+        
+        # Start with the names 'EX1' and 'IN1'        
+        exonIndex = 1
+        intronIndex = 1
+        
+        lociCount = len(self.loci)
+        
+        if(lociCount == 0):
+            print('No loci to annotate.  We are done here.')
+            # TODO: do I need to raise an exception or just ignore the problem?
+            
+        else:
+            for lociIndex in range(0, len(self.loci)):
 
-                # Determine the name of this loci.  
-                # 5UT -> EX1 -> IN1 -> EX2 -> IN2 -> ... -> EXN -> 3UT
-                if(x==0):
-                    self.loci[x].name = '5UT'
-                elif(x==len(self.loci)-1):
-                    self.loci[x].name = '3UT'
-                elif(x%2 == 1):
-                    self.loci[x].name = 'EX' + str(x/2 + 1)
-                else:
-                    self.loci[x].name = 'I' + str(x/2)
+                if (self.loci[lociIndex].exon):
+                    self.loci[lociIndex].name = 'EX' + str(exonIndex)
+                    exonIndex += 1
+                else :
+                    # Is it a UTR or an Intron?
+                    if (lociIndex == 0):
+                        self.loci[lociIndex].name = '5UT'
+                    elif (lociIndex == lociCount - 1):
+                        self.loci[lociIndex].name = '3UT'
+                    else:
+                        self.loci[lociIndex].name = 'I' + str(intronIndex)
+                        intronIndex += 1
 
                 # Determine start and end indices of these exons.
                 # Attempting to make index that looks like:
                 #5UT:	1-65
                 #EX1:	66-137
                 # I1:	138-267
-                self.loci[x].beginIndex = lociBeginIndex
-                lociBeginIndex += len(self.loci[x].sequence)
-                self.loci[x].endIndex = lociBeginIndex - 1
-                
-
-        else:
-            print('I expected at least three loci in order to annotate them.  Please double check your input file.')
-
+                self.loci[lociIndex].beginIndex = lociBeginIndex
+                lociBeginIndex += len(self.loci[lociIndex].sequence)
+                self.loci[lociIndex].endIndex = lociBeginIndex - 1
+            
+            
     # Print a summary of the inputted sequence to console.  
     def printGeneSummary(self):
         print('\nPrinting Gene Summary')

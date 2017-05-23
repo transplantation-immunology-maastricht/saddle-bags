@@ -15,7 +15,7 @@
 
 # Version 1.0 
 
-SoftwareVersion = "EMBL-HLA-Submission Version 1.0"
+SoftwareVersion = "Bhast Version 1.0"
 
 import Tkinter
 import sys
@@ -24,9 +24,9 @@ from AlleleGui import AlleleGui
 
 if __name__=='__main__':
     try:
-
         # This is a really simple way to read commandline args, 
         # because there really shouldn't be any.
+        # TODO: Be more graceful with this, there are better ways to read args.
 
         # No parameters are expected at all.  sys.argv[0] doesn't count.
         if (len(sys.argv) == 1):
@@ -36,7 +36,7 @@ if __name__=='__main__':
             AlleleGui(root).pack()
             root.mainloop()
 
-            print('Done.  Yay.')
+            print('Done.  Hooray.')
 
         # Print the Software Version
         elif (len(sys.argv) == 2 and (
