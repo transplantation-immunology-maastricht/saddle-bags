@@ -33,58 +33,95 @@ class AlleleGenerator():
         self.inputFileName = ''
         self.outputFileName = ''
         self.sequenceAnnotation = HLAGene()
-        self.inputCellNummer = 0#12345
-        self.inputGene = ''#HLA-C'
-        self.inputAllele = ''#C0316ext'  
+        self.inputCellNummer = 0
+        self.inputGene = ''
+        self.inputAllele = '' 
 
     # This is a short wrapper method to use biopython's translation method. 
+    # Most of this code is just checking for things that went wrong
     def translateSequence(self,inputSequence):
 
-        try:
-            coding_dna = Seq(inputSequence, generic_dna)        
-            proteinSequence = str(coding_dna.translate())   
-            print ('Exon Sequence before translation:' + coding_dna)     
-            print ('Translated Protein:' + proteinSequence)
-            
-            # Perform Sanity Checks.
-            # Stop codon *should* be at the end of the protein.  
-            stopCodonLocation = proteinSequence.find('*')
-            
-            # If no stop codon was found
-            if (stopCodonLocation == -1):
-                if(len(coding_dna) % 3 == 0):
-                    tkMessageBox.showinfo('No Stop Codon Found', 
-                        'The translated protein does not contain a stop codon.' )
-                else:
-                    tkMessageBox.showinfo('No Stop Codon Found', 
-                        'The translated protein does not contain a stop codon.\n' + 
-                        'The coding nucleotide sequence length (' + str(len(coding_dna))  + ') is not a multiple of 3.')
-            
-            # This happens if the coding sequence is the wrong length
-            elif (not len(coding_dna) % 3 == 0):
-                tkMessageBox.showinfo('Check your coding sequence length.', 
-                    'The coding nucleotide sequence length (' + str(len(coding_dna))  + ') is not a multiple of 3.')
+        proteinSequence = ''
         
-            # This is normal and expected.
-            else:
-                if (stopCodonLocation == len(proteinSequence) - 1):
-                    # Stop codon is the last character in the peptide sequence.  
-                    # That's just fine, but trim off the stop codon.
-                    proteinSequence = proteinSequence[0:stopCodonLocation]
-                    pass
+        try:
+            # Do nothing if the input sequence is blank.
+            if( len(inputSequence) > 0 ):
+                
+                coding_dna = Seq(inputSequence, generic_dna)        
+                proteinSequence = str(coding_dna.translate())   
+                print ('Exon Sequence before translation:' + coding_dna)     
+                print ('Translated Protein:' + proteinSequence)
+                
+                # Perform Sanity Checks.
+                # Stop codon *should* be at the end of the protein.  
+                # Here we seek out the first instance of a stop codon, 
+                # and remove the peptides afterwards.
+                # because that's what happens in real life.
+                stopCodonLocation = proteinSequence.find('*')
+                
+                # If no stop codon was found
+                if (stopCodonLocation == -1):
+                    # If multiple of three (correct codon length)
+                    if(len(coding_dna) % 3 == 0):
+                        tkMessageBox.showinfo('No Stop Codon Found', 
+                            'The translated protein does not contain a stop codon.' )
+                        
+                    # Wrong Codon Length
+                    else:
+                        tkMessageBox.showinfo('No Stop Codon Found', 
+                            'The translated protein does not contain a stop codon.\n' + 
+                            'The coding nucleotide sequence length (' + str(len(coding_dna))  + ') is not a multiple of 3.')
+
+                # If Stop Codon is in the end of the protein (This is expected and correct)
+                elif (stopCodonLocation == len(proteinSequence) - 1):
+                    # If multiple of three (correct codon length)
+                    if(len(coding_dna) % 3 == 0):
+                        # Everything is fine in this case.  Trim off the stop codon
+                        proteinSequence = proteinSequence[0:stopCodonLocation]
+                        pass 
+                    # Wrong Codon Length
+                    else:
+                        tkMessageBox.showinfo('Extra Nucleotides After the Stop Codon', 
+                            'The stop codon is at the correct position in the protein, but ' + 
+                            'The coding nucleotide sequence length (' + str(len(coding_dna))  + ') is not a multiple of 3.\n\n' +
+                            'Please double check your sequence.')
+                        proteinSequence = proteinSequence[0:stopCodonLocation]
+                                            
+                # Else Stop Codon is premature (before the end of the protein) 
                 else:
-                    tkMessageBox.showinfo('Premature Stop Codon Detected',
-                        'Premature stop codon found:\nProtein Position (' + 
-                        str(stopCodonLocation + 1) + '/' +
-                        str(len(proteinSequence)) + ')\n\n' +
-                        'Double check your protein sequence,\n' + 
-                        'because some aminos from the\n3\' / C-Terminus end\nwere spliced out.\n\n' + 
-                        'Protein Before Splicing:\n' + proteinSequence + 
-                        '\n\nProtein After Splicing:\n' + proteinSequence[0:stopCodonLocation] + 
-                        '\n'
-                        )
-                    proteinSequence = proteinSequence[0:stopCodonLocation]
+                    # If multiple of three (correct codon length)
+                    if(len(coding_dna) % 3 == 0):
+                        tkMessageBox.showinfo('Premature Stop Codon Detected',
+                            'Premature stop codon found:\nProtein Position (' + 
+                            str(stopCodonLocation + 1) + '/' +
+                            str(len(proteinSequence)) + ')\n\n' +
+                            'Double check your protein sequence,\n' + 
+                            'this might indicate a missense mutation.\n\n' + 
+                            'Translated Protein:\n' + proteinSequence + 
+                            '\n\nProtein in EMBL Submission:\n' + proteinSequence[0:stopCodonLocation] + 
+                            '\n'
+                            )
+                        proteinSequence = proteinSequence[0:stopCodonLocation]
     
+    
+                    # Wrong Codon Length
+                    else:
+                        tkMessageBox.showinfo('Premature Stop Codon Detected',
+                            'Premature stop codon found:\nProtein Position (' + 
+                            str(stopCodonLocation + 1) + '/' +
+                            str(len(proteinSequence)) + ')\n\n' +
+                            'Nucleotide count is not a multiple of 3,\n' +
+                            'Double check your protein sequence,\n' + 
+                            'this might indicate a missense mutation.\n\n' + 
+                            'Translated Protein:\n' + proteinSequence + 
+                            '\n\nProtein in EMBL Submission:\n' + proteinSequence[0:stopCodonLocation] + 
+                            '\n'
+                            )
+                        proteinSequence = proteinSequence[0:stopCodonLocation]
+            else:
+                print('Translating a nucleotide sequence of length 0.  That was easy.')
+                pass
+
             return proteinSequence
         
         except Exception:
@@ -416,16 +453,25 @@ class AlleleGenerator():
 
         totalLength = self.sequenceAnnotation.totalLength()
         print('total calculated length = ' + str(totalLength))
+        
+        if(totalLength > 0):
 
-        # These are the main sections of the ENA submission.
-        documentBuffer += self.printHeader()
-        documentBuffer += self.printMRNA()
-        documentBuffer += self.printCDS()
-        documentBuffer += self.printFeatures()
-        documentBuffer += self.printSequence()
-
-        # Print entry terminator.  The last line of an ENA entry.
-        documentBuffer += ('//\n')
+            # These are the main sections of the ENA submission.
+            documentBuffer += self.printHeader()
+            documentBuffer += self.printMRNA()
+            documentBuffer += self.printCDS()
+            documentBuffer += self.printFeatures()
+            documentBuffer += self.printSequence()
+    
+            # Print entry terminator.  The last line of an ENA entry.
+            documentBuffer += ('//\n')
+            
+        else: 
+            tkMessageBox.showinfo('No HLA Sequence Found', 
+                'The HLA sequence is empty.\nPlease fill in an annotated HLA sequence\nbefore generating the submission.' )
+            
+            pass
+        
 
         return documentBuffer
 

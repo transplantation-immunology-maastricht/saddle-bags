@@ -36,7 +36,7 @@ if __name__=='__main__':
             AlleleGui(root).pack()
             root.mainloop()
 
-            print('Done.  Yay.')
+            print('Done.  Hooray.')
 
         # Print the Software Version
         elif (len(sys.argv) == 2 and (

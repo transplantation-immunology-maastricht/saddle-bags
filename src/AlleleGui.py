@@ -30,7 +30,7 @@ class AlleleGui(Tkinter.Frame):
     # Initialize the GUI
     def __init__(self, root):
         Tkinter.Frame.__init__(self, root)
-        root.title("EMBL Novel HLA Allele Submission Tool")
+        root.title("AlleleGen - A Novel HLA Allele Submission Generator")
         self.parent = root
         
         # Ctrl-A doesn't work by default in TK.  I guess I need to do it myself.
@@ -51,28 +51,20 @@ class AlleleGui(Tkinter.Frame):
         self.cellNumInstrText = Tkinter.StringVar()
         self.cellNumInstrText.set('Sample ID:')
         self.inputCellNummer = Tkinter.StringVar()
-        self.inputCellNummer.set('Donor_12345')
 
         self.geneInstrText = Tkinter.StringVar()
         self.geneInstrText.set('Gene:')
         self.inputGene = Tkinter.StringVar()
-        self.inputGene.set('HLA-C')
 
         self.alleleInstrText = Tkinter.StringVar()
         self.alleleInstrText.set('Allele:')
         self.inputAllele = Tkinter.StringVar()   
-        self.inputAllele.set('Allele:01:02')     
 
-        #self.inputFeature = Tkinter.StringVar()
-        #self.inputFeature.set('AGC[AGT]CCG[GGC]AAT')
         self.featureInstrText = Tkinter.StringVar()
         self.featureInstrText.set('Annotated Sequence:')
 
         self.outputEMBLSubmission = Tkinter.StringVar()
         self.outputEMBLSubmission.set('Resulting Allele Submission:')
-
-        #Moving this to the bottom
-        #Tkinter.Label(self, width=85, height=3, textvariable=self.instructionText).pack()
 
         Tkinter.Label(self, width=80, height=1, textvariable=self.cellNumInstrText).pack()
         Tkinter.Entry(self, width=15, textvariable=self.inputCellNummer).pack()
@@ -106,11 +98,7 @@ class AlleleGui(Tkinter.Frame):
         self.featureInputGuiObject.pack() 
         self.featureInputFrame.pack()
 
-        self.featureInputGuiObject.delete('1.0','end')
-        self.featureInputGuiObject.insert('1.0', 'aag\nCGTCGT\nccg\nGGCTGA\naat')
-
-        #Tkinter.Button(self, text='\|/ Generate an EMBL submission \|/', command=self.updateGUI).pack(**button_opt)
-        Tkinter.Button(self, text=unichr(8681) + ' Generate an EMBL submission ' + unichr(8681), command=self.updateGUI).pack(**button_opt)
+        Tkinter.Button(self, text=unichr(8681) + ' Generate an EMBL submission ' + unichr(8681), command=self.constructSubmission).pack(**button_opt)
 
         Tkinter.Label(self, width=80, height=1, textvariable=self.outputEMBLSubmission).pack()
 
@@ -144,63 +132,61 @@ class AlleleGui(Tkinter.Frame):
         Tkinter.Button(self, text='Save this submission to my computer', command=self.saveSubmissionFile).pack(**button_opt)
          
         self.instructionText = Tkinter.StringVar()       
-        #self.instructionText.set('This tool assumes you are submitting a standard HLA allele.\n'
-        #    + 'HLA alleles are assumed to be fully sequenced, including 5\' and 3\' UTRs.\n'
-        #    + 'Use capital letters for exons, lowercase for introns & UTRs, like this:\n'
-        #    + 'five\'utr EXON1 intron1 EXON2 ... EXON{X} three\'utr\n'
-        #    + 'All spaces, tabs, and newlines are discarded and ignored.')
         self.instructionText.set('This tool was developed by the Tissue Typing Laboratory at\nMaastricht University Medical Center.\nFor more information:')
         Tkinter.Label(self, width=85, height=3, textvariable=self.instructionText).pack()
-  
-  
+    
         # Make a frame for the more-info buttons
         self.moreInfoFrame = Tkinter.Frame(self)
   
         Tkinter.Button(self.moreInfoFrame, text='How to use this tool', command=self.howToUse).grid(row=0, column=0)
         Tkinter.Button(self.moreInfoFrame, text='Contacting or Citing MUMC', command=self.contactInformation).grid(row=0, column=1)
+        Tkinter.Button(self.moreInfoFrame, text='Example Sequence', command=self.sampleSequence).grid(row=0, column=2)
         
-
-
         self.moreInfoFrame.pack()
 
-
-        self.updateGUI()
         
+    def sampleSequence(self):
+        self.featureInputGuiObject.delete('1.0','end')
+        self.featureInputGuiObject.insert('1.0', 'aag\nCGTCGT\nccg\nGGCTGA\naat')
+        
+        self.inputAllele.set('Allele:01:02')    
+        self.inputGene.set('HLA-C') 
+        self.inputCellNummer.set('Donor_12345')
+        
+        self.constructSubmission()
+        
+    # This method should popup some instruction text in a wee window.
+    # This should be explicit on how to use the tool.    
     def howToUse(self):
-        # This method should popup some instruction text in a wee window.
-        
-        #self.instructionText.set('This tool assumes you are submitting a standard HLA allele.\n'
-        #    + 'HLA alleles are assumed to be fully sequenced, including 5\' and 3\' UTRs.\n'
-        #    + 'Use capital letters for exons, lowercase for introns & UTRs, like this:\n'
-        #    + 'five\'utr EXON1 intron1 EXON2 ... EXON{X} three\'utr\n'
-        #    + 'All spaces, tabs, and newlines are discarded and ignored.')
-        
         tkMessageBox.showinfo('How to use this tool',
             'This software is to be used to create an\n'
             + 'EMBL-formatted submission document,\n'
-            + 'which specifies a novel HLA allele,\n'
-            + 'including exon/intron annotation.\n\n'       
+            + 'which specifies a (novel) HLA allele.\n\n'       
                        
-            + 'This tool assumes you are submitting a\n'
-            + 'full length HLA allele.\n'
-            + 'HLA alleles should be fully sequenced,\n'
-            + 'including 5\' and 3\' UTRs.\n'
+            + 'This tool requires you to submit a\n'
+            + 'full length HLA allele, including\n'
+            + '5\' and 3\' UTRs.\n\n'
+            
             + 'Use capital letters for exons,\n'
             + 'lowercase for introns & UTRs.\n\n'
             
-            + 'Paste your formatted sequence in the\n'
-            + 'first text area, and push the button\n'
-            + 'to generate a submission.\n\n'     
-            
-            + 'You can copy the submission from the GUI\n'
-            + 'or save it as text to your computer.\n\n'        
-            
-            + 'An example is included in the form,\n'
+            + 'Push the "Example Sequence" button to see a small example of'
+            + ' a formatted sequence.\n'
             + 'Sequences should follow this pattern:\n'
             + '5\'utr EX1 int1 EX2 ... EX{X} 3\'utr\n\n'
             
-            + 'All spaces, tabs, and newlines are\n'
-            + 'removed and ignored.'
+            + 'To use this tool:\n'
+            + '1.) Fill in a Sample ID, Gene Name, and Allele.'
+            + ' This text will be included in the submission.\n'
+            + '2.) Paste your formatted sequence in the\n'
+            + 'Annotated Sequence text area.\n'
+            + '3.) Push \"Generate an EMBL submission\" button'
+            + ' to generate a submission.\n'
+            + '4.) Push the "Save the submission" button'
+            + ' to store the submission on your computer.\nYou can submit this file to EMBL.\n\n'
+            
+            + 'All spaces, tabs, and newlines are'
+            + ' removed before the nucleotide sequence is translated.'
             )
         
     def contactInformation(self):
@@ -236,12 +222,13 @@ class AlleleGui(Tkinter.Frame):
         options['initialdir'] = self.idir
         options['parent'] = self
         options['title'] = 'Specify your output file.'
+        options['initialfile'] = 'NovelAlleleEMBLSubmission.txt'
         outputFileObject = tkFileDialog.asksaveasfile(**self.dir_opt)
         submissionText = self.submOutputGuiObject.get('1.0', 'end')
         outputFileObject.write(submissionText)
         
     # Gather sequence information from the input elements, and generate a text EMBL submission.
-    def updateGUI(self):
+    def constructSubmission(self):
 
         allGen = AlleleGenerator()
         roughFeatureSequence = self.featureInputGuiObject.get('1.0', 'end')
