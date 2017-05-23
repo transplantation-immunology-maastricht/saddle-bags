@@ -15,7 +15,7 @@
 
 # Version 1.0 
 
-SoftwareVersion = "EMBL-HLA-Submission Version 1.0"
+SoftwareVersion = "Bhast Version 1.0"
 
 import Tkinter
 import sys

@@ -1,4 +1,5 @@
-#EMBL-HLA-SUBMISSION
+#Bhast
+Ben's HLA Allele Submission Tool
 A tool for generating an EMBL-formatted submission of a standard novel HLA allele. 
 
 ##Download the executable

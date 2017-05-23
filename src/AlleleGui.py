@@ -14,7 +14,7 @@
 # along with EMBL-HLA-Submission. If not, see <http://www.gnu.org/licenses/>.
 
 # Version 1.0 
-SoftwareVersion = "EMBL-HLA-Submission Version 1.0"
+SoftwareVersion = "Bhast Version 1.0"
 
 import os
 
@@ -30,7 +30,7 @@ class AlleleGui(Tkinter.Frame):
     # Initialize the GUI
     def __init__(self, root):
         Tkinter.Frame.__init__(self, root)
-        root.title("AlleleGen - A Novel HLA Allele Submission Generator")
+        root.title("Bhast - A Novel HLA Allele Submission Generator")
         self.parent = root
         
         # Ctrl-A doesn't work by default in TK.  I guess I need to do it myself.
