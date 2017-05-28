@@ -67,8 +67,13 @@ tagctagct
 AGCTAGCTA  
 gctagctagctag  
 
+## Annotating my exons
+If you don't know where your exons are, we have provided a list of common sequences surrounding exon boundaries. See the [Release Page](https://github.com/transplantation-immunology/EMBL-HLA-Submission/releases) for a .pdf reference of exon boundaries.
+
 ## Output Data
-The resulting report is in the form of an EMBL HLA Novel Allele submission flatfile.  You can submit this to EMBL as a new HLA allele.
+The resulting report is in the form of an EMBL HLA Novel Allele submission flatfile.  You can submit this to EMBL as a new HLA allele
+
+
 
 ## For more information on EMBL's ENA format:  
 http://www.ebi.ac.uk/ena/submit/sequence-submission  
