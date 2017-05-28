@@ -1,12 +1,14 @@
 # Bhast
 Ben's HLA Allele Submission Tool
+
 A tool for generating an EMBL-formatted submission of a standard novel HLA allele. 
 
 ## Download the executable
-When the compiled executable is available, i'll put a link for the file download here.
+Download an executable for Windows from the Release page.
+[Download Bhast for Windows Here](https://github.com/transplantation-immunology/EMBL-HLA-Submission/releases)
 
 ## Run using Python
-Run this program using standard python call:  
+Alternatively, you can run this program using Python 2.7. This works for Mac and Linux users (or Windows). There are prerequesites, you can install them inside an Anaconda environment.
 ```
 python AlleleSubmissionEMBL.py
 ```
