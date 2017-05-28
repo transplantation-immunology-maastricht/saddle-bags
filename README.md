@@ -67,8 +67,8 @@ tagctagct
 AGCTAGCTA  
 gctagctagctag  
 
-## Annotating my exons
-If you don't know where your exons are, we have provided a list of common sequences surrounding exon boundaries. See the [Release Page](https://github.com/transplantation-immunology/EMBL-HLA-Submission/releases) for a .pdf reference of exon boundaries.
+## Annotating your exons
+Identifying the exons in your HLA sequence is a nontrivial challenge. We have provided a list of common sequences surrounding exon boundaries. See the [Release Page](https://github.com/transplantation-immunology/EMBL-HLA-Submission/releases) for a .pdf reference.  These sequences can probably be found within your HLA consensus sequence at exon boundary sites. It may also help to use the [IMGT/HLA alignments feature](http://www.ebi.ac.uk/ipd/imgt/hla/align.html) for more information on common exon patterns.
 
 ## Output Data
 The resulting report is in the form of an EMBL HLA Novel Allele submission flatfile.  You can submit this to EMBL as a new HLA allele
