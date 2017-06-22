@@ -20,7 +20,7 @@
 cd src
 
 source activate AlleleSubEnvironment
-python AlleleSubmissionEMBL.py
+python AlleleSubmissionMain.py
 source deactivate
 
 

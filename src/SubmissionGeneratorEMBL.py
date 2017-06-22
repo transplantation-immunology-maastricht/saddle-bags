@@ -13,8 +13,6 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with EMBL-HLA-Submission. If not, see <http://www.gnu.org/licenses/>.
 
-# Version 1.0
-
 from Bio.Seq import Seq
 from Bio.Alphabet import generic_dna
 import sys
@@ -26,7 +24,7 @@ from HLAGene import *
 
 # The AlleleGenerator class contains logic to generate an EMBL HLA allele submission 
 # In ENA format.  
-class AlleleGenerator():   
+class SubmissionGeneratorEMBL():   
     
     def __init__(self):
  
@@ -138,6 +136,10 @@ class AlleleGenerator():
     # agctagctagctAGCTAGCtagctagctAGCTAGCtagctagctAGCTAGCTAgctagctagctag
     # All spaces, line feeds, and tabs are removed and ignored.  
     def processInputSequence(self, inputSequenceText):
+
+        # TODO: I should accept a Fasta Input. 
+        # Disregard the header line completely. Is there still sequence?
+
 
         resultGeneLoci = HLAGene()
         
@@ -296,7 +298,9 @@ class AlleleGenerator():
         cdsText += ('FT                   /transl_table=1\n')
         cdsText += ('FT                   /codon_start=1\n')
         cdsText += ('FT                   /gene="' + str(self.inputGene) + '"\n') 
-        cdsText += ('FT                   /allele="' + str(self.inputAllele) + '"\n')  
+        cdsText += ('FT                   /allele="' + str(self.inputAllele) + '"\n')
+        
+        # TODO: This is a problem. I need to specify Class I or Class II  
         cdsText += ('FT                   /product=\"MHC class I antigen\"\n')  
         cdsText += ('FT                   /translation=\"')
 
@@ -310,8 +314,15 @@ class AlleleGenerator():
             cdsText += peptideSequence[0:66] + '\n'
             i=66
             while (i < len(peptideSequence)):
-                cdsText += 'FT                   ' + peptideSequence[i:i+80] + '\n'   
+                cdsText += 'FT                   ' + peptideSequence[i:i+80]   
                 i += 80
+                
+                # If we're not yet at the end of the sequence, go to the next line
+                if(i < len(peptideSequence)):
+                    cdsText += '\n'
+                # We're at the end. close the quote and new line.
+                else:
+                    cdsText += '\"\n'
                 
         return cdsText
     

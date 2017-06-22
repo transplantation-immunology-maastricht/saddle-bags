@@ -13,8 +13,6 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with EMBL-HLA-Submission. If not, see <http://www.gnu.org/licenses/>.
 
-# Version 1.0
-
 # The GeneLocus class specifies a locus on a Gene, 
 # Either an Exon, intron, or UTR.
 class GeneLocus():

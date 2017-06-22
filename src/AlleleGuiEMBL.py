@@ -13,72 +13,68 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with EMBL-HLA-Submission. If not, see <http://www.gnu.org/licenses/>.
 
-# Version 1.0 
-SoftwareVersion = "Bhast Version 1.0"
+SoftwareVersion = "Bhast Version 1.1"
 
 import os
+from os.path import expanduser
 
 import Tkinter, Tkconstants, tkFileDialog, tkMessageBox
 from Tkinter import *
 
-from AlleleGenerator import AlleleGenerator
-from HLAGene import *
+from SubmissionGeneratorEMBL import SubmissionGeneratorEMBL
+from AlleleGuiEMBLInputForm import AlleleGuiEMBLInputForm
+from AlleleSubCommon import *
+#from HLAGene import HLAGene
 
 # The AlleleGui class is an extension of Tkinter.  The GUI elements and interactions are specified in this class.
-class AlleleGui(Tkinter.Frame):
+class AlleleGuiEMBL(Tkinter.Frame):
 
-    # Initialize the GUI
-    def __init__(self, root):
-        Tkinter.Frame.__init__(self, root)
-        root.title("Bhast - A Novel HLA Allele Submission Generator")
-        self.parent = root
-        
-        # Ctrl-A doesn't work by default in TK.  I guess I need to do it myself.
-        root.bind_class("Text","<Control-a>", self.selectall)
-
-        self.initialize()
-        
     # I shouldn't need to write a select-All method but TK is kind of annoying.
     def selectall(self, event):
 
         event.widget.tag_add("sel","1.0","end")
         
-    # Initialize GUI elements
-    def initialize(self):
+    # Initialize the GUI
+    def __init__(self, root):
+        Tkinter.Frame.__init__(self, root)
+        root.title("An HLA Allele Submission Generator")
+        self.parent = root
+
+        # Ctrl-A doesn't work by default in TK.  I guess I need to do it myself.
+        root.bind_class("Text","<Control-a>", self.selectall)
+        
+        # To define the exit behavior.  Save the input sequence text.
+        self.parent.protocol('WM_DELETE_WINDOW', self.saveSequenceText)
 
         button_opt = {'fill': Tkconstants.BOTH, 'padx': 35, 'pady': 5}
-
-        self.cellNumInstrText = Tkinter.StringVar()
-        self.cellNumInstrText.set('Sample ID:')
-        self.inputCellNummer = Tkinter.StringVar()
-
-        self.geneInstrText = Tkinter.StringVar()
-        self.geneInstrText.set('Gene:')
-        self.inputGene = Tkinter.StringVar()
-
-        self.alleleInstrText = Tkinter.StringVar()
-        self.alleleInstrText.set('Allele:')
-        self.inputAllele = Tkinter.StringVar()   
-
-        self.featureInstrText = Tkinter.StringVar()
-        self.featureInstrText.set('Annotated Sequence:')
-
-        self.outputEMBLSubmission = Tkinter.StringVar()
-        self.outputEMBLSubmission.set('Resulting Allele Submission:')
-
-        Tkinter.Label(self, width=80, height=1, textvariable=self.cellNumInstrText).pack()
-        Tkinter.Entry(self, width=15, textvariable=self.inputCellNummer).pack()
-
-        Tkinter.Label(self, width=80, height=1, textvariable=self.geneInstrText).pack()
-        Tkinter.Entry(self, width=15, textvariable=self.inputGene).pack()
-
-        Tkinter.Label(self, width=80, height=1, textvariable=self.alleleInstrText).pack()
-        Tkinter.Entry(self, width=15, textvariable=self.inputAllele).pack()
-
-        Tkinter.Label(self, width=80, height=1, textvariable=self.featureInstrText).pack()
+        
+        
+        # A frame for the Instructions Label.
+        self.instructionsFrame = Tkinter.Frame(self)  
+        self.instructionText = Tkinter.StringVar()       
+        self.instructionText.set('\nThis tool will generate an HLA allele submission for\n'
+            + 'the EMBL / ENA nucleotide database.\n'
+            + 'If you provide login credentials, you may automatically submit the sequence.\n'
+            + 'For more information:\n')
+        Tkinter.Label(self.instructionsFrame, width=85, height=6, textvariable=self.instructionText).pack()
+        self.instructionsFrame.pack()
+        
+        # Make a frame for the more-info buttons
+        self.moreInfoFrame = Tkinter.Frame(self)
+        Tkinter.Button(self.moreInfoFrame, text='How to use this tool', command=self.howToUse).grid(row=0, column=0)
+        Tkinter.Button(self.moreInfoFrame, text='Example Sequence', command=self.sampleSequence).grid(row=0, column=1)
+        self.moreInfoFrame.pack() 
+         
+         
+        # TODO: Can I instruct this text area to fill the space allowed?
+        # http://effbot.org/tkinterbook/pack.htm
         
         # Create a frame for the input widget, add scrollbars.
         self.featureInputFrame = Tkinter.Frame(self)
+        
+        self.featureInstrText = Tkinter.StringVar()
+        self.featureInstrText.set('Annotated Sequence:')
+        self.featureInstrLabel = Tkinter.Label(self.featureInputFrame, width=80, height=1, textvariable=self.featureInstrText).pack()
 
         self.featureInputXScrollbar = Scrollbar(self.featureInputFrame, orient=HORIZONTAL)
         self.featureInputXScrollbar.pack(side=BOTTOM, fill=X)
@@ -98,12 +94,20 @@ class AlleleGui(Tkinter.Frame):
         self.featureInputGuiObject.pack() 
         self.featureInputFrame.pack()
 
-        Tkinter.Button(self, text=unichr(8681) + ' Generate an EMBL submission ' + unichr(8681), command=self.constructSubmission).pack(**button_opt)
 
-        Tkinter.Label(self, width=80, height=1, textvariable=self.outputEMBLSubmission).pack()
+        # Create  Frame for "Generate Submission" button.
+        self.submButtonFrame = Tkinter.Frame(self)
+        Tkinter.Button(self.submButtonFrame, text='Submission Options', command=self.chooseSubmissionOptions).grid(row=0, column=0)
+        Tkinter.Button(self.submButtonFrame, text=unichr(8681) + ' Generate an EMBL submission ' + unichr(8681), command=self.constructSubmission).grid(row=0, column=1)
+        self.submButtonFrame.pack()
 
+       
         # Output interface is contained on a frame.
         self.submOutputFrame = Tkinter.Frame(self)
+        
+        self.outputEMBLSubmission = Tkinter.StringVar()
+        self.outputEMBLSubmission.set('Allele Submission Preview:')
+        self.outputEMBLLabel = Tkinter.Label(self.submOutputFrame, width=80, height=1, textvariable=self.outputEMBLSubmission).pack()
 
         self.submOutputXScrollbar = Scrollbar(self.submOutputFrame, orient=HORIZONTAL)
         self.submOutputXScrollbar.pack(side=BOTTOM, fill=X)
@@ -123,35 +127,29 @@ class AlleleGui(Tkinter.Frame):
         self.submOutputGuiObject.pack() 
         self.submOutputFrame.pack()
 
-        # This is the directory the python executable is running from.
-        # self.idir is used inside the saveSubmissionFile method.
-        # Maybe the code should be in there.
-        FileAndPath = os.path.abspath(__file__)
-        self.idir, self.ifile = os.path.split(FileAndPath)
-        
-        Tkinter.Button(self, text='Save this submission to my computer', command=self.saveSubmissionFile).pack(**button_opt)
+        self.uploadSubmissionFrame = Tkinter.Frame(self)        
+        Tkinter.Button(self.uploadSubmissionFrame, text='Upload Submission to EMBL', command=self.saveSubmissionFile).pack(**button_opt)
+        Tkinter.Button(self.uploadSubmissionFrame, text='Save Submission to My Computer', command=self.saveSubmissionFile).pack(**button_opt)
+        Tkinter.Button(self.uploadSubmissionFrame, text='Exit', command=self.saveSubmissionFile).pack(**button_opt)
+        self.uploadSubmissionFrame.pack()
          
-        self.instructionText = Tkinter.StringVar()       
-        self.instructionText.set('This tool was developed by the Tissue Typing Laboratory at\nMaastricht University Medical Center.\nFor more information:')
-        Tkinter.Label(self, width=85, height=3, textvariable=self.instructionText).pack()
-    
-        # Make a frame for the more-info buttons
-        self.moreInfoFrame = Tkinter.Frame(self)
-  
-        Tkinter.Button(self.moreInfoFrame, text='How to use this tool', command=self.howToUse).grid(row=0, column=0)
-        Tkinter.Button(self.moreInfoFrame, text='Contacting or Citing MUMC', command=self.contactInformation).grid(row=0, column=1)
-        Tkinter.Button(self.moreInfoFrame, text='Example Sequence', command=self.sampleSequence).grid(row=0, column=2)
-        
-        self.moreInfoFrame.pack()
+    def chooseSubmissionOptions(self):
+        print ('Opening the EMBL Submission Options Dialog')
+        #emblSubRoot = Tkinter.Tk()
+        emblOptionsRoot = Tkinter.Toplevel()
+        AlleleGuiEMBLInputForm(emblOptionsRoot).pack()
+        #print ('Starting the main loop...')
+        emblOptionsRoot.mainloop()
 
         
     def sampleSequence(self):
         self.featureInputGuiObject.delete('1.0','end')
         self.featureInputGuiObject.insert('1.0', 'aag\nCGTCGT\nccg\nGGCTGA\naat')
         
-        self.inputAllele.set('Allele:01:02')    
-        self.inputGene.set('HLA-C') 
-        self.inputCellNummer.set('Donor_12345')
+        assignConfigurationValue("allele_name",'Allele:01:02')
+        assignConfigurationValue('gene','HLA-C')
+        assignConfigurationValue('sample_id', 'Donor_12345')
+        assignConfigurationValue('class','1')
         
         self.constructSubmission()
         
@@ -219,24 +217,45 @@ class AlleleGui(Tkinter.Frame):
     def saveSubmissionFile(self):
 
         self.dir_opt = options = {}
-        options['initialdir'] = self.idir
+       
+        options['initialdir'] = expanduser("~")
         options['parent'] = self
         options['title'] = 'Specify your output file.'
-        options['initialfile'] = 'NovelAlleleEMBLSubmission.txt'
+        options['initialfile'] = 'EMBL.HLA.Submission.txt'
         outputFileObject = tkFileDialog.asksaveasfile(**self.dir_opt)
         submissionText = self.submOutputGuiObject.get('1.0', 'end')
         outputFileObject.write(submissionText)
         
     # Gather sequence information from the input elements, and generate a text EMBL submission.
     def constructSubmission(self):
+        try:
 
-        allGen = AlleleGenerator()
-        roughFeatureSequence = self.featureInputGuiObject.get('1.0', 'end')
-        allGen.inputCellNummer = self.inputCellNummer.get()
-        allGen.inputGene = self.inputGene.get()
-        allGen.inputAllele = self.inputAllele.get()
-        allGen.processInputSequence(roughFeatureSequence)
-        enaSubmission = allGen.buildENASubmission()
-        self.submOutputGuiObject.delete('1.0','end')    
-        self.submOutputGuiObject.insert('1.0', enaSubmission) 
-
+            allGen = SubmissionGeneratorEMBL()
+            roughFeatureSequence = self.featureInputGuiObject.get('1.0', 'end')
+            #allGen.inputSampleID = self.inputSampleID.get()
+            #allGen.inputGene = self.inputGene.get()
+            #allGen.inputAllele = self.inputAllele.get()
+            allGen.inputSampleID = getConfigurationValue('sample_id')
+            allGen.inputGene = getConfigurationValue('gene')
+            allGen.inputAllele = getConfigurationValue('allele_name')
+            
+            allGen.processInputSequence(roughFeatureSequence)
+            enaSubmission = allGen.buildENASubmission()
+            self.submOutputGuiObject.delete('1.0','end')    
+            self.submOutputGuiObject.insert('1.0', enaSubmission) 
+            
+        except KeyError, e:
+            tkMessageBox.showerror('Missing Submission Options'
+                ,'You are missing some required information.\n'
+                + 'Use the \'Submission Options\' button.\n'
+                + 'Missing Data: ' + str(e))
+            
+    def saveSequenceText(self):
+        assignConfigurationValue('sequence', self.featureInputGuiObject.get('1.0', 'end'))
+        
+        
+        
+        
+        
+        
+        

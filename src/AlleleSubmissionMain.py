@@ -13,27 +13,28 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with EMBL-HLA-Submission. If not, see <http://www.gnu.org/licenses/>.
 
-# Version 1.0 
-
 SoftwareVersion = "Bhast Version 1.0"
 
 import Tkinter
 import sys
 
-from AlleleGui import AlleleGui
-
+from AlleleGuiMain import AlleleGuiMain
+from AlleleSubCommon import *
+    
 if __name__=='__main__':
     try:
         # This is a really simple way to read commandline args, 
         # because there really shouldn't be any.
         # TODO: Be more graceful with this, there are better ways to read args.
-
         # No parameters are expected at all.  sys.argv[0] doesn't count.
         if (len(sys.argv) == 1):
-            print('\n\n\n\n\n***Creating an EMBL Allele submission***\n')
+            
+            loadConfigurationFile()
+            
+            print('\n\n\n\n\n***Starting the HLA Allele Submission Tool***\n')
 
             root = Tkinter.Tk()
-            AlleleGui(root).pack()
+            AlleleGuiMain(root).pack()
             root.mainloop()
 
             print('Done.  Hooray.')
@@ -50,7 +51,7 @@ if __name__=='__main__':
         else:
             print("usage:\n" + 
                 "\tRun this program using standard python call:\n" + 
-                "\t$python AlleleSubmissionEMBL.py\n" + 
+                "\t$python AlleleSubmissionMain.py\n" + 
                 "\tbiopython must be accessible in your python environment.  To run using Anaconda,\n"
                 "\tCheck readme at https://github.com/transplantation-immunology/EMBL-HLA-Submission\n"
             )
@@ -62,4 +63,3 @@ if __name__=='__main__':
         print 'Unexpected problem during execution:'
         print sys.exc_info()[1]
         raise
-
