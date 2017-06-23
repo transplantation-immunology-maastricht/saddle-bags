@@ -17,14 +17,23 @@ import os
 
 import Tkinter, Tkconstants, tkFileDialog, tkMessageBox
 from Tkinter import *
+from ttk import *
 
 from AlleleSubCommon import *
+from ScrolledWindow import VerticalScrolledFrame
 
-class AlleleGuiIMGTInputForm(Tkinter.Frame):
+# I am using this ScrolledWindow class instead of a Frame.
+# This interface is too big for one screen, need a scrollbar.
+
+class AlleleGuiIMGTInputForm(VerticalScrolledFrame):
         
     # Initialize the GUI
     def __init__(self, root):
-        Tkinter.Frame.__init__(self, root)
+        
+        
+        VerticalScrolledFrame.__init__(self, root)
+        #Tkinter.Frame.__init__(self, root)
+        #super(500, 500)
         root.title("Choose IMGT Submission Options")
         self.parent = root
 
@@ -33,7 +42,7 @@ class AlleleGuiIMGTInputForm(Tkinter.Frame):
         # To define the exit behavior.  Save and exit.
         self.parent.protocol('WM_DELETE_WINDOW', self.saveOptions)
         
-        self.instructionsFrame = Tkinter.Frame(self)  
+        self.instructionsFrame = Tkinter.Frame(self.interior)  
         self.instructionText = Tkinter.StringVar()       
         self.instructionText.set('\nThese options are required for an IMGT allele submission.\n'
             + 'Login Credentials will not be stored, but they will be sent to IMGT via\n'
@@ -42,11 +51,12 @@ class AlleleGuiIMGTInputForm(Tkinter.Frame):
         self.instructionsFrame.pack()
         
         #Standard Inputs widths for the form elements
-        formInputWidth = 30
-        labelInputWidth = 30
+        formInputWidth = 35
+        labelInputWidth = 35
                 
         # Make a frame to contain the input variables
-        self.submissionDetailsInputFrame = Tkinter.Frame(self)
+        # self.interior is defined in the ScrolledWindow class
+        self.submissionDetailsInputFrame = Tkinter.Frame(self.interior)
 
         self.usernameInstrText = Tkinter.StringVar()
         self.usernameInstrText.set('IMGT Username:')
@@ -93,7 +103,8 @@ class AlleleGuiIMGTInputForm(Tkinter.Frame):
         # TODO: Can I just load an EMBL accession? I think that is possible.  Easier than filling it in here
         
         
-        # TODO: Do I need to specify if it is EMBL / Genbank / The other one?  Probably not.  
+        # TODO: Do I need to specify if it is EMBL / Genbank / The other one?  Probably not.
+        # I can require an EMBL code and disregard Genbank.  
         # Radio Buttons?  
         # EMBL / Genbank Accession #
         self.emblAccInstrText = Tkinter.StringVar()
@@ -104,26 +115,80 @@ class AlleleGuiIMGTInputForm(Tkinter.Frame):
 
         
         # Release Date
-        sdfasdfasdfasd this definitely doesnt work
-        self.emblAccInstrText = Tkinter.StringVar()
-        self.emblAccInstrText.set('EMBL Sequence Accession #:')
-        self.emblAccInstrLabel = Tkinter.Label(self.submissionDetailsInputFrame, width=labelInputWidth, height=1, textvariable=self.emblAccInstrText).grid(row=6, column=0)
-        self.inputEmblAcc = Tkinter.StringVar() 
-        self.inputEmblAccEntry = Tkinter.Entry(self.submissionDetailsInputFrame, width=formInputWidth, textvariable=self.inputEmblAcc).grid(row=6, column=1)
+        self.releaseDateInstrText = Tkinter.StringVar()
+        self.releaseDateInstrText.set('Release Date:')
+        self.releaseDateInstrLabel = Tkinter.Label(self.submissionDetailsInputFrame, width=labelInputWidth, height=1, textvariable=self.releaseDateInstrText).grid(row=7, column=0)
+        self.inputReleaseDate = Tkinter.StringVar() 
+        self.inputReleaseDateEntry = Tkinter.Entry(self.submissionDetailsInputFrame, width=formInputWidth, textvariable=self.inputReleaseDate).grid(row=7, column=1)
         
         # Reference Details
-        # Radio Button: Unpublished
+        # Is this allele in a published paper or not?
+        # 1=unpublished, 2=published
+        self.publishedReferenceIntVar = IntVar()
+        self.publishedReferenceIntVar.set(1)
+        
+        self.submissionDetailsInputFrame.pack()
+ 
+        
+        self.unpublishedReferenceFrame = Tkinter.Frame(self.interior)   
+        
+        self.referenceInstrText = Tkinter.StringVar()
+        self.referenceInstrText.set('\nPlease provide some information about a\npublished paper relevant to this sequence.\n')
+        self.referenceInstrLabel = Tkinter.Label(self.unpublishedReferenceFrame, width=70, height=4, textvariable=self.referenceInstrText).pack()#.grid(row=2, column=0)
+             
+        Radiobutton(self.unpublishedReferenceFrame, text="No Published Reference.", variable=self.publishedReferenceIntVar, value=1).pack()
+        self.unpublishedReferenceFrame.pack()
+
+        self.publishedReferenceFrame = Tkinter.Frame(self.interior)
         
         # Radio Button: Published
-            # tITLE
-            # Authors
-            # Journal
+        Radiobutton(self.unpublishedReferenceFrame, text="Use This Reference:", variable=self.publishedReferenceIntVar, value=2).pack()
+        
+        # Reference Title
+        self.referenceTitleInstrText = Tkinter.StringVar()
+        self.referenceTitleInstrText.set('Reference Title:')
+        self.referenceTitleInstrLabel = Tkinter.Label(self.publishedReferenceFrame, width=labelInputWidth, height=1, textvariable=self.referenceTitleInstrText).grid(row=1, column=0)
+        self.inputReferenceTitle = Tkinter.StringVar() 
+        self.inputReferenceTitle = Tkinter.Entry(self.publishedReferenceFrame, width=formInputWidth, textvariable=self.inputReferenceTitle).grid(row=1, column=1)
+        
+        # Authors
+        self.referenceAuthorsInstrText = Tkinter.StringVar()
+        self.referenceAuthorsInstrText.set('Reference Authors:')
+        self.referenceAuthorsInstrLabel = Tkinter.Label(self.publishedReferenceFrame, width=labelInputWidth, height=1, textvariable=self.referenceAuthorsInstrText).grid(row=2, column=0)
+        self.inputReferenceAuthors = Tkinter.StringVar() 
+        self.inputReferenceAuthors = Tkinter.Entry(self.publishedReferenceFrame, width=formInputWidth, textvariable=self.inputReferenceAuthors).grid(row=2, column=1)
+        
+        # Journal
+        self.referenceJournalInstrText = Tkinter.StringVar()
+        self.referenceJournalInstrText.set('Reference Journal:')
+        self.referenceJournalInstrLabel = Tkinter.Label(self.publishedReferenceFrame, width=labelInputWidth, height=1, textvariable=self.referenceJournalInstrText).grid(row=3, column=0)
+        self.inputReferenceJournal = Tkinter.StringVar() 
+        self.inputReferenceJournal = Tkinter.Entry(self.publishedReferenceFrame, width=formInputWidth, textvariable=self.inputReferenceJournal).grid(row=3, column=1)
+
+        self.publishedReferenceFrame.pack()
+               
+        # Make a frame to contain the input variables.
+        # I had to make 2 of them to organize my gui, maybe I can name this better.
+        self.submissionDetailsInputFrame2 = Tkinter.Frame(self.interior)
             
-        # /alignment -> defined by IMGT sequence alignment srrvice        
+        # /alignment -> defined by IMGT sequence alignment service        
         # In this case, it is the closest known allele.
+        self.closestAlleleInstrText = Tkinter.StringVar()
+        self.closestAlleleInstrText.set('Closest Known HLA Allele:')
+        self.closestAlleleInstrLabel = Tkinter.Label(self.submissionDetailsInputFrame2, width=labelInputWidth, height=1, textvariable=self.closestAlleleInstrText).grid(row=1, column=0)
+        self.inputClosestAllele = Tkinter.StringVar() 
+        self.inputClosestAllele = Tkinter.Entry(self.submissionDetailsInputFrame2, width=formInputWidth, textvariable=self.inputClosestAllele).grid(row=1, column=1)
+
+        
         
         # Written Description
         # Looks like this is a description of how the sequence differes from closest knnown allele
+        self.closestAlleleWrittenDescriptionInstrText = Tkinter.StringVar()
+        self.closestAlleleWrittenDescriptionInstrText.set('Differences from Closest Allele:')
+        self.closestAlleleWrittenDescriptionInstrLabel = Tkinter.Label(self.submissionDetailsInputFrame2, width=labelInputWidth, height=1, textvariable=self.closestAlleleWrittenDescriptionInstrText).grid(row=2, column=0)
+        self.inputClosestAlleleWrittenDescription = Tkinter.StringVar() 
+        self.inputClosestAlleleWrittenDescription = Tkinter.Entry(self.submissionDetailsInputFrame2, width=formInputWidth, textvariable=self.inputClosestAlleleWrittenDescription).grid(row=2, column=1)
+
         
         # DONOR INFORMATION
         
@@ -168,88 +233,14 @@ class AlleleGuiIMGTInputForm(Tkinter.Frame):
         
         
         
-        self.submissionDetailsInputFrame.pack()
+        self.submissionDetailsInputFrame2.pack()
         
         
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        # A Frame for specifing the details of the Study / Project
-        self.projectDetailsFrame = Tkinter.Frame(self)
-        
-        self.alleleInstrText = Tkinter.StringVar()
-        self.alleleInstrText.set('\nIMGT requires that submissions are assigned to a Study/Project.\n'
-            + 'Will you provide an existing IMGT study accession #?\n'
-            + '(ex. \'PRJEB01234\')\n'
-            + 'Or will you specify a new study?\n')
-        self.alleleInstrLabel = Tkinter.Label(self.projectDetailsFrame, width=70, height=6, textvariable=self.alleleInstrText).pack()#.grid(row=2, column=0)
- 
-        self.chooseProjectIntVar = IntVar()
-        self.chooseProjectIntVar.set(2)
- 
-        # A frame for the "new study" radio button
-        self.existingProjectFrame = Tkinter.Frame(self.projectDetailsFrame)
-        Radiobutton(self.existingProjectFrame, text="Use this study accession:", variable=self.chooseProjectIntVar, value=1).grid(row=0,column=0)
-        self.inputStudyAccession = Tkinter.StringVar()
-        self.inputStudyNameEntry = Tkinter.Entry(self.existingProjectFrame, width=formInputWidth, textvariable=self.inputStudyAccession).grid(row=0, column=1)
-        self.existingProjectFrame.pack()
-        
-        
-        # Filler Label
-        Tkinter.Label(self.projectDetailsFrame, width=labelInputWidth, height=1, text=' ').pack()
-        
-        # This radio button is on the project details frame, but not 
-        # on one of it's sub-frames (existingProjectFrame or newProjectFrame)  
-        # That's so i can pack it, and not use a grid
-        Radiobutton(self.projectDetailsFrame, text="Create a new study with this information:", variable=self.chooseProjectIntVar, value=2).pack()
 
-        self.newProjectFrame = Tkinter.Frame(self.projectDetailsFrame)            
-
-        self.studyNameInstrText = Tkinter.StringVar()
-        self.studyNameInstrText.set('Study Name:')
-        self.studyNameInstrLabel = Tkinter.Label(self.newProjectFrame, width=labelInputWidth, height=1, textvariable=self.studyNameInstrText).grid(row=0, column=0)
-        self.inputStudyName = Tkinter.StringVar()
-        self.inputStudyNameEntry = Tkinter.Entry(self.newProjectFrame, width=formInputWidth, textvariable=self.inputStudyName).grid(row=0, column=1)
-
-        self.studyShortDescriptionInstrText = Tkinter.StringVar()
-        self.studyShortDescriptionInstrText.set('Short Description:')
-        self.studyShortDescriptionInstrLabel = Tkinter.Label(self.newProjectFrame, width=labelInputWidth, height=1, textvariable=self.studyShortDescriptionInstrText).grid(row=1, column=0)
-        self.inputStudyShortDescription = Tkinter.StringVar()
-        self.inputStudyShortDescriptionEntry = Tkinter.Entry(self.newProjectFrame, width=formInputWidth, textvariable=self.inputStudyShortDescription).grid(row=1, column=1)
-
-        self.studyAbstractInstrText = Tkinter.StringVar()
-        self.studyAbstractInstrText.set('Study Abstract:')
-        self.studyAbstractInstrLabel = Tkinter.Label(self.newProjectFrame, width=labelInputWidth, height=1, textvariable=self.studyAbstractInstrText).grid(row=2, column=0)
-        self.inputStudyAbstract = Tkinter.StringVar()
-        self.inputStudyAbstractEntry = Tkinter.Entry(self.newProjectFrame, width=formInputWidth, textvariable=self.inputStudyAbstract).grid(row=2, column=1)
         
-        self.newProjectFrame.pack()
-        
-        self.projectDetailsFrame.pack()
 
         # Make a frame for the save options button.
-        self.saveOptionsFrame = Tkinter.Frame(self)
+        self.saveOptionsFrame = Tkinter.Frame(self.interior)
         Tkinter.Button(self.saveOptionsFrame, text='Save Options', command=self.saveOptions).grid(row=0, column=0)
         self.saveOptionsFrame.pack()
         
@@ -280,25 +271,25 @@ class AlleleGuiIMGTInputForm(Tkinter.Frame):
         if getConfigurationValue('allele_name') is not None:
             self.inputAllele.set(getConfigurationValue('allele_name'))
             
-        if getConfigurationValue('choose_project') is not None:
-            if (str(getConfigurationValue('choose_project')) == '1'):
-                self.chooseProjectIntVar.set(1)
-            elif (str(getConfigurationValue('choose_project')) == '2'):
-                self.chooseProjectIntVar.set(2)
-            else:
-                raise Exception('Error loading IMGT submission options. Invalid Project choice:' + str(getConfigurationValue('choose_project')))
+        #if getConfigurationValue('choose_project') is not None:
+        #    if (str(getConfigurationValue('choose_project')) == '1'):
+        #        self.chooseProjectIntVar.set(1)
+        #    elif (str(getConfigurationValue('choose_project')) == '2'):
+        #        self.chooseProjectIntVar.set(2)
+        #    else:
+        #        raise Exception('Error loading IMGT submission options. Invalid Project choice:' + str(getConfigurationValue('choose_project')))
             
-        if getConfigurationValue('study_accession') is not None:
-            self.inputStudyAccession.set(getConfigurationValue('study_accession'))
+        #if getConfigurationValue('study_accession') is not None:
+        #    self.inputStudyAccession.set(getConfigurationValue('study_accession'))
             
-        if getConfigurationValue('study_name') is not None:
-            self.inputStudyName.set(getConfigurationValue('study_name'))
+        #if getConfigurationValue('study_name') is not None:
+        #    self.inputStudyName.set(getConfigurationValue('study_name'))
             
-        if getConfigurationValue('study_description') is not None:
-            self.inputStudyShortDescription.set(getConfigurationValue('study_description'))
+        #if getConfigurationValue('study_description') is not None:
+        #    self.inputStudyShortDescription.set(getConfigurationValue('study_description'))
             
-        if getConfigurationValue('study_abstract') is not None:
-            self.inputStudyAbstract.set(getConfigurationValue('study_abstract'))
+        #if getConfigurationValue('study_abstract') is not None:
+        #    self.inputStudyAbstract.set(getConfigurationValue('study_abstract'))
             
 
     def saveOptions(self):
@@ -353,33 +344,33 @@ class AlleleGuiIMGTInputForm(Tkinter.Frame):
                 'You are missing an Allele Name. Please try again.')
             return False
         
-        if (str(self.chooseProjectIntVar.get()) == '1'):
+        #if (str(self.chooseProjectIntVar.get()) == '1'):
             # Use Existing Project
-            if (not self.inputStudyAccession.get()):
-                tkMessageBox.showwarning('Missing Form Value',
-                    'You are missing a Study Accession number. Please try again.')
-                return False
+        #    if (not self.inputStudyAccession.get()):
+        #        tkMessageBox.showwarning('Missing Form Value',
+        #            'You are missing a Study Accession number. Please try again.')
+        #        return False
             
-        elif(str(self.chooseProjectIntVar.get()) == '2'):
+        #elif(str(self.chooseProjectIntVar.get()) == '2'):
             # Use New Project
-            if (not self.inputStudyName.get()):
-                tkMessageBox.showwarning('Missing Form Value',
-                    'You are missing a Study Name. Please try again.')
-                return False
+        #    if (not self.inputStudyName.get()):
+        #        tkMessageBox.showwarning('Missing Form Value',
+        #            'You are missing a Study Name. Please try again.')
+        #        return False
             
-            if (not self.inputStudyShortDescription.get()):
-                tkMessageBox.showwarning('Missing Form Value',
-                    'You are missing a Study Description. Please try again.')
-                return False
+        #    if (not self.inputStudyShortDescription.get()):
+        #        tkMessageBox.showwarning('Missing Form Value',
+        #           'You are missing a Study Description. Please try again.')
+        #        return False
             
             
-            if (not self.inputStudyAbstract.get()):
-                tkMessageBox.showwarning('Missing Form Value',
-                    'You are missing a Study Accession number. Please try again.')
-                return False
+        #    if (not self.inputStudyAbstract.get()):
+        #        tkMessageBox.showwarning('Missing Form Value',
+        #            'You are missing a Study Accession number. Please try again.')
+        #        return False
             
-        else:
-            raise Exception ('Unknown value of self.chooseProjectIntVar. I expect 1 or 2. Observed:' + str(self.chooseProjectIntVar)) 
+        #else:
+        #    raise Exception ('Unknown value of self.chooseProjectIntVar. I expect 1 or 2. Observed:' + str(self.chooseProjectIntVar)) 
 
         # All options look good, right?
         return True

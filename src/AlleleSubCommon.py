@@ -60,12 +60,19 @@ def assignConfigName():
     # I should assign the directory to a default value.
         
     print 'This application is running from the following directory:\n' + globalVariables['saddlebags_application_path']
-    globalVariables['config_file_location'] = join(globalVariables['saddlebags_application_path'], 'config.xml')
+    globalVariables['config_file_location'] = join(globalVariables['saddlebags_application_path'], 'Saddlebags.Config.xml')
     
     
 def writeConfigurationFile():
     assignConfigName()
     print ('Writing a config file to:\n' + globalVariables['config_file_location'])
+    
+    # TODO: Some variables should be hard-coded here, I think.
+    # If they are undefined:
+    # Define the TEST website.
+    # Define the PRODUCTION website
+    # Make an option pointing to the production website.
+    # Change the MAIN INTERFACE so that we know if we're pointing at the TEST server.
 
     root = ET.Element("config")
     

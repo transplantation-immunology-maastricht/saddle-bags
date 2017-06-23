@@ -128,7 +128,9 @@ class AlleleGuiIMGT(Tkinter.Frame):
         self.submOutputFrame.pack()
 
         self.uploadSubmissionFrame = Tkinter.Frame(self)        
-        Tkinter.Button(self.uploadSubmissionFrame, text='Upload Submission to IMGT', command=self.saveSubmissionFile).pack(**button_opt)
+        # It is impossible to send the IMGT Submission via REST.
+        # I guess we save the submission, and email it to James.
+        #Tkinter.Button(self.uploadSubmissionFrame, text='Upload Submission to IMGT', command=self.saveSubmissionFile).pack(**button_opt)
         Tkinter.Button(self.uploadSubmissionFrame, text='Save Submission to My Computer', command=self.saveSubmissionFile).pack(**button_opt)
         Tkinter.Button(self.uploadSubmissionFrame, text='Exit', command=self.saveSubmissionFile).pack(**button_opt)
         self.uploadSubmissionFrame.pack()
