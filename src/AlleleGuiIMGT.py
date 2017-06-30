@@ -34,17 +34,19 @@ class AlleleGuiIMGT(Tkinter.Frame):
 
         event.widget.tag_add("sel","1.0","end")
         
+        
     # Initialize the GUI
     def __init__(self, root):
         Tkinter.Frame.__init__(self, root)
-        root.title("An HLA Allele Submission Generator")
+        root.title("Create and Save an IMGT Sequence Submission")
         self.parent = root
 
         # Ctrl-A doesn't work by default in TK.  I guess I need to do it myself.
         root.bind_class("Text","<Control-a>", self.selectall)
         
         # To define the exit behavior.  Save the input sequence text.
-        self.parent.protocol('WM_DELETE_WINDOW', self.saveSequenceText)
+        self.parent.protocol('WM_DELETE_WINDOW', self.saveAndExit)
+
 
         button_opt = {'fill': Tkconstants.BOTH, 'padx': 35, 'pady': 5}
         
@@ -54,21 +56,16 @@ class AlleleGuiIMGT(Tkinter.Frame):
         self.instructionText = Tkinter.StringVar()       
         self.instructionText.set('\nThis tool will generate an HLA allele submission for\n'
             + 'the IMGT / HLA nucleotide database.\n'
-            + 'If you provide login credentials, you may automatically submit the sequence.\n'
             + 'For more information:\n')
         Tkinter.Label(self.instructionsFrame, width=85, height=6, textvariable=self.instructionText).pack()
-        self.instructionsFrame.pack()
+        self.instructionsFrame.pack(expand=False, fill='both')
         
         # Make a frame for the more-info buttons
         self.moreInfoFrame = Tkinter.Frame(self)
         Tkinter.Button(self.moreInfoFrame, text='How to use this tool', command=self.howToUse).grid(row=0, column=0)
         Tkinter.Button(self.moreInfoFrame, text='Example Sequence', command=self.sampleSequence).grid(row=0, column=1)
         self.moreInfoFrame.pack() 
-         
-         
-        # TODO: Can I instruct this text area to fill the space allowed?
-        # http://effbot.org/tkinterbook/pack.htm
-        
+       
         # Create a frame for the input widget, add scrollbars.
         self.featureInputFrame = Tkinter.Frame(self)
         
@@ -83,7 +80,9 @@ class AlleleGuiIMGT(Tkinter.Frame):
         self.featureInputYScrollbar.pack(side=RIGHT, fill=Y)
 
         self.featureInputGuiObject = Tkinter.Text(
-            self.featureInputFrame, width=80, height=12, wrap=NONE
+            self.featureInputFrame
+            , width=80, height=8
+            , wrap=NONE
             , xscrollcommand=self.featureInputXScrollbar.set
             , yscrollcommand=self.featureInputYScrollbar.set
         )
@@ -91,8 +90,8 @@ class AlleleGuiIMGT(Tkinter.Frame):
         self.featureInputXScrollbar.config(command=self.featureInputGuiObject.xview)
         self.featureInputYScrollbar.config(command=self.featureInputGuiObject.yview) 
 
-        self.featureInputGuiObject.pack() 
-        self.featureInputFrame.pack()
+        self.featureInputGuiObject.pack(expand=True, fill='both') 
+        self.featureInputFrame.pack(expand=True, fill='both')
 
 
         # Create  Frame for "Generate Submission" button.
@@ -105,9 +104,9 @@ class AlleleGuiIMGT(Tkinter.Frame):
         # Output interface is contained on a frame.
         self.submOutputFrame = Tkinter.Frame(self)
         
-        self.outputIMGTSubmission = Tkinter.StringVar()
-        self.outputIMGTSubmission.set('Allele Submission Preview:')
-        self.outputIMGTLabel = Tkinter.Label(self.submOutputFrame, width=80, height=1, textvariable=self.outputIMGTSubmission).pack()
+        self.outputEMBLSubmission = Tkinter.StringVar()
+        self.outputEMBLSubmission.set('Allele Submission Preview:')
+        self.outputEMBLLabel = Tkinter.Label(self.submOutputFrame, width=80, height=1, textvariable=self.outputEMBLSubmission).pack()
 
         self.submOutputXScrollbar = Scrollbar(self.submOutputFrame, orient=HORIZONTAL)
         self.submOutputXScrollbar.pack(side=BOTTOM, fill=X)
@@ -116,7 +115,7 @@ class AlleleGuiIMGT(Tkinter.Frame):
         self.submOutputYScrollbar.pack(side=RIGHT, fill=Y)
 
         self.submOutputGuiObject = Tkinter.Text(
-            self.submOutputFrame, width=80, height=15, wrap=NONE
+            self.submOutputFrame, width=80, height=8, wrap=NONE
             , xscrollcommand=self.submOutputXScrollbar.set
             , yscrollcommand=self.submOutputYScrollbar.set
         )
@@ -124,24 +123,34 @@ class AlleleGuiIMGT(Tkinter.Frame):
         self.submOutputXScrollbar.config(command=self.submOutputGuiObject.xview)
         self.submOutputYScrollbar.config(command=self.submOutputGuiObject.yview) 
 
-        self.submOutputGuiObject.pack() 
-        self.submOutputFrame.pack()
+        self.submOutputGuiObject.pack(expand=True, fill='both') 
+        self.submOutputFrame.pack(expand=True, fill='both')
 
         self.uploadSubmissionFrame = Tkinter.Frame(self)        
-        # It is impossible to send the IMGT Submission via REST.
-        # I guess we save the submission, and email it to James.
-        #Tkinter.Button(self.uploadSubmissionFrame, text='Upload Submission to IMGT', command=self.saveSubmissionFile).pack(**button_opt)
         Tkinter.Button(self.uploadSubmissionFrame, text='Save Submission to My Computer', command=self.saveSubmissionFile).pack(**button_opt)
-        Tkinter.Button(self.uploadSubmissionFrame, text='Exit', command=self.saveSubmissionFile).pack(**button_opt)
+        Tkinter.Button(self.uploadSubmissionFrame, text='Exit', command=self.saveAndExit).pack(**button_opt)
         self.uploadSubmissionFrame.pack()
+        
+        self.pack(expand=True, fill='both')
+         
+   
          
     def chooseSubmissionOptions(self):
         print ('Opening the IMGT Submission Options Dialog')
-        #emblSubRoot = Tkinter.Tk()
-        emblOptionsRoot = Tkinter.Toplevel()
-        AlleleGuiIMGTInputForm(emblOptionsRoot).pack()
-        #print ('Starting the main loop...')
-        emblOptionsRoot.mainloop()
+        imgtOptionsRoot = Tkinter.Toplevel()
+        AlleleGuiIMGTInputForm(imgtOptionsRoot).pack()
+
+        # Set the X and the Y Position of the options window, so it is nearby.  
+        imgtOptionsRoot.update()        
+        windowXpos = str(self.parent.winfo_geometry().split('+')[1])
+        windowYpos = str(self.parent.winfo_geometry().split('+')[2])
+        newGeometry = (str(imgtOptionsRoot.winfo_width()) + 'x' 
+            + str(imgtOptionsRoot.winfo_height()) + '+' 
+            + str(windowXpos) + '+' 
+            + str(windowYpos))
+        imgtOptionsRoot.geometry(newGeometry)
+        
+        imgtOptionsRoot.mainloop()
 
         
     def sampleSequence(self):
@@ -236,19 +245,25 @@ class AlleleGuiIMGT(Tkinter.Frame):
 
             allGen = SubmissionGeneratorIMGT()
             roughFeatureSequence = self.featureInputGuiObject.get('1.0', 'end')
-            #allGen.inputSampleID = self.inputSampleID.get()
-            #allGen.inputGene = self.inputGene.get()
-            #allGen.inputAllele = self.inputAllele.get()
+
             allGen.inputSampleID = getConfigurationValue('sample_id')
             allGen.inputGene = getConfigurationValue('gene')
             allGen.inputAllele = getConfigurationValue('allele_name')
             
-            
-            
             allGen.processInputSequence(roughFeatureSequence)
-            enaSubmission = allGen.buildENASubmission()
-            self.submOutputGuiObject.delete('1.0','end')    
-            self.submOutputGuiObject.insert('1.0', enaSubmission) 
+            imgtSubmission = allGen.buildIMGTSubmission()
+            
+            if (imgtSubmission is None or len(imgtSubmission) < 1):
+                tkMessageBox.showerror('Empty submission text'
+                    ,'You are missing some required information.\n'
+                    + 'Try the \'Submission Options\' button.\n')
+                
+                self.submOutputGuiObject.delete('1.0','end')    
+                self.submOutputGuiObject.insert('1.0', '') 
+            else:
+                self.submOutputGuiObject.delete('1.0','end')    
+                self.submOutputGuiObject.insert('1.0', imgtSubmission) 
+            
             
         except KeyError, e:
             tkMessageBox.showerror('Missing Submission Options'
@@ -256,8 +271,9 @@ class AlleleGuiIMGT(Tkinter.Frame):
                 + 'Use the \'Submission Options\' button.\n'
                 + 'Missing Data: ' + str(e))
             
-    def saveSequenceText(self):
+    def saveAndExit(self):
         assignConfigurationValue('sequence', self.featureInputGuiObject.get('1.0', 'end'))
+        self.parent.destroy()
         
             
 

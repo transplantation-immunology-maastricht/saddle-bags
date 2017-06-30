@@ -31,7 +31,7 @@ class SubmissionGeneratorIMGT():
         self.inputFileName = ''
         self.outputFileName = ''
         self.sequenceAnnotation = HLAGene()
-        self.inputCellNummer = 0
+        self.inputSampleID = '0'
         self.inputGene = ''
         self.inputAllele = '' 
 
@@ -227,6 +227,141 @@ class SubmissionGeneratorIMGT():
         self.sequenceAnnotation = resultGeneLoci
 
     
+    # Create the text submission based on the IMGT format.
+    def buildIMGTSubmission(self):    
+        
+        # I only have one example of this submission so far. I build based on that.
+
+        documentBuffer = ''
+
+        totalLength = self.sequenceAnnotation.totalLength()
+        print('total calculated length = ' + str(totalLength))
+        
+        if(totalLength > 0):
+
+            # These are the main sections of the ENA submission.
+            #documentBuffer += self.printHeader()
+            #documentBuffer += self.printMRNA()
+            #documentBuffer += self.printCDS()
+            #documentBuffer += self.printFeatures()
+            #documentBuffer += self.printSequence()
+    
+            # Print entry terminator.  The last line of an ENA entry.
+            documentBuffer += ('//\n')
+            
+        else: 
+            tkMessageBox.showinfo('No HLA Sequence Found', 
+                'The HLA sequence is empty.\nPlease fill in an annotated HLA sequence\nbefore generating the submission.' )
+            
+            pass
+        
+
+        return documentBuffer
+
+
+    # Return True if our input values are all present and accomodated for.
+    # If something is missing, then throw a fit and give up.
+    # TODO: I should probably not raise these exceptions actually.
+    # Instead, I should have the GUI Automatically open the choose options screen
+    def validateInputs(self):
+        if (self.inputSampleID is None or len(self.inputSampleID) < 1):
+            raise Exception ('Invalid Sequence ID:' + str(self.inputSampleID))
+            return False
+        
+        elif (self.sequenceAnnotation is None):
+            raise Exception ('Invalid Sequence Annotation:' + str(self.sequenceAnnotation))
+            return False
+        
+        elif (self.inputGene is None or len(self.inputGene) < 1):
+            raise Exception ('Invalid Input Gene:' + str(self.inputGene))
+            return False
+        
+        elif (self.inputAllele is None or len(self.inputAllele) < 1):
+            raise Exception ('Invalid Input Allele:' + str(self.inputAllele))
+            return False
+        
+        elif (self.inputClass is None or len(self.inputClass) < 1):
+            raise Exception ('Invalid Input Class:' + str(self.inputClass))
+            return False
+        
+        else:
+            return True
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#I assume the rest of this code is outdated and deprectaed:
+
+
+
+
 
     def printHeader(self):
         headerText = ''
@@ -252,9 +387,13 @@ class SubmissionGeneratorIMGT():
         headerText += ('FT                   /db_xref="taxon:9606"\n')
         headerText += ('FT                   /mol_type="genomic DNA"\n')
         headerText += ('FT                   /chromosome="6"\n')
-        headerText += ('FT                   /isolate="' + str(self.inputCellNummer) + '"\n')    
+        headerText += ('FT                   /isolate="' + str(self.inputSampleID) + '"\n')    
         
         return headerText
+    
+   
+    
+    
     
     def printMRNA(self):
         mRNAText = ''
@@ -450,46 +589,4 @@ class SubmissionGeneratorIMGT():
         return sequenceText
             
         
-    # Create the text submission based on the ENA format.
-    def buildENASubmission(self):    
-        
-        # ENA format is the preferred submission type for IMGT.  More information:
-        # http://www.ebi.ac.uk/ena/submit/sequence-submission
-        # http://www.ebi.ac.uk/ena/submit/entry-upload-templates
-        # ftp://ftp.ebi.ac.uk/pub/databases/embl/doc/usrman.txt
-        # ftp://ftp.ebi.ac.uk/pub/databases/embl/doc/FT_current.html
-        # http://www.ebi.ac.uk/ena/software/flat-file-validator
-
-        documentBuffer = ''
-
-        totalLength = self.sequenceAnnotation.totalLength()
-        print('total calculated length = ' + str(totalLength))
-        
-        if(totalLength > 0):
-
-            # These are the main sections of the ENA submission.
-            documentBuffer += self.printHeader()
-            documentBuffer += self.printMRNA()
-            documentBuffer += self.printCDS()
-            documentBuffer += self.printFeatures()
-            documentBuffer += self.printSequence()
-    
-            # Print entry terminator.  The last line of an ENA entry.
-            documentBuffer += ('//\n')
-            
-        else: 
-            tkMessageBox.showinfo('No HLA Sequence Found', 
-                'The HLA sequence is empty.\nPlease fill in an annotated HLA sequence\nbefore generating the submission.' )
-            
-            pass
-        
-
-        return documentBuffer
-
-    # Simple method to write the results to a file on your computer.
-    def outputENASubmissionToFile(self, outputText): 
-
-        outputFileObject = open(self.outputFileName, 'w')  
-        outputFileObject.write(outputText)
-        outputFileObject.close()
 

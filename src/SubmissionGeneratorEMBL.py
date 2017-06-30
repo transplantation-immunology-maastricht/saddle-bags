@@ -31,9 +31,11 @@ class SubmissionGeneratorEMBL():
         self.inputFileName = ''
         self.outputFileName = ''
         self.sequenceAnnotation = HLAGene()
-        self.inputCellNummer = 0
+        self.inputSampleID = 0
         self.inputGene = ''
         self.inputAllele = '' 
+        self.inputClass = ''
+        self.isPseudoGene = False
 
     # This is a short wrapper method to use biopython's translation method. 
     # Most of this code is just checking for things that went wrong
@@ -59,19 +61,25 @@ class SubmissionGeneratorEMBL():
                 
                 # If no stop codon was found
                 if (stopCodonLocation == -1):
+                    self.isPseudoGene = True
                     # If multiple of three (correct codon length)
                     if(len(coding_dna) % 3 == 0):
                         tkMessageBox.showinfo('No Stop Codon Found', 
-                            'The translated protein does not contain a stop codon.' )
+                            'The translated protein does not contain a stop codon.\n' + 
+                            'This is indicated by a /pseudo flag in the sequence submission.'
+                             )
                         
                     # Wrong Codon Length
                     else:
                         tkMessageBox.showinfo('No Stop Codon Found', 
                             'The translated protein does not contain a stop codon.\n' + 
-                            'The coding nucleotide sequence length (' + str(len(coding_dna))  + ') is not a multiple of 3.')
+                            'The coding nucleotide sequence length (' + str(len(coding_dna))  + ') is not a multiple of 3.\n' + 
+                            'This is indicated by a /pseudo flag in the sequence submission.')
 
                 # If Stop Codon is in the end of the protein (This is expected and correct)
                 elif (stopCodonLocation == len(proteinSequence) - 1):
+                    self.isPseudoGene = False
+                    
                     # If multiple of three (correct codon length)
                     if(len(coding_dna) % 3 == 0):
                         # Everything is fine in this case.  Trim off the stop codon
@@ -87,12 +95,15 @@ class SubmissionGeneratorEMBL():
                                             
                 # Else Stop Codon is premature (before the end of the protein) 
                 else:
+                    self.isPseudoGene = True
+                    
                     # If multiple of three (correct codon length)
                     if(len(coding_dna) % 3 == 0):
                         tkMessageBox.showinfo('Premature Stop Codon Detected',
                             'Premature stop codon found:\nProtein Position (' + 
                             str(stopCodonLocation + 1) + '/' +
-                            str(len(proteinSequence)) + ')\n\n' +
+                            str(len(proteinSequence)) + ')\n\n' + 
+                            'This is indicated by a /pseudo flag in the sequence submission.\n' +
                             'Double check your protein sequence,\n' + 
                             'this might indicate a missense mutation.\n\n' + 
                             'Translated Protein:\n' + proteinSequence + 
@@ -107,7 +118,8 @@ class SubmissionGeneratorEMBL():
                         tkMessageBox.showinfo('Premature Stop Codon Detected',
                             'Premature stop codon found:\nProtein Position (' + 
                             str(stopCodonLocation + 1) + '/' +
-                            str(len(proteinSequence)) + ')\n\n' +
+                            str(len(proteinSequence)) + ')\n\n' + 
+                            'This is indicated by a /pseudo flag in the sequence submission.\n' +
                             'Nucleotide count is not a multiple of 3,\n' +
                             'Double check your protein sequence,\n' + 
                             'this might indicate a missense mutation.\n\n' + 
@@ -238,7 +250,12 @@ class SubmissionGeneratorEMBL():
         # I don't have an AC number available, so it's blank.
         headerText += 'AC   \n'
         headerText += 'XX\n'
-        headerText += 'DE   Human Leukocyte Antigen\n'
+        #headerText += 'DE   Human Leukocyte Antigen\n'
+        #Requested change to the DE line.  It should look like:
+        #Homo sapiens HLA-B gene for MHC class I antigen, allele "/allele name"
+        headerText += ('DE   Homo sapiens ' + str(self.inputGene) 
+            + ' gene for MHC class ' + str(('I' if ('1'==str(self.inputClass)) else 'II')) 
+            + ' antigen, allele "' + str(self.inputAllele) + '"\n')
         headerText += 'XX\n'
 
         # Print key
@@ -252,7 +269,7 @@ class SubmissionGeneratorEMBL():
         headerText += ('FT                   /db_xref="taxon:9606"\n')
         headerText += ('FT                   /mol_type="genomic DNA"\n')
         headerText += ('FT                   /chromosome="6"\n')
-        headerText += ('FT                   /isolate="' + str(self.inputCellNummer) + '"\n')    
+        headerText += ('FT                   /isolate="' + str(self.inputSampleID) + '"\n')    
         
         return headerText
     
@@ -274,12 +291,15 @@ class SubmissionGeneratorEMBL():
 
         mRNAText += ('FT                   /gene="' + str(self.inputGene) + '"\n') 
         mRNAText += ('FT                   /allele="' + str(self.inputAllele) + '"\n')  
-        mRNAText += ('FT                   /product=\"MHC class I antigen\"\n')  
+        mRNAText += ('FT                   /product=\"MHC class ' + str(('I' if ('1'==str(self.inputClass)) else 'II')) + ' antigen\"\n')  
         
         return mRNAText
     
     
     def printCDS(self):
+        # I need to perform the translation first, so I know if this is a "pseudogene" or not
+        peptideSequence = self.translateSequence(self.sequenceAnnotation.getExonSequence())
+        
         cdsText = ''
         
         # Print CDS
@@ -297,17 +317,28 @@ class SubmissionGeneratorEMBL():
 
         cdsText += ('FT                   /transl_table=1\n')
         cdsText += ('FT                   /codon_start=1\n')
+        
+        # If this sequence has premature stop codon, add the "/pseudo" flag.
+        # This indicates the gene is a /pseudo gene, not a complete protein.
+        if(self.isPseudoGene):
+            print("putting pseudo in the submission")
+            cdsText += ('FT                   /pseudo\n')
+        else:
+            print("not putting pseudo in the submission")
+            pass
+        
+        
         cdsText += ('FT                   /gene="' + str(self.inputGene) + '"\n') 
         cdsText += ('FT                   /allele="' + str(self.inputAllele) + '"\n')
-        
-        # TODO: This is a problem. I need to specify Class I or Class II  
-        cdsText += ('FT                   /product=\"MHC class I antigen\"\n')  
+        cdsText += ('FT                   /product=\"MHC class ' + str(('I' if ('1'==str(self.inputClass)) else 'II')) + ' antigen\"\n')  
         cdsText += ('FT                   /translation=\"')
 
         # Some simple formatting for the peptide sequence, making it human and computer readable.  
         # 80 peptides per line.  Except the first line, which is 66.
         # 66 is 80-14, where 14 is the length of { /translation=" }
-        peptideSequence = self.translateSequence(self.sequenceAnnotation.getExonSequence())
+        
+        # The translation is commented out here. I had to move it to the top of this method.
+        #peptideSequence = self.translateSequence(self.sequenceAnnotation.getExonSequence())
         if(len(peptideSequence) < 66):
             cdsText += (peptideSequence) + '\"\n'
         else:
@@ -465,7 +496,7 @@ class SubmissionGeneratorEMBL():
         totalLength = self.sequenceAnnotation.totalLength()
         print('total calculated length = ' + str(totalLength))
         
-        if(totalLength > 0):
+        if(totalLength > 0 and self.validateInputs()):
 
             # These are the main sections of the ENA submission.
             documentBuffer += self.printHeader()
@@ -480,16 +511,50 @@ class SubmissionGeneratorEMBL():
         else: 
             tkMessageBox.showinfo('No HLA Sequence Found', 
                 'The HLA sequence is empty.\nPlease fill in an annotated HLA sequence\nbefore generating the submission.' )
-            
-            pass
-        
+            return None
+
 
         return documentBuffer
+    
+    
+    # Return True if our input values are all present and accomodated for.
+    # If something is missing, then throw a fit and give up.
+    # TODO: I should probably not raise these exceptions actually.
+    # Instead, I should have the GUI Automatically open the choose options screen
+    def validateInputs(self):
+        if (self.inputSampleID is None or len(self.inputSampleID) < 1):
+            print('Invalid Sequence ID:' + str(self.inputSampleID))
+            #raise Exception ('Invalid Sequence ID:' + str(self.inputSampleID))
+            return False
+        
+        elif (self.sequenceAnnotation is None):
+            #raise Exception ('Invalid Sequence Annotation:' + str(self.sequenceAnnotation))
+            print('Invalid Sequence Annotation:' + str(self.sequenceAnnotation))
+            return False
+        
+        elif (self.inputGene is None or len(self.inputGene) < 1):
+            #raise Exception ('Invalid Input Gene:' + str(self.inputGene))
+            print('Invalid Input Gene:' + str(self.inputGene))
+            return False
+        
+        elif (self.inputAllele is None or len(self.inputAllele) < 1):
+            #raise Exception ('Invalid Input Allele:' + str(self.inputAllele))
+            print('Invalid Input Allele:' + str(self.inputAllele))
+            return False
+        
+        elif (self.inputClass is None or len(self.inputClass) < 1):
+            #raise Exception ('Invalid Input Class:' + str(self.inputClass))
+            print('Invalid Input Class:' + str(self.inputClass))
+            return False
+        
+        else:
+            return True
 
     # Simple method to write the results to a file on your computer.
-    def outputENASubmissionToFile(self, outputText): 
+    # I'm deprecating this method, lets see if it causes problems.
+    #def outputSubmissionToFile(self, outputText): 
 
-        outputFileObject = open(self.outputFileName, 'w')  
-        outputFileObject.write(outputText)
-        outputFileObject.close()
+    #    outputFileObject = open(self.outputFileName, 'w')  
+    #    outputFileObject.write(outputText)
+     #   outputFileObject.close()
 

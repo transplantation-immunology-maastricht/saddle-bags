@@ -18,11 +18,28 @@
 
 #SoftwareVersion = "Bhast Version 1.0"
 
-import xml.etree.cElementTree as ET
+import xml.etree.ElementTree as ET
+import xml.dom.minidom
+
+from os.path import isdir, split
+from os import makedirs
 
 
 import sys
 from os.path import dirname, join, abspath, isfile
+
+# This method is a directory-safe way to open up a write file.
+def createOutputFile(outputfileName):
+    tempDir, tempFilename = split(outputfileName)
+    if not isdir(tempDir):
+        print('Making Directory:' + tempDir)
+        makedirs(tempDir)
+    resultsOutput = open(outputfileName, 'w')
+    return resultsOutput
+
+
+
+
 
 # I'm storing global variables in a dictionary for now. 
 def initializeGlobalVariables():    
@@ -67,13 +84,6 @@ def writeConfigurationFile():
     assignConfigName()
     print ('Writing a config file to:\n' + globalVariables['config_file_location'])
     
-    # TODO: Some variables should be hard-coded here, I think.
-    # If they are undefined:
-    # Define the TEST website.
-    # Define the PRODUCTION website
-    # Make an option pointing to the production website.
-    # Change the MAIN INTERFACE so that we know if we're pointing at the TEST server.
-
     root = ET.Element("config")
     
     for key in globalVariables.keys():
@@ -87,12 +97,14 @@ def writeConfigurationFile():
             , 'sequence'
             ]):
             ET.SubElement(root, key).text = globalVariables[key]
-    
-    tree = ET.ElementTree(root)
 
-    tree.write(globalVariables['config_file_location'])
+    xmlText = ET.tostring(root, encoding='utf8', method='xml')
+    prettyXmlText = xml.dom.minidom.parseString(xmlText).toprettyxml()
     
-    
+    xmlOutput = createOutputFile(globalVariables['config_file_location'])
+    xmlOutput.write(prettyXmlText)
+    xmlOutput.close()
+
 
 def loadConfigurationFile():
     assignConfigName()
@@ -101,7 +113,18 @@ def loadConfigurationFile():
         print ('The config file does not exist yet. I will not load it:\n' + globalVariables['config_file_location'])
         
         # Here is where I assign the common configuration values
-        # TODO: Assign the commonly used config values
+        # test_submission indicates if we should use the "test" values.
+        # I think I'll use this value for both EMBL and IMGT submissions, if it applies.
+        assignConfigurationValue('test_submission', '1')
+        
+        # I'm storing FTP without the ftp:// identifier, because it is not necessary.
+        # The test and prod ftp sites have the same address. This is intentional, embl doesn't have a test ftp
+        assignConfigurationValue('embl_ftp_upload_site_test', 'webin.ebi.ac.uk')
+        assignConfigurationValue('embl_ftp_upload_site_prod', 'webin.ebi.ac.uk')
+        assignConfigurationValue('embl_rest_address_test', 'https://www-test.ebi.ac.uk/ena/submit/drop-box/submit/')
+        assignConfigurationValue('embl_rest_address_prod', 'https://www.ebi.ac.uk/ena/submit/drop-box/submit/')
+      
+        
         
     else:
         print ('The config file already exists, I will load it:\n' + globalVariables['config_file_location'])
@@ -110,13 +133,6 @@ def loadConfigurationFile():
         root = tree.getroot()
         
         for child in root:
-            #print 'childtag:' + str(child.tag)
-            #print 'childattrib:' + str(child.attrib)
-            #print 'childtext:' + str(child.text)
             assignConfigurationValue(child.tag, child.text)
             
-        
-    
-    
-    
-    
+       

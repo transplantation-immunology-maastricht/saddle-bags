@@ -1,7 +1,7 @@
-from Tkinter import Canvas
-from ttk import *
+from Tkinter import Scrollbar, Frame, Canvas, VERTICAL, RIGHT, Y, LEFT, BOTH, TRUE, FALSE, NW
+#from ttk import *
 
-Obviously this doesn't work.  Fix it, I want to be mroe specific witht he imports'
+#Obviously this doesn't work.  Fix it, I want to be mroe specific witht he imports'
 
 # http://tkinter.unpythonic.net/wiki/VerticalScrolledFrame
 

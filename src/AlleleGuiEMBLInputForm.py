@@ -32,6 +32,9 @@ class AlleleGuiEMBLInputForm(Tkinter.Frame):
         
         # To define the exit behavior.  Save and exit.
         self.parent.protocol('WM_DELETE_WINDOW', self.saveOptions)
+  
+        # This window should not be resizeable. I guess.
+        self.parent.resizable(width=False, height=False)
         
         self.instructionsFrame = Tkinter.Frame(self)  
         self.instructionText = Tkinter.StringVar()       
@@ -45,6 +48,26 @@ class AlleleGuiEMBLInputForm(Tkinter.Frame):
         formInputWidth = 30
         labelInputWidth = 30
                 
+                
+        # Make a frame to contain the Test/Production radio buttons.
+        self.testProductionFrame = Tkinter.Frame(self)
+        
+        self.testProductionInstrText = Tkinter.StringVar()
+        self.testProductionInstrText.set('\nBy default, you submit to the EMBL test servers,\n'
+            + 'where submissions are regularly deleted.\n'
+            + 'change this option if you want to submit to the live EMBL environment.\n'
+            )
+        self.alleleInstrLabel = Tkinter.Label(self.testProductionFrame, width=70, height=5, textvariable=self.testProductionInstrText).pack()#.grid(row=2, column=0)
+ 
+        # 1 = Test.  0 = Production/live server
+        self.chooseTestServersIntVar = IntVar()
+        self.chooseTestServersIntVar.set(int(getConfigurationValue('test_submission')))
+ 
+        Radiobutton(self.testProductionFrame, text="Submit to EMBL TEST / DEMO environment.", variable=self.chooseTestServersIntVar, value=1).pack()
+        Radiobutton(self.testProductionFrame, text="Submit to EMBL LIVE / PROD environment.", variable=self.chooseTestServersIntVar, value=0).pack()
+        
+        self.testProductionFrame.pack()
+     
         # Make a frame to contain the input variables
         self.submissionDetailsInputFrame = Tkinter.Frame(self)
 
@@ -190,6 +213,12 @@ class AlleleGuiEMBLInputForm(Tkinter.Frame):
         if getConfigurationValue('study_abstract') is not None:
             self.inputStudyAbstract.set(getConfigurationValue('study_abstract'))
             
+        if getConfigurationValue('test_submission') is not None:
+            # 1 = Test.  0 = Production/live server
+            self.chooseTestServersIntVar.set(int(getConfigurationValue('test_submission')))
+ 
+        
+            
 
     def saveOptions(self):
         # TODO: Save the options to our configuration dictionary
@@ -210,6 +239,7 @@ class AlleleGuiEMBLInputForm(Tkinter.Frame):
             assignConfigurationValue('study_name', self.inputStudyName.get())            
             assignConfigurationValue('study_description', self.inputStudyShortDescription.get())
             assignConfigurationValue('study_abstract', self.inputStudyAbstract.get())
+            assignConfigurationValue('test_submission', str(self.chooseTestServersIntVar.get()))
             
             self.parent.destroy() 
             

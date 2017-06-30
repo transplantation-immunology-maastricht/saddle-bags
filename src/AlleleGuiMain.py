@@ -13,28 +13,16 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with EMBL-HLA-Submission. If not, see <http://www.gnu.org/licenses/>.
 
-SoftwareVersion = "Bhast Version 1.1"
-
 import os
 
 import Tkinter, Tkconstants, tkFileDialog, tkMessageBox
 from Tkinter import *
-
-from SubmissionGeneratorEMBL import SubmissionGeneratorEMBL
-from HLAGene import *
 
 from AlleleGuiEMBL import AlleleGuiEMBL
 from AlleleGuiIMGT import AlleleGuiIMGT
 
 from AlleleSubCommon import *
 
-
-# TODO: I should hide this window when the user selects an option.
-# Example maybe like this:
-# https://www.blog.pythonlibrary.org/2012/07/26/tkinter-how-to-show-hide-a-window/
-
-
-# The AlleleGui class is an extension of Tkinter.  The GUI elements and interactions are specified in this class.
 class AlleleGuiMain(Tkinter.Frame):
 
     # Initialize the GUI
@@ -55,36 +43,47 @@ class AlleleGuiMain(Tkinter.Frame):
         
         # To define the exit behavior
         self.parent.protocol('WM_DELETE_WINDOW', self.closeWindow)
+        
+        # This window should not be resizeable. I guess.
+        self.parent.resizable(width=False, height=False)
 
         # Instruction Frame
         self.instructionFrame = Tkinter.Frame(self)
-  
         self.instructionText = Tkinter.StringVar()       
         self.instructionText.set('\nSaddlebags is an HLA Allele Submission Generator.\n'
             + 'You can generate an allele submission text file for either\n'
             + 'the EMBL/ENA or IMGT/HLA nucleotide databases. You must choose:\n'
             )
-        Tkinter.Label(self, width=85, height=5, textvariable=self.instructionText).pack()
+        Tkinter.Label(self.instructionFrame, width=85, height=5, textvariable=self.instructionText).pack()
+        self.instructionFrame.pack()
            
-        # Submit Button Frame
-        # EMBL Submission Button 
-        self.submitButtonFrame = Tkinter.Frame(self)  
-        Tkinter.Button(self, text='Generate an EMBL submission', command=self.openEMBLGUI).pack(**button_opt)
-        Tkinter.Button(self, text='Generate an IMGT submission', command=self.openIMGTGUI).pack(**button_opt)
-        
         # Make a frame for the more-info buttons
         self.moreInfoFrame = Tkinter.Frame(self)
-  
-        Tkinter.Button(self.moreInfoFrame, text='  How to use this tool   ', command=self.howToUse).grid(row=0, column=0)
-        Tkinter.Button(self.moreInfoFrame, text='Contacting or Citing MUMC', command=self.contactInformation).grid(row=0, column=1)
-        
+        Tkinter.Button(self.moreInfoFrame, text='Generate an EMBL submission', command=lambda: self.openAlleleSubGUI('EMBL')).grid(row=0, column=0)
+        Tkinter.Button(self.moreInfoFrame, text='Generate an IMGT submission', command=lambda: self.openAlleleSubGUI('IMGT')).grid(row=0, column=1)
+        Tkinter.Button(self.moreInfoFrame, text='  How to use this tool   ', command=self.howToUse).grid(row=1, column=0)
+        Tkinter.Button(self.moreInfoFrame, text='Contacting or Citing MUMC', command=self.contactInformation).grid(row=1, column=1)
         self.moreInfoFrame.pack()
         
         # Frame for the exit button
         self.exitFrame = Tkinter.Frame(self)
         Tkinter.Button(self.exitFrame, text='Exit', command=self.closeWindow).pack(**button_opt)
         self.exitFrame.pack()
-
+        
+        self.pack()
+        
+        self.initializeWindowLocation()
+       
+    # Put the GUI on the center of the screen. Doesn't make sense for it to start in a corner.
+    # Well, lets divide by 4 instead of 2. Center is too...centered.
+    def initializeWindowLocation(self):
+        self.parent.update_idletasks()
+        w = self.parent.winfo_screenwidth()
+        h = self.parent.winfo_screenheight()
+        size = tuple(int(_) for _ in self.parent.geometry().split('+')[0].split('x'))
+        x = w/4 - size[0]/2
+        y = h/4 - size[1]/2
+        self.parent.geometry("%dx%d+%d+%d" % (size + (x, y)))
         
 
     # This method should popup some instruction text in a wee window.
@@ -146,35 +145,60 @@ class AlleleGuiMain(Tkinter.Frame):
 
             )
         
-        
-        
-        
     def closeWindow(self):
         writeConfigurationFile()
-
         self.parent.destroy()        
         
 
-        
-    # TODO: this isn't workng right now, i have to set handlers and such.
-    # https://www.blog.pythonlibrary.org/2012/07/26/tkinter-how-to-show-hide-a-window/
-    # A method to call when the subframe is closed.
-    def onCloseOtherFrame(self, otherFrame):
-        otherFrame.destroy()
-        #elf.show() 
-        self.parent.update()
-        self.parent.deiconify()   
+    def restoreWindowPosition(self):
+        # Geometry is a string that looks like this: 599x144+681+52
+        # WidthxHeight+Xpos+Ypos
+        newGeometry = self.windowWidth + 'x' + self.windowHeight + '+' + self.windowXpos + '+' + self.windowYpos
+        self.parent.geometry(newGeometry)
 
-    def openEMBLGUI(self):
-        print ('Opening the EMBL Submission GUI')
-        # TODO: Uncomment this when the subwindows are all working right.
-        #self.parent.withdraw()
-        emblSubRoot = Tkinter.Toplevel()
-        AlleleGuiEMBL(emblSubRoot).pack()
-        emblSubRoot.mainloop()
+
+    def onCloseOtherFrame(self, event):
+        # <Destroy> is triggered for each widget on the subframe.
+        # We want to only trigger if the main subframe is destroyed.
+        if(event.widget is self.alleleSubRoot):
+            self.parent.deiconify()        
+            self.restoreWindowPosition()
+
+    def rememberWindowPosition(self):
+        # Remember the geometry of this window.
+        self.windowWidth = str(self.parent.winfo_width())
+        self.windowHeight = str(self.parent.winfo_height())
+        # "Geometry" is a string that looks like this: 599x144+681+52
+        # WidthxHeight+Xpos+Ypos
+        windowGeometryPosTokens = self.parent.winfo_geometry().split('+')
+        self.windowXpos = str(windowGeometryPosTokens[1])
+        self.windowYpos = str(windowGeometryPosTokens[2])
+
+    def openAlleleSubGUI(self, submissionType):          
+        self.rememberWindowPosition()
         
-    def openIMGTGUI(self):
-        print ('Opening the IMGT Submission GUI')
-        imgtSubRoot = Tkinter.Toplevel()
-        AlleleGuiIMGT(imgtSubRoot).pack()
-        imgtSubRoot.mainloop()
+        self.parent.withdraw()
+        self.alleleSubRoot = Tkinter.Toplevel()
+        self.alleleSubRoot.bind("<Destroy>", self.onCloseOtherFrame)
+        
+        if(submissionType=='IMGT'):
+            print ('Opening the IMGT Submission GUI')
+            AlleleGuiIMGT(self.alleleSubRoot).pack()
+        elif(submissionType=='EMBL'):
+            print ('Opening the EMBL Submission GUI')
+            AlleleGuiEMBL(self.alleleSubRoot).pack()
+        else:
+            raise Exception('Unknown Submission Type.  I expected IMGT or EMBL:' + str(submissionType))
+        
+        # Set the X and the Y Position of the window, so it is nearby.  
+        # it is necessary to update the window before assigning geometry.
+        # Using Size Values from Subwindow, but Position values from Parent window 
+        self.alleleSubRoot.update()
+        #print('after update geometry subwindow:' + self.alleleSubRoot.winfo_geometry())
+        newGeometry = (str(self.alleleSubRoot.winfo_width()) + 'x' 
+            + str(self.alleleSubRoot.winfo_height()) + '+' 
+            + str(self.windowXpos) + '+' 
+            + str(self.windowYpos))
+        self.alleleSubRoot.geometry(newGeometry)
+                    
+        self.alleleSubRoot.mainloop()

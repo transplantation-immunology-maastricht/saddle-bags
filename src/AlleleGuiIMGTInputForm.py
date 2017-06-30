@@ -16,8 +16,9 @@
 import os
 
 import Tkinter, Tkconstants, tkFileDialog, tkMessageBox
-from Tkinter import *
-from ttk import *
+#from Tkinter import *
+from Tkinter import IntVar, Radiobutton
+#from ttk import *
 
 from AlleleSubCommon import *
 from ScrolledWindow import VerticalScrolledFrame
@@ -38,6 +39,10 @@ class AlleleGuiIMGTInputForm(VerticalScrolledFrame):
         self.parent = root
 
         button_opt = {'fill': Tkconstants.BOTH, 'padx': 35, 'pady': 5}
+                        
+        # This window should not be resizeable. I guess.
+        # Maybe height should be resizeable, i don't know.
+        self.parent.resizable(width=False, height=False)
         
         # To define the exit behavior.  Save and exit.
         self.parent.protocol('WM_DELETE_WINDOW', self.saveOptions)
@@ -69,6 +74,11 @@ class AlleleGuiIMGTInputForm(VerticalScrolledFrame):
         self.passwordInstrLabel = Tkinter.Label(self.submissionDetailsInputFrame, width=labelInputWidth, height=1, textvariable=self.passwordInstrText).grid(row=1, column=0)
         self.inputPassword = Tkinter.StringVar()
         self.inputPasswordEntry = Tkinter.Entry(self.submissionDetailsInputFrame, width=formInputWidth, textvariable=self.inputPassword, show="*").grid(row=1, column=1)
+        
+        
+        # TODO: Submitter / Laboratory ID.  
+        # This is on the IMGT form.
+        #Do I know this infromation? Do I need to tell user how to get it?
   
         self.sampleIDInstrText = Tkinter.StringVar()
         self.sampleIDInstrText.set('Sample ID:')
@@ -271,25 +281,7 @@ class AlleleGuiIMGTInputForm(VerticalScrolledFrame):
         if getConfigurationValue('allele_name') is not None:
             self.inputAllele.set(getConfigurationValue('allele_name'))
             
-        #if getConfigurationValue('choose_project') is not None:
-        #    if (str(getConfigurationValue('choose_project')) == '1'):
-        #        self.chooseProjectIntVar.set(1)
-        #    elif (str(getConfigurationValue('choose_project')) == '2'):
-        #        self.chooseProjectIntVar.set(2)
-        #    else:
-        #        raise Exception('Error loading IMGT submission options. Invalid Project choice:' + str(getConfigurationValue('choose_project')))
-            
-        #if getConfigurationValue('study_accession') is not None:
-        #    self.inputStudyAccession.set(getConfigurationValue('study_accession'))
-            
-        #if getConfigurationValue('study_name') is not None:
-        #    self.inputStudyName.set(getConfigurationValue('study_name'))
-            
-        #if getConfigurationValue('study_description') is not None:
-        #    self.inputStudyShortDescription.set(getConfigurationValue('study_description'))
-            
-        #if getConfigurationValue('study_abstract') is not None:
-        #    self.inputStudyAbstract.set(getConfigurationValue('study_abstract'))
+
             
 
     def saveOptions(self):
@@ -306,11 +298,11 @@ class AlleleGuiIMGTInputForm(VerticalScrolledFrame):
             assignConfigurationValue('gene', self.inputGene.get())
             assignConfigurationValue('class', str(self.chooseClassIntVar.get()))             
             assignConfigurationValue('allele_name', self.inputAllele.get())
-            assignConfigurationValue('choose_project', str(self.chooseProjectIntVar.get()))    
-            assignConfigurationValue('study_accession', self.inputStudyAccession.get())                    
-            assignConfigurationValue('study_name', self.inputStudyName.get())            
-            assignConfigurationValue('study_description', self.inputStudyShortDescription.get())
-            assignConfigurationValue('study_abstract', self.inputStudyAbstract.get())
+            #assignConfigurationValue('choose_project', str(self.chooseProjectIntVar.get()))    
+            #assignConfigurationValue('study_accession', self.inputStudyAccession.get())                    
+            #assignConfigurationValue('study_name', self.inputStudyName.get())            
+            #assignConfigurationValue('study_description', self.inputStudyShortDescription.get())
+            #assignConfigurationValue('study_abstract', self.inputStudyAbstract.get())
             
             self.parent.destroy() 
             
@@ -344,30 +336,7 @@ class AlleleGuiIMGTInputForm(VerticalScrolledFrame):
                 'You are missing an Allele Name. Please try again.')
             return False
         
-        #if (str(self.chooseProjectIntVar.get()) == '1'):
-            # Use Existing Project
-        #    if (not self.inputStudyAccession.get()):
-        #        tkMessageBox.showwarning('Missing Form Value',
-        #            'You are missing a Study Accession number. Please try again.')
-        #        return False
-            
-        #elif(str(self.chooseProjectIntVar.get()) == '2'):
-            # Use New Project
-        #    if (not self.inputStudyName.get()):
-        #        tkMessageBox.showwarning('Missing Form Value',
-        #            'You are missing a Study Name. Please try again.')
-        #        return False
-            
-        #    if (not self.inputStudyShortDescription.get()):
-        #        tkMessageBox.showwarning('Missing Form Value',
-        #           'You are missing a Study Description. Please try again.')
-        #        return False
-            
-            
-        #    if (not self.inputStudyAbstract.get()):
-        #        tkMessageBox.showwarning('Missing Form Value',
-        #            'You are missing a Study Accession number. Please try again.')
-        #        return False
+
             
         #else:
         #    raise Exception ('Unknown value of self.chooseProjectIntVar. I expect 1 or 2. Observed:' + str(self.chooseProjectIntVar)) 
