@@ -62,8 +62,10 @@ class AlleleGuiIMGT(Tkinter.Frame):
         
         # Make a frame for the more-info buttons
         self.moreInfoFrame = Tkinter.Frame(self)
-        Tkinter.Button(self.moreInfoFrame, text='How to use this tool', command=self.howToUse).grid(row=0, column=0)
-        Tkinter.Button(self.moreInfoFrame, text='Example Sequence', command=self.sampleSequence).grid(row=0, column=1)
+        self.howToUseButton = Tkinter.Button(self.moreInfoFrame, text='How to use this tool', command=self.howToUse)
+        self.howToUseButton.grid(row=0, column=0)
+        self.exampleButton = Tkinter.Button(self.moreInfoFrame, text='Example Sequence', command=self.sampleSequence)
+        self.exampleButton.grid(row=0, column=1)
         self.moreInfoFrame.pack() 
        
         # Create a frame for the input widget, add scrollbars.
@@ -96,8 +98,10 @@ class AlleleGuiIMGT(Tkinter.Frame):
 
         # Create  Frame for "Generate Submission" button.
         self.submButtonFrame = Tkinter.Frame(self)
-        Tkinter.Button(self.submButtonFrame, text='Submission Options', command=self.chooseSubmissionOptions).grid(row=0, column=0)
-        Tkinter.Button(self.submButtonFrame, text=unichr(8681) + ' Generate an IMGT submission ' + unichr(8681), command=self.constructSubmission).grid(row=0, column=1)
+        self.submissionOptionsButton = Tkinter.Button(self.submButtonFrame, text='Submission Options', command=self.chooseSubmissionOptions)
+        self.submissionOptionsButton.grid(row=0, column=0)
+        self.generateSubmissionButton = Tkinter.Button(self.submButtonFrame, text=unichr(8681) + ' Generate an IMGT submission ' + unichr(8681), command=self.constructSubmission)
+        self.generateSubmissionButton.grid(row=0, column=1)
         self.submButtonFrame.pack()
 
        
@@ -127,8 +131,10 @@ class AlleleGuiIMGT(Tkinter.Frame):
         self.submOutputFrame.pack(expand=True, fill='both')
 
         self.uploadSubmissionFrame = Tkinter.Frame(self)        
-        Tkinter.Button(self.uploadSubmissionFrame, text='Save Submission to My Computer', command=self.saveSubmissionFile).pack(**button_opt)
-        Tkinter.Button(self.uploadSubmissionFrame, text='Exit', command=self.saveAndExit).pack(**button_opt)
+        self.saveSubmissionButton = Tkinter.Button(self.uploadSubmissionFrame, text='Save Submission to My Computer', command=self.saveSubmissionFile)
+        self.saveSubmissionButton.pack(**button_opt)
+        self.exitButton = Tkinter.Button(self.uploadSubmissionFrame, text='Exit', command=self.saveAndExit)
+        self.exitButton.pack(**button_opt)
         self.uploadSubmissionFrame.pack()
         
         self.pack(expand=True, fill='both')
@@ -137,7 +143,11 @@ class AlleleGuiIMGT(Tkinter.Frame):
          
     def chooseSubmissionOptions(self):
         print ('Opening the IMGT Submission Options Dialog')
+        
+        self.disableGUI()
+        
         imgtOptionsRoot = Tkinter.Toplevel()
+        imgtOptionsRoot.bind("<Destroy>", self.enableGUI)
         AlleleGuiIMGTInputForm(imgtOptionsRoot).pack()
 
         # Set the X and the Y Position of the options window, so it is nearby.  
@@ -157,12 +167,31 @@ class AlleleGuiIMGT(Tkinter.Frame):
         self.featureInputGuiObject.delete('1.0','end')
         self.featureInputGuiObject.insert('1.0', 'aag\nCGTCGT\nccg\nGGCTGA\naat')
         
+        # Clear the password, keep the username
+        assignConfigurationValue('imgt_password','')
+        
         assignConfigurationValue("allele_name",'Allele:01:02')
         assignConfigurationValue('gene','HLA-C')
         assignConfigurationValue('sample_id', 'Donor_12345')
         assignConfigurationValue('class','1')
         
-        #print ('I just set default values for those mysterious input things')
+        assignConfigurationValue('embl_sequence_accession', 'LT123456')        
+        assignConfigurationValue('embl_release_date', '01/01/2020')
+        
+        assignConfigurationValue('is_published','0')
+        
+        assignConfigurationValue('reference_title', 'Published Reference Title') 
+        assignConfigurationValue('reference_authors', 'Albert Authorman, Ben Bioinformaticist, Cindy Cell-Culture') 
+        assignConfigurationValue('reference_journal', 'Scientific Journal of Research')  
+        
+        assignConfigurationValue('closest_known_allele', 'HLA-C*01:02:01')
+        assignConfigurationValue('closest_allele_written_description', 'This allele has a C->G polymorphism in Exon 1.\nPosition 5 in the coding sequence.\nThis polymorphism is interesting because of science.')
+        
+        assignConfigurationValue('ethnic_origin', 'Unknown')
+        assignConfigurationValue('sex', 'Unknown')
+        assignConfigurationValue('cosanguinous', 'Unknown')
+        assignConfigurationValue('homozygous', 'Unknown')
+
         
         self.constructSubmission()
         
@@ -246,11 +275,12 @@ class AlleleGuiIMGT(Tkinter.Frame):
             allGen = SubmissionGeneratorIMGT()
             roughFeatureSequence = self.featureInputGuiObject.get('1.0', 'end')
 
-            allGen.inputSampleID = getConfigurationValue('sample_id')
-            allGen.inputGene = getConfigurationValue('gene')
-            allGen.inputAllele = getConfigurationValue('allele_name')
+            # Don't assign these, they should already be stored in our configuration.
+            #allGen.inputSampleID = getConfigurationValue('sample_id')
+            #allGen.inputGene = getConfigurationValue('gene')
+           # allGen.inputAllele = getConfigurationValue('allele_name')
             
-            allGen.processInputSequence(roughFeatureSequence)
+            allGen.sequenceAnnotation = annotateRoughInputSequence(roughFeatureSequence)
             imgtSubmission = allGen.buildIMGTSubmission()
             
             if (imgtSubmission is None or len(imgtSubmission) < 1):
@@ -274,6 +304,29 @@ class AlleleGuiIMGT(Tkinter.Frame):
     def saveAndExit(self):
         assignConfigurationValue('sequence', self.featureInputGuiObject.get('1.0', 'end'))
         self.parent.destroy()
+        
+        
+    def enableGUI(self, event=None):
+        self.toggleGUI(True)  
+        
+    def disableGUI(self):
+        self.toggleGUI(False)   
+        
+    def toggleGUI(self, isEnabled): 
+        #print ('Toggling GUI Widgets:' + str(isEnabled))
+         
+        newState = (NORMAL if (isEnabled) else DISABLED)
+        
+        # Choosing the widgets individually, this makes the most sense I think.
+        self.howToUseButton.config(state=newState) 
+        self.exampleButton.config(state=newState)         
+        self.featureInputGuiObject.config(state=newState)
+        self.submissionOptionsButton.config(state=newState)
+        self.generateSubmissionButton.config(state=newState)
+        self.submOutputGuiObject.config(state=newState)
+        #self.uploadButton.config(state=newState)
+        self.saveSubmissionButton.config(state=newState)
+        self.exitButton.config(state=newState)
         
             
 

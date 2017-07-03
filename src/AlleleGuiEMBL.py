@@ -578,12 +578,14 @@ class AlleleGuiEMBL(Tkinter.Frame):
             allGen = SubmissionGeneratorEMBL()
             roughFeatureSequence = self.featureInputGuiObject.get('1.0', 'end')
 
-            allGen.inputSampleID = getConfigurationValue('sample_id')
-            allGen.inputGene = getConfigurationValue('gene')
-            allGen.inputAllele = getConfigurationValue('allele_name')
-            allGen.inputClass = getConfigurationValue('class')            
+            # TODO: I uncommented these, hope there is no problem.
+            #allGen.inputSampleID = getConfigurationValue('sample_id')
+            #allGen.inputGene = getConfigurationValue('gene')
+            #allGen.inputAllele = getConfigurationValue('allele_name')
+            #allGen.inputClass = getConfigurationValue('class')            
             
-            allGen.processInputSequence(roughFeatureSequence)
+            allGen.sequenceAnnotation = annotateRoughInputSequence(roughFeatureSequence)
+
             enaSubmission = allGen.buildENASubmission()
                         
             if (enaSubmission is None or len(enaSubmission) < 1):

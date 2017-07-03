@@ -22,225 +22,30 @@ import math
 
 from HLAGene import *
 
+from AlleleSubCommon import *
+
 # The AlleleGenerator class contains logic to generate an EMBL HLA allele submission 
 # In ENA format.  
 class SubmissionGeneratorEMBL():   
     
     def __init__(self):
  
-        self.inputFileName = ''
-        self.outputFileName = ''
+        # TODO: These values are stored in a config file. I don't think I need to assign them.
+        # Except the HLAGene value, initialize that.
+        # Comment out the rest of these initializations.
+ 
+        #self.inputFileName = ''
+        #self.outputFileName = ''
         self.sequenceAnnotation = HLAGene()
-        self.inputSampleID = 0
-        self.inputGene = ''
-        self.inputAllele = '' 
-        self.inputClass = ''
-        self.isPseudoGene = False
-
-    # This is a short wrapper method to use biopython's translation method. 
-    # Most of this code is just checking for things that went wrong
-    def translateSequence(self,inputSequence):
-
-        proteinSequence = ''
-        
-        try:
-            # Do nothing if the input sequence is blank.
-            if( len(inputSequence) > 0 ):
-                
-                coding_dna = Seq(inputSequence, generic_dna)        
-                proteinSequence = str(coding_dna.translate())   
-                print ('Exon Sequence before translation:' + coding_dna)     
-                print ('Translated Protein:' + proteinSequence)
-                
-                # Perform Sanity Checks.
-                # Stop codon *should* be at the end of the protein.  
-                # Here we seek out the first instance of a stop codon, 
-                # and remove the peptides afterwards.
-                # because that's what happens in real life.
-                stopCodonLocation = proteinSequence.find('*')
-                
-                # If no stop codon was found
-                if (stopCodonLocation == -1):
-                    self.isPseudoGene = True
-                    # If multiple of three (correct codon length)
-                    if(len(coding_dna) % 3 == 0):
-                        tkMessageBox.showinfo('No Stop Codon Found', 
-                            'The translated protein does not contain a stop codon.\n' + 
-                            'This is indicated by a /pseudo flag in the sequence submission.'
-                             )
-                        
-                    # Wrong Codon Length
-                    else:
-                        tkMessageBox.showinfo('No Stop Codon Found', 
-                            'The translated protein does not contain a stop codon.\n' + 
-                            'The coding nucleotide sequence length (' + str(len(coding_dna))  + ') is not a multiple of 3.\n' + 
-                            'This is indicated by a /pseudo flag in the sequence submission.')
-
-                # If Stop Codon is in the end of the protein (This is expected and correct)
-                elif (stopCodonLocation == len(proteinSequence) - 1):
-                    self.isPseudoGene = False
-                    
-                    # If multiple of three (correct codon length)
-                    if(len(coding_dna) % 3 == 0):
-                        # Everything is fine in this case.  Trim off the stop codon
-                        proteinSequence = proteinSequence[0:stopCodonLocation]
-                        pass 
-                    # Wrong Codon Length
-                    else:
-                        tkMessageBox.showinfo('Extra Nucleotides After the Stop Codon', 
-                            'The stop codon is at the correct position in the protein, but ' + 
-                            'The coding nucleotide sequence length (' + str(len(coding_dna))  + ') is not a multiple of 3.\n\n' +
-                            'Please double check your sequence.')
-                        proteinSequence = proteinSequence[0:stopCodonLocation]
-                                            
-                # Else Stop Codon is premature (before the end of the protein) 
-                else:
-                    self.isPseudoGene = True
-                    
-                    # If multiple of three (correct codon length)
-                    if(len(coding_dna) % 3 == 0):
-                        tkMessageBox.showinfo('Premature Stop Codon Detected',
-                            'Premature stop codon found:\nProtein Position (' + 
-                            str(stopCodonLocation + 1) + '/' +
-                            str(len(proteinSequence)) + ')\n\n' + 
-                            'This is indicated by a /pseudo flag in the sequence submission.\n' +
-                            'Double check your protein sequence,\n' + 
-                            'this might indicate a missense mutation.\n\n' + 
-                            'Translated Protein:\n' + proteinSequence + 
-                            '\n\nProtein in EMBL Submission:\n' + proteinSequence[0:stopCodonLocation] + 
-                            '\n'
-                            )
-                        proteinSequence = proteinSequence[0:stopCodonLocation]
-    
-    
-                    # Wrong Codon Length
-                    else:
-                        tkMessageBox.showinfo('Premature Stop Codon Detected',
-                            'Premature stop codon found:\nProtein Position (' + 
-                            str(stopCodonLocation + 1) + '/' +
-                            str(len(proteinSequence)) + ')\n\n' + 
-                            'This is indicated by a /pseudo flag in the sequence submission.\n' +
-                            'Nucleotide count is not a multiple of 3,\n' +
-                            'Double check your protein sequence,\n' + 
-                            'this might indicate a missense mutation.\n\n' + 
-                            'Translated Protein:\n' + proteinSequence + 
-                            '\n\nProtein in EMBL Submission:\n' + proteinSequence[0:stopCodonLocation] + 
-                            '\n'
-                            )
-                        proteinSequence = proteinSequence[0:stopCodonLocation]
-            else:
-                print('Translating a nucleotide sequence of length 0.  That was easy.')
-                pass
-
-            return proteinSequence
-        
-        except Exception:
-            print 'Problem when translating protein:'
-            print sys.exc_info()[1]
-            tkMessageBox.showinfo('Protein Translation Error', 
-                'I could not translate your protein:\n' +  str(sys.exc_info()[1]))
-            
-            raise
-
-    # The input file should be a string of nucleotides, with capital letters to identify exons and introns.
-    # Annotations are expected and read in this format:
-    # fiveprimeutrEXONONEintrononeEXONTWOintrontwoEXONTHREEthreeprimeutr
-    # agctagctagctAGCTAGCtagctagctAGCTAGCtagctagctAGCTAGCTAgctagctagctag
-    # All spaces, line feeds, and tabs are removed and ignored.  
-    def processInputSequence(self, inputSequenceText):
-
-        # TODO: I should accept a Fasta Input. 
-        # Disregard the header line completely. Is there still sequence?
+        #getConfigurationValue('sample_id') = 0
+        #getConfigurationValue('gene') = ''
+        #getConfigurationValue('allele_name') = '' 
+        #s#elf.inputClass = ''
+        #self.isPseudoGene = False
 
 
-        resultGeneLoci = HLAGene()
-        
-        # Trim out any spaces, tabs, newlines.  Uppercase.
-        cleanedGene = inputSequenceText.replace(' ','').replace('\n','').replace('\t','').replace('\r','')
-
-        # Capitalize, so I can store a copy of the full unannotated sequence.
-        unannotatedGene = cleanedGene.upper()
-        resultGeneLoci.fullSequence = unannotatedGene
-        print('Total Sequence Length = ' + str(len(unannotatedGene)))
-
-        # Loop through the cleaned and annotated input sequence, 
-        # capitals and lowercase letters to determine exon start and end
-        if(len(cleanedGene) > 0):
-            
-            # Is the first feature an exon or an intron?
-            # If we begin in an Exon
-            if( cleanedGene[0] in ('A','G','C','T')):                
-                insideAnExon = True
-            # If we begin in an Intron/UTR
-            elif( cleanedGene[0] in ('a','g','c','t')):  
-                insideAnExon = False
-            else:
-                # Nonstandard nucleotide? I should start panicking.
-                #raise Exception('Nonstandard Nucleotide, not sure how to handle it')
-                print('Nonstandard Nucleotide at the beginning of the sequence, not sure how to handle it')
-                insideAnExon = False
-            
-            
-            locusBeginPosition = 0
-            for x in range(0, len(cleanedGene)):
-                currentChar = cleanedGene[x]
-                
-                # Is this a standard nucleotide character?
-                if(currentChar.upper() in ('A','G','C','T')):
-    
-                    if(currentChar.isupper()):
-                        if(insideAnExon):
-                            #We're STILL in an exon.  In this case, I should just do nothing and continue.  
-                            pass
-                        else:
-                            #In this case, we're just starting an EXON.
-                            #Store the last Intron in the list.
-                            currentIntron = GeneLocus()
-                            currentIntron.sequence = cleanedGene[locusBeginPosition:x].upper()
-                            currentIntron.exon = False
-                            resultGeneLoci.loci.append(currentIntron)                    
-                            insideAnExon=True
-                            locusBeginPosition = x
-                            pass
-                            
-                    else:
-                        if not (insideAnExon):
-                            #We're STILL in an intron.  Continue.
-                            pass
-                        else:
-                            #Starting a new Intron.
-                            # Store an Exon in the list.
-                            currentExon = GeneLocus()
-                            currentExon.sequence = cleanedGene[locusBeginPosition:x].upper()
-                            currentExon.exon = True
-                            resultGeneLoci.loci.append(currentExon)     
-                            insideAnExon = False
-                            locusBeginPosition=x
-                            pass
-                else:
-                    print('Nonstandard nucleotide detected at position ' + str(x) + ' : ' + currentChar 
-                        + '.  If this is a wildcard character, you might be ok.')
-    
-            # We've reached the end of the loop and we still need to store the last feature.
-            # Should be a 3' UTR, but I can't be sure, people like to put in weird sequences.
-            currentIntron = GeneLocus()
-            currentIntron.sequence = cleanedGene[locusBeginPosition:len(cleanedGene)].upper()
-            currentIntron.exon = insideAnExon
-            resultGeneLoci.loci.append(currentIntron)    
-    
-            # Annotate the loci (name them) and print the results of the read file.
-            resultGeneLoci.annotateLoci()
-            resultGeneLoci.printGeneSummary()
-        
-        # If the sequence is empty
-        else:
-            print('Empty sequence, I don\'t have anything to do.')
-            
-        self.sequenceAnnotation = resultGeneLoci
-
-    
-
-    def printHeader(self):
+    def printHeader(self):      
+        #print('The EMBL Print Header Method.')
         headerText = ''
         
         # Print header
@@ -253,9 +58,9 @@ class SubmissionGeneratorEMBL():
         #headerText += 'DE   Human Leukocyte Antigen\n'
         #Requested change to the DE line.  It should look like:
         #Homo sapiens HLA-B gene for MHC class I antigen, allele "/allele name"
-        headerText += ('DE   Homo sapiens ' + str(self.inputGene) 
-            + ' gene for MHC class ' + str(('I' if ('1'==str(self.inputClass)) else 'II')) 
-            + ' antigen, allele "' + str(self.inputAllele) + '"\n')
+        headerText += ('DE   Homo sapiens ' + str(getConfigurationValue('gene')) 
+            + ' gene for MHC class ' + str(('I' if ('1'==str(getConfigurationValue('class'))) else 'II')) 
+            + ' antigen, allele "' + str(getConfigurationValue('allele_name')) + '"\n')
         headerText += 'XX\n'
 
         # Print key
@@ -269,7 +74,7 @@ class SubmissionGeneratorEMBL():
         headerText += ('FT                   /db_xref="taxon:9606"\n')
         headerText += ('FT                   /mol_type="genomic DNA"\n')
         headerText += ('FT                   /chromosome="6"\n')
-        headerText += ('FT                   /isolate="' + str(self.inputSampleID) + '"\n')    
+        headerText += ('FT                   /isolate="' + str(getConfigurationValue('sample_id')) + '"\n')    
         
         return headerText
     
@@ -289,16 +94,16 @@ class SubmissionGeneratorEMBL():
         # Trim off the last comma and add a parenthese
         mRNAText = mRNAText[0:len(mRNAText)-1] + ')\n'
 
-        mRNAText += ('FT                   /gene="' + str(self.inputGene) + '"\n') 
-        mRNAText += ('FT                   /allele="' + str(self.inputAllele) + '"\n')  
-        mRNAText += ('FT                   /product=\"MHC class ' + str(('I' if ('1'==str(self.inputClass)) else 'II')) + ' antigen\"\n')  
+        mRNAText += ('FT                   /gene="' + str(getConfigurationValue('gene')) + '"\n') 
+        mRNAText += ('FT                   /allele="' + str(getConfigurationValue('allele_name')) + '"\n')  
+        mRNAText += ('FT                   /product=\"MHC class ' + str(('I' if ('1'==str(getConfigurationValue('class'))) else 'II')) + ' antigen\"\n')  
         
         return mRNAText
     
     
     def printCDS(self):
         # I need to perform the translation first, so I know if this is a "pseudogene" or not
-        peptideSequence = self.translateSequence(self.sequenceAnnotation.getExonSequence())
+        peptideSequence = translateSequence(self.sequenceAnnotation.getExonSequence())
         
         cdsText = ''
         
@@ -320,7 +125,7 @@ class SubmissionGeneratorEMBL():
         
         # If this sequence has premature stop codon, add the "/pseudo" flag.
         # This indicates the gene is a /pseudo gene, not a complete protein.
-        if(self.isPseudoGene):
+        if(str(getConfigurationValue('is_pseudo_gene') == '1')):
             print("putting pseudo in the submission")
             cdsText += ('FT                   /pseudo\n')
         else:
@@ -328,9 +133,9 @@ class SubmissionGeneratorEMBL():
             pass
         
         
-        cdsText += ('FT                   /gene="' + str(self.inputGene) + '"\n') 
-        cdsText += ('FT                   /allele="' + str(self.inputAllele) + '"\n')
-        cdsText += ('FT                   /product=\"MHC class ' + str(('I' if ('1'==str(self.inputClass)) else 'II')) + ' antigen\"\n')  
+        cdsText += ('FT                   /gene="' + str(getConfigurationValue('gene')) + '"\n') 
+        cdsText += ('FT                   /allele="' + str(getConfigurationValue('allele_name')) + '"\n')
+        cdsText += ('FT                   /product=\"MHC class ' + str(('I' if ('1'==str(getConfigurationValue('class'))) else 'II')) + ' antigen\"\n')  
         cdsText += ('FT                   /translation=\"')
 
         # Some simple formatting for the peptide sequence, making it human and computer readable.  
@@ -373,16 +178,16 @@ class SubmissionGeneratorEMBL():
             if(currentFeature.name == '3UT'):
                 featureText += ('FT   3\'UTR           ' + str(currentFeature.beginIndex) + '..' + str(currentFeature.endIndex) + '\n')
                 featureText += ('FT                   /note=\"3\'UTR\"\n')
-                featureText += ('FT                   /gene="' + str(self.inputGene) + '"\n') 
-                featureText += ('FT                   /allele="' + str(self.inputAllele) + '"\n')
+                featureText += ('FT                   /gene="' + str(getConfigurationValue('gene')) + '"\n') 
+                featureText += ('FT                   /allele="' + str(getConfigurationValue('allele_name')) + '"\n')
                 geneHas3UTR = True  
                 
             # 5' UTR
             elif(currentFeature.name == '5UT'):
                 featureText += ('FT   5\'UTR           ' + str(currentFeature.beginIndex) + '..' + str(currentFeature.endIndex) + '\n')
                 featureText += ('FT                   /note=\"5\'UTR\"\n')
-                featureText += ('FT                   /gene="' + str(self.inputGene) + '"\n') 
-                featureText += ('FT                   /allele="' + str(self.inputAllele) + '"\n')
+                featureText += ('FT                   /gene="' + str(getConfigurationValue('gene')) + '"\n') 
+                featureText += ('FT                   /allele="' + str(getConfigurationValue('allele_name')) + '"\n')
                 geneHas5UTR = True   
             
             # Exon
@@ -390,8 +195,8 @@ class SubmissionGeneratorEMBL():
                 featureText += ('FT   exon            ' + str(currentFeature.beginIndex) 
                     + '..' + str(currentFeature.endIndex) + '\n')
                 featureText += ('FT                   /number=' + str(exonIndex) + '\n') 
-                featureText += ('FT                   /gene="' + str(self.inputGene) + '"\n') 
-                featureText += ('FT                   /allele="' + str(self.inputAllele) + '"\n')  
+                featureText += ('FT                   /gene="' + str(getConfigurationValue('gene')) + '"\n') 
+                featureText += ('FT                   /allele="' + str(getConfigurationValue('allele_name')) + '"\n')  
                 exonIndex += 1
             
             # Intron
@@ -399,8 +204,8 @@ class SubmissionGeneratorEMBL():
                 featureText += ('FT   intron          ' + str(currentFeature.beginIndex) 
                     + '..' + str(currentFeature.endIndex) + '\n')   
                 featureText += ('FT                   /number=' + str(intronIndex) + '\n') 
-                featureText += ('FT                   /gene="' + str(self.inputGene) + '"\n') 
-                featureText += ('FT                   /allele="' + str(self.inputAllele) + '"\n') 
+                featureText += ('FT                   /gene="' + str(getConfigurationValue('gene')) + '"\n') 
+                featureText += ('FT                   /allele="' + str(getConfigurationValue('allele_name')) + '"\n') 
                 intronIndex += 1
 
        
@@ -521,10 +326,14 @@ class SubmissionGeneratorEMBL():
     # If something is missing, then throw a fit and give up.
     # TODO: I should probably not raise these exceptions actually.
     # Instead, I should have the GUI Automatically open the choose options screen
+    
+    # TODO: Maybe I should delete this method, and add error handling to the generate methods.
     def validateInputs(self):
-        if (self.inputSampleID is None or len(self.inputSampleID) < 1):
-            print('Invalid Sequence ID:' + str(self.inputSampleID))
-            #raise Exception ('Invalid Sequence ID:' + str(self.inputSampleID))
+        #raise Exception ('Validate Inputs Method is being used, after all.')
+        
+        if (getConfigurationValue('sample_id') is None or len(getConfigurationValue('sample_id')) < 1):
+            print('Invalid Sequence ID:' + str(getConfigurationValue('sample_id')))
+            #raise Exception ('Invalid Sequence ID:' + str(getConfigurationValue('sample_id')))
             return False
         
         elif (self.sequenceAnnotation is None):
@@ -532,29 +341,21 @@ class SubmissionGeneratorEMBL():
             print('Invalid Sequence Annotation:' + str(self.sequenceAnnotation))
             return False
         
-        elif (self.inputGene is None or len(self.inputGene) < 1):
-            #raise Exception ('Invalid Input Gene:' + str(self.inputGene))
-            print('Invalid Input Gene:' + str(self.inputGene))
+        elif (getConfigurationValue('gene') is None or len(getConfigurationValue('gene')) < 1):
+            #raise Exception ('Invalid Input Gene:' + str(getConfigurationValue('gene')))
+            print('Invalid Input Gene:' + str(getConfigurationValue('gene')))
             return False
         
-        elif (self.inputAllele is None or len(self.inputAllele) < 1):
-            #raise Exception ('Invalid Input Allele:' + str(self.inputAllele))
-            print('Invalid Input Allele:' + str(self.inputAllele))
+        elif (getConfigurationValue('allele_name') is None or len(getConfigurationValue('allele_name')) < 1):
+            #raise Exception ('Invalid Input Allele:' + str(getConfigurationValue('allele_name')))
+            print('Invalid Input Allele:' + str(getConfigurationValue('allele_name')))
             return False
         
-        elif (self.inputClass is None or len(self.inputClass) < 1):
-            #raise Exception ('Invalid Input Class:' + str(self.inputClass))
-            print('Invalid Input Class:' + str(self.inputClass))
+        elif (getConfigurationValue('class') is None or len(getConfigurationValue('class')) < 1):
+            #raise Exception ('Invalid Input Class:' + str(getConfigurationValue('class')))
+            print('Invalid Input Class:' + str(getConfigurationValue('class')))
             return False
         
         else:
             return True
-
-    # Simple method to write the results to a file on your computer.
-    # I'm deprecating this method, lets see if it causes problems.
-    #def outputSubmissionToFile(self, outputText): 
-
-    #    outputFileObject = open(self.outputFileName, 'w')  
-    #    outputFileObject.write(outputText)
-     #   outputFileObject.close()
 
