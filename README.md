@@ -69,6 +69,16 @@ gctagctagctag
 ## Annotating your exons
 Identifying the exons in your HLA sequence is a nontrivial challenge. We have provided a list of common sequences surrounding exon boundaries. See the [Release Page](https://github.com/transplantation-immunology/saddle-bags/releases) for a .pdf reference.  These sequences can probably be found within your HLA consensus sequence at exon boundary sites. It may also help to use the [IMGT/HLA sequence alignment tool](http://www.ebi.ac.uk/ipd/imgt/hla/align.html) for more information on common exon patterns.
 
+## EMBL Metadata Input format
+Sample ID: Specified by the submitting laboratory, you may use a value that is informative to you.
+Gene:
+Class I or II:
+Allele Local Name:
+
+Saddlebags will submit to EMBL Test environment by default, you must specify that the software target the Live / Production environment.
+
+EMBL sequence submissions must be associated with a Study/Project. You may specify the accession number of an existing EMBL study (Get this accession number from [EMBL Webin](https://www.ebi.ac.uk/ena/submit/sra/#home) ), or Saddlebags can create a new project to your specifications.
+
 
 ## For more information on EMBL's ENA format:  
 http://www.ebi.ac.uk/ena/submit/sequence-submission  
@@ -76,3 +86,7 @@ http://www.ebi.ac.uk/ena/submit/entry-upload-templates
 ftp://ftp.ebi.ac.uk/pub/databases/embl/doc/usrman.txt  
 ftp://ftp.ebi.ac.uk/pub/databases/embl/doc/FT_current.html  
 http://www.ebi.ac.uk/ena/software/flat-file-validator  
+
+## For more information on IMGT metadata:
+
+TODO: Put a description of the IMGT metadata form. There is lots of information that goes in here, and much of it is confusing.  How should Primers and Sequencing methodology be provided? What are the options for Ethnic Origin or Sex or Cosanguineous?
