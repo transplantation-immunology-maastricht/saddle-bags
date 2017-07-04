@@ -1,16 +1,15 @@
-# Bhast
-Ben's HLA Allele Submission Tool
-
-A tool for generating an EMBL-formatted submission of a standard novel HLA allele. 
+# Saddlebags
+A tool for generating allele submissions for the EMBL and IMGT nucleotide databases. 
 
 ## Download the executable
 Download an executable for Windows from the Release page.
-[Download Bhast for Windows Here](https://github.com/transplantation-immunology/EMBL-HLA-Submission/releases)
+[Download Saddlebags for Windows Here](https://github.com/transplantation-immunology/saddle-bags/releases)
 
 ## Run using Python
-Alternatively, you can run this program using Python 2.7. This works for Mac and Linux users (or Windows). There are prerequesites, you can install them inside an Anaconda environment.
+Alternatively, you can run this program using Python 2.7. This works for Mac and Linux users (or Windows). There are prerequesites, I recommend you install them inside an Anaconda environment. See Run_allele_submission.sh and Run_allele_submission.bat for an example of this in Linux and Windows environments, respectively.
+
 ```
-python AlleleSubmissionEMBL.py
+python AlleleSubmissionMain.py
 ```
 
 ## To configure Anaconda
@@ -68,11 +67,7 @@ AGCTAGCTA
 gctagctagctag  
 
 ## Annotating your exons
-Identifying the exons in your HLA sequence is a nontrivial challenge. We have provided a list of common sequences surrounding exon boundaries. See the [Release Page](https://github.com/transplantation-immunology/EMBL-HLA-Submission/releases) for a .pdf reference.  These sequences can probably be found within your HLA consensus sequence at exon boundary sites. It may also help to use the [IMGT/HLA sequence alignment tool](http://www.ebi.ac.uk/ipd/imgt/hla/align.html) for more information on common exon patterns.
-
-## Output Data
-The resulting report is in the form of an EMBL HLA Novel Allele submission flatfile.  You can submit this to EMBL as a new HLA allele
-
+Identifying the exons in your HLA sequence is a nontrivial challenge. We have provided a list of common sequences surrounding exon boundaries. See the [Release Page](https://github.com/transplantation-immunology/saddle-bags/releases) for a .pdf reference.  These sequences can probably be found within your HLA consensus sequence at exon boundary sites. It may also help to use the [IMGT/HLA sequence alignment tool](http://www.ebi.ac.uk/ipd/imgt/hla/align.html) for more information on common exon patterns.
 
 
 ## For more information on EMBL's ENA format:  
