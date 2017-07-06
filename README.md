@@ -20,7 +20,7 @@ To set up the environment in anaconda:
 
 Linux/Mac:  
 ```
-conda create --name AlleleSubEnvironment biopython six  
+conda create --name AlleleSubEnvironment biopython six pycurl 
 source activate AlleleSubEnvironment  
 pip install pyinstaller packaging  
 source deactivate  

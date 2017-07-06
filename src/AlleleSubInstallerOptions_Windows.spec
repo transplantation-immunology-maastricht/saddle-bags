@@ -1,21 +1,19 @@
-# This file is part of EMBL-HLA-Submission.
+# This file is part of saddle-bags.
 #
-# EMBL-HLA-Submission is free software: you can redistribute it and/or modify
+# saddle-bags is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Lesser General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# EMBL-HLA-Submission is distributed in the hope that it will be useful,
+# saddle-bags is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU Lesser General Public License for more details.
 #
 # You should have received a copy of the GNU Lesser General Public License
-# along with EMBL-HLA-Submission. If not, see <http://www.gnu.org/licenses/>.
+# along with saddle-bags. If not, see <http://www.gnu.org/licenses/>.
 
-# Version 1.0 
-
-# This file contains specifications for packaging of the MinION Extractor GUI
+# This file contains specifications for packaging of saddlebags
 # As a standalone executable.  This file is meant to be used with pyinstaller
 # http://www.pyinstaller.org/
 
@@ -25,7 +23,7 @@
 block_cipher = None
 
 
-a = Analysis(['AlleleSubmissionEMBL.py'],
+a = Analysis(['AlleleSubmissionMain.py'],
              binaries=None,
              datas=None,
              hiddenimports=['six', 'packaging', 'packaging.requirements', 'packaging.version', 'packaging.specifiers', 'Tkinter', 'tkFileDialog', 'Tkconstants'],
@@ -42,7 +40,7 @@ exe = EXE(pyz,
           a.binaries,
           a.zipfiles,
           a.datas,
-          name='AlleleSubmissionEMBLWindows',
+          name='SaddlebagsWindows',
           debug=False,
           strip=False,
           upx=True,
