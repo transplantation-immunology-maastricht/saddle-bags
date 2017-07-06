@@ -1,25 +1,25 @@
-# This file is part of EMBL-HLA-Submission.
+# This file is part of saddle-bags.
 #
-# EMBL-HLA-Submission is free software: you can redistribute it and/or modify
+# saddle-bags is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Lesser General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# EMBL-HLA-Submission is distributed in the hope that it will be useful,
+# saddle-bags is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU Lesser General Public License for more details.
 #
 # You should have received a copy of the GNU Lesser General Public License
-# along with EMBL-HLA-Submission. If not, see <http://www.gnu.org/licenses/>.
-
-SoftwareVersion = "Bhast Version 1.0"
+# along with saddle-bags. If not, see <http://www.gnu.org/licenses/>.
 
 import Tkinter
 import sys
 
 from AlleleGuiMain import AlleleGuiMain
 from AlleleSubCommon import *
+
+SoftwareVersion = 'saddlebags Version 1.1'
     
 if __name__=='__main__':
     try:
@@ -46,6 +46,8 @@ if __name__=='__main__':
             sys.argv[1].lower() == '-version')        
         ):
             print (SoftwareVersion)
+            pass
+            #
 
         # You executed the software wrong.  Sorry. 
         else:
@@ -53,7 +55,7 @@ if __name__=='__main__':
                 "\tRun this program using standard python call:\n" + 
                 "\t$python AlleleSubmissionMain.py\n" + 
                 "\tbiopython must be accessible in your python environment.  To run using Anaconda,\n"
-                "\tCheck readme at https://github.com/transplantation-immunology/EMBL-HLA-Submission\n"
+                "\tCheck readme at https://github.com/transplantation-immunology/saddle-bags\n"
             )
 
 

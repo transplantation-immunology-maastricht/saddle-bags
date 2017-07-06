@@ -1,17 +1,17 @@
-# This file is part of EMBL-HLA-Submission.
+# This file is part of saddle-bags.
 #
-# EMBL-HLA-Submission is free software: you can redistribute it and/or modify
+# saddle-bags is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Lesser General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# EMBL-HLA-Submission is distributed in the hope that it will be useful,
+# saddle-bags is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU Lesser General Public License for more details.
 #
 # You should have received a copy of the GNU Lesser General Public License
-# along with EMBL-HLA-Submission. If not, see <http://www.gnu.org/licenses/>.
+# along with saddle-bags. If not, see <http://www.gnu.org/licenses/>.
 
 import os
 
@@ -139,7 +139,7 @@ class AlleleGuiMain(Tkinter.Frame):
             + 'm.tilanus@mumc.nl\n\n'
             
             + 'This code will be hosted at:\n'
-            + 'https://github.com/transplantation-\nimmunology/EMBL-HLA-Submission\n'
+            + 'https://github.com/transplantation-\nimmunology/saddle-bags\n'
             + 'You will find more information on\n'
             + 'EMBL\'s data format on that page.'
 

@@ -1,17 +1,25 @@
-from Tkinter import Scrollbar, Frame, Canvas, VERTICAL, RIGHT, Y, LEFT, BOTH, TRUE, FALSE, NW
-#from ttk import *
+# This file is part of saddle-bags.
+#
+# saddle-bags is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Lesser General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# saddle-bags is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU Lesser General Public License for more details.
+#
+# You should have received a copy of the GNU Lesser General Public License
+# along with saddle-bags. If not, see <http://www.gnu.org/licenses/>.
 
-#Obviously this doesn't work.  Fix it, I want to be mroe specific witht he imports'
+
+
+from Tkinter import Scrollbar, Frame, Canvas, VERTICAL, RIGHT, Y, LEFT, BOTH, TRUE, FALSE, NW
 
 # http://tkinter.unpythonic.net/wiki/VerticalScrolledFrame
 
 class VerticalScrolledFrame(Frame):
-    """A pure Tkinter scrollable frame that actually works!
-    * Use the 'interior' attribute to place widgets inside the scrollable frame
-    * Construct and pack/place/grid normally
-    * This frame only allows vertical scrolling
-
-    """
     def __init__(self, parent, *args, **kw):
         Frame.__init__(self, parent, *args, **kw)     
                
@@ -23,6 +31,9 @@ class VerticalScrolledFrame(Frame):
                         yscrollcommand=vscrollbar.set)
         canvas.pack(side=LEFT, fill=BOTH, expand=TRUE)
         vscrollbar.config(command=canvas.yview)
+        
+        # TODO: Fix the vertical scrolling behavior.  The Mouse does not work.
+        
 
         # reset the view
         canvas.xview_moveto(0)
