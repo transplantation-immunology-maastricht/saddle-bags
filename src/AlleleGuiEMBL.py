@@ -1,17 +1,17 @@
-# This file is part of EMBL-HLA-Submission.
+# This file is part of saddle-bags.
 #
-# EMBL-HLA-Submission is free software: you can redistribute it and/or modify
+# saddle-bags is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Lesser General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# EMBL-HLA-Submission is distributed in the hope that it will be useful,
+# saddle-bags is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU Lesser General Public License for more details.
 #
 # You should have received a copy of the GNU Lesser General Public License
-# along with EMBL-HLA-Submission. If not, see <http://www.gnu.org/licenses/>.
+# along with saddle-bags. If not, see <http://www.gnu.org/licenses/>.
 
 
 import os
@@ -24,7 +24,7 @@ import ftplib
 import gzip
 import shutil
 #import pycurl
-import requests
+#import StringIO
 
 import Tkinter, Tkconstants, tkFileDialog, tkMessageBox
 from Tkinter import *
@@ -33,6 +33,7 @@ from SubmissionGeneratorEMBL import SubmissionGeneratorEMBL
 from AlleleGuiEMBLInputForm import AlleleGuiEMBLInputForm
 from AlleleSubCommon import *
 from AlleleSubmissionEMBLXml import *
+from AlleleSubmissionEMBLRestMethods import *
 #from HLAGene import HLAGene
 
 # The AlleleGui class is an extension of Tkinter.  The GUI elements and interactions are specified in this class.
@@ -182,40 +183,15 @@ class AlleleGuiEMBL(Tkinter.Frame):
         # I don't know why 2 spaces, but I'll roll with it.
         outputFile.write(str(hashValue) + '  ' + str(split(inputFileName)[1]))
         outputFile.close()
+        
+        return hashValue
+
+
+
 
     def uploadSubmission(self):
         print('Uploading Submission to EMBL')
-
-        emblUsername = getConfigurationValue('embl_username')
-        emblPassword = getConfigurationValue('embl_password')
-        if(emblUsername is None 
-            or len(emblUsername) < 1
-            or emblPassword is None 
-            or len(emblPassword) < 1):
-            tkMessageBox.showinfo('Missing Login Credentials', 
-                'You must provide EMBL username and password.\n'
-                'Please use the "Submission Options" button.')
-            return
-           
-
-        useTestServers = (int(getConfigurationValue('test_submission')) == 1)
-        # Are you sure?
-        if useTestServers:
-            result = tkMessageBox.askquestion("Submit to TEST / DEMO environment", "You are about to submit a sequence to the\n\nTEST / DEMO EMBL environment.\n\nAre You Sure?", icon='warning')
-        else:
-            result = tkMessageBox.askquestion("Submit to LIVE / PROD environment", "You are about to submit a sequence to the\n\nLIVE / PROD EMBL environment.\n\nAre You Sure?", icon='warning')
-
-        if result == 'yes':
-            pass
-        else:
-            return
         
-        # TODO: Existing project? Maybe I should check if the study/project exists, before I get started
-        
-        
-        
-        
-
         # Determine a working directory. Folder underneath executable called temp.
         try:
             workingDirectory = join(expanduser("~"), 'temp_upload_directory')
@@ -235,24 +211,60 @@ class AlleleGuiEMBL(Tkinter.Frame):
                 +  str(sys.exc_info()[1]))
             return
         
+        restLog = createOutputFile(join(workingDirectory, 'Submission_Log.txt'))
+        
+        
+        
+        # TODO: Make a REST log.
+        # For each step report success or failure.  Same as popup messages.
+        
+        
+
+        emblUsername = getConfigurationValue('embl_username')
+        emblPassword = getConfigurationValue('embl_password')
+        if(emblUsername is None 
+            or len(emblUsername) < 1
+            or emblPassword is None 
+            or len(emblPassword) < 1):
+            tkMessageBox.showinfo('Missing Login Credentials', 
+                'You must provide EMBL username and password.\n'
+                'Please use the "Submission Options" button.')
+            restLog.write('Missing EMBL Username or Password.' + '\n')
+            return
+        else:
+            restLog.write('EMBL Username and Password exist.' + '\n')
+           
+
+        useTestServers = (int(getConfigurationValue('test_submission')) == 1)
+        # Are you sure?
+        if useTestServers:
+            restLog.write('Using Test EMBL Server.' + '\n')
+            result = tkMessageBox.askquestion("Submit to TEST / DEMO environment", "You are about to submit a sequence to the\n\nTEST / DEMO EMBL environment.\n\nAre You Sure?", icon='warning')
+        else:
+            restLog.write('Using Production EMBL Server.' + '\n')
+            result = tkMessageBox.askquestion("Submit to LIVE / PROD environment", "You are about to submit a sequence to the\n\nLIVE / PROD EMBL environment.\n\nAre You Sure?", icon='warning')
+
+        if result == 'yes':
+            pass
+        else:
+            return
+        
+        # TODO: Existing project? Maybe I should check if the study/project exists, before I get started
+        
+
+
+
+        
         # Give my submission a filename. SOmething with a datetime stamp
         try:
             # This includes a "seconds" measure, should be pretty unique.
             dateTimeNow = '{:%Y_%m_%d_%H_%M_%S}'.format(datetime.datetime.now())
-            submissionFileName = join(workingDirectory, 'HLA_Submission_' + dateTimeNow + '.txt')
+            submissionShortFileName = 'HLA_Submission_' + dateTimeNow + '.txt'
+            submissionFileName = join(workingDirectory, submissionShortFileName)
+            zippedShortFileName = submissionShortFileName + '.gz'
+            zippedFileName = join(workingDirectory, zippedShortFileName)
+            md5FileName = zippedFileName + '.md5'
       
-        except Exception:
-            print 'Cannot Assign File Name'
-            print sys.exc_info()[1]
-            tkMessageBox.showinfo('File Name Error', 
-                'Sorry, I failed to create this file:\n'
-                + str(submissionFileName)
-                + '\n and I cannot continue.\n' 
-                +  str(sys.exc_info()[1]))
-            return
-        
-        # Write submission to a file
-        try:
             submissionText = self.submOutputGuiObject.get('1.0', 'end')           
             
             outputFileObject = open(submissionFileName, 'w') 
@@ -268,11 +280,14 @@ class AlleleGuiEMBL(Tkinter.Frame):
                 + '\n and I cannot continue.\nMaybe this is a '
                 + 'permissions issue, are these folders read only?\n' 
                 +  str(sys.exc_info()[1]))
+            restLog.write('Failure to create submission file:' + str(sys.exc_info()[1]) + '\n')
             return
+        
+        restLog.write('Submission file was created:' + str(submissionFileName) + '\n')
         
         # gzip the submission file.  Make a gz file.
         try:
-            zippedFileName = submissionFileName + '.gz'
+            #zippedFileName = submissionFileName + '.gz'
             
             with open(submissionFileName, 'rb') as fileIn, gzip.open(zippedFileName, 'wb') as fileOut:
                 shutil.copyfileobj(fileIn, fileOut)
@@ -285,12 +300,15 @@ class AlleleGuiEMBL(Tkinter.Frame):
                 + str(zippedFileName)
                 + '\n and I cannot continue.\n' 
                 +  str(sys.exc_info()[1]))
+            restLog.write('Failure to create zip file:' + str(sys.exc_info()[1]) + '\n')
             return
+        
+        restLog.write('Zip file was created:' + str(zippedFileName) + '\n')
         
         # Calculate an MD5SUM
         try:
-            md5FileName = zippedFileName + '.md5'
-            self.writeMd5(zippedFileName,md5FileName)
+            #md5FileName = zippedFileName + '.md5'
+            md5HashValue = self.writeMd5(zippedFileName,md5FileName)
             
         except Exception:
             print 'Cannot Calculate MD5'
@@ -298,7 +316,10 @@ class AlleleGuiEMBL(Tkinter.Frame):
             tkMessageBox.showinfo('Cannot Calculate an Md5 checksum', 
                 'Sorry, I failed to calculate an md5 checksum\nand I cannot continue.\n' 
                 +  str(sys.exc_info()[1]))
+            restLog.write('Failure to create zip file:' + str(sys.exc_info()[1]) + '\n')
             return
+        
+        restLog.write('md5 file was created:' + str(md5FileName) + '\n')
 
         # Use FTP  to send the file to EMBL
         try:
@@ -321,12 +342,10 @@ class AlleleGuiEMBL(Tkinter.Frame):
             tkMessageBox.showinfo('Cannot Upload to FTP site', 
                 'Sorry, I failed to upload your submission files to the EMBL FTP site\nand I cannot continue.\n' 
                 +  str(sys.exc_info()[1]))
+            restLog.write('Failure to upload to FTP site:' + str(sys.exc_info()[1]) + '\n')
             return
         
-        
-        # TODO: I Need a center_name.  This is based on the username but it goes into these submissions.
-        # Maybe I can get that from REST
-        
+        restLog.write('Submission and MD5 successfully uploaded.\n')
         
         # Handle the new project
         # effectively, study = project 
@@ -337,17 +356,15 @@ class AlleleGuiEMBL(Tkinter.Frame):
             # Generate Project and Project Submission XML Files
             try:
                 projectFileName = join(workingDirectory, 'project.xml')
-                projectText = createProjectXML(projectFileName
-                    , getConfigurationValue('study_name')
-                    , getConfigurationValue('study_description')
-                    , getConfigurationValue('study_abstract'))
+                projectText = createProjectXML(projectFileName)
                 
-                projectSubFileName = join(workingDirectory, 'project_submission.xml')
-                projectSubmissionText = createProjectSubmissionXML('proj_sub_' + dateTimeNow
-                    , projectSubFileName)
+                projectSubmissionFileName = join(workingDirectory, 'project_submission.xml')
+                projectSubmissionText = createProjectSubmissionXML(projectSubmissionFileName
+                    ,'proj_sub_' + dateTimeNow
+                    ,'project.xml')
                 
-                print('I made this project text:\n' + projectText)
-                print('I made this project submission text:\n' + projectSubmissionText)
+                #print('I made this project text:\n' + projectText)
+                #print('I made this project submission text:\n' + projectSubmissionText)
                 
             except Exception:
                 print 'Cannot Create Project Submission XML'
@@ -355,84 +372,32 @@ class AlleleGuiEMBL(Tkinter.Frame):
                 tkMessageBox.showinfo('Cannot Create Project Submission XML', 
                     'Sorry, I failed to create a project XML file\nand I cannot continue.\n' 
                     +  str(sys.exc_info()[1]))
+                restLog.write('Failure to create project submission file:' + str(sys.exc_info()[1]) + '\n')
                 return
+            
+            restLog.write('Project Submission XML files were created.\n')
                         
             # Use REST to submit this project
             try:
-                #"https://www-test.ebi.ac.uk/ena/submit/drop-box/submit/?auth=ENA%20Webin-NNN%20PASSWORD"
-                requestURL = (getConfigurationValue('embl_rest_address_test')
-                    + '?auth=ENA%20'
-                    + getConfigurationValue('embl_username')
-                    + '%20'
-                    + getConfigurationValue('embl_password')          
-                              
-                               
-                    )
+                # Return value should be a tuple:
+                # (Success, ProjectAccession, Messages[])   
+                (projectSubmissionSuccess, projectAccessionNumber, projectErrorMessages) = performProjectSubmission(projectSubmissionFileName,projectFileName)
                 
-                
-                # So i keep getting 415 errors. Trying to figure out what's up with REST.
-                
-                print ('URL=\n'+str(requestURL))
-                #auth=HTTPBasicAuth(getConfigurationValue('embl_username'), getConfigurationValue('embl_password'))
-                #requestUser=(getConfigurationValue('embl_username'), getConfigurationValue('embl_password'))
-                requestData = {'SUBMISSION':projectSubmissionText
-                    , 'PROJECT':projectText
-                   # ,'content-type':'text/xml'
-                    }
-                
-                requestHeaders = {'content-type':'application/xml'
-                   # 'HTTP Name':'Content-Type'
-            
-                    }
-                
-               
-                
-                postResponse = requests.post(
-                    requestURL
-                    , params=requestData
-                    , headers=requestHeaders
-
-#                    , auth=requestUser
-                    #, auth=(getConfigurationValue('embl_username'), getConfigurationValue('embl_password'))
-                    )
-                
-                print ('the post response object:\n' + str(postResponse))
-                
-                print ('response status:\n' + str(postResponse.status_code))
-                
-                print('response text:' + str(postResponse.text))
-                
-                print('response content:' + str(postResponse.content))
-                
-                print('is response okay?:' + str(postResponse.status_code == requests.codes.ok))
-                
-                
-                # headers have the login credentials?
-                
-                #  -k, --insecure      Allow connections to SSL sites without certs (H)
-                #  -F, --form CONTENT  Specify HTTP multipart POST data (H)
-                # those login credentials are passed plain text in the URL? Why?
-                #curl -k -F "SUBMISSION=@sub.xml" -F "PROJECT=@project.xml" "https://www-test.ebi.ac.uk/ena/submit/drop-box/submit/?auth=ENA%20Webin-NNN%20PASSWORD"
-                #curl -k -F "SUBMISSION=@"$submissionFileName -F "PROJECT=@"$projectFileName $testEnaSite"?auth=ENA%20"$userName"%20"$password > curlProjResults.xml
-                
-                
-                #data = ['SUBMISSION': '@projectSubFileName'
-                #    ,
-                #    'tx': str(request.GET.get('tx')),
-                #    'at': paypal_pdt_test
-                #    ]
-
-                #post = urllib.urlencode(data)
-
-                #c = pycurl.Curl()
-                #if(useTestServers):
-                #c.setopt(pycurl.URL, getConfigurationValue('embl_rest_address_test'))
-                #c.setopt(pycurl.HTTPHEADER, ['X-Postmark-Server-Token: API_TOKEN_HERE','Accept: application/json'])
-                #c.setopt(pycurl.POST, 1)
-                #c.setopt(pycurl.POSTFIELDS, data)
-                
-                #print ('about to perform curl:' + str(c))
-                #c.perform()
+                if(projectSubmissionSuccess):
+                    # Great. The project was created successfully. 
+                    # Lets use this new study accession moving forward.
+                    assignConfigurationValue('study_accession', projectAccessionNumber)
+                    assignConfigurationValue('choose_project','1')
+                    pass
+                else:
+                    messageText = ('There was a problem in the Project Submission.\n' 
+                        + 'I cannot continue.\n'
+                        + 'These messages were reported by EMBL:\n')
+                    for errorMessage in projectErrorMessages:
+                        messageText += ('\n' + errorMessage + '\n')                    
+                    tkMessageBox.showinfo('Cannot Submit Project XML via REST', messageText)
+                    restLog.write('Failure to submit project submission file:' + str(sys.exc_info()[1]) + '\n')
+                    return
                 
             except Exception:
                 print 'Cannot Submit Project XML'
@@ -440,37 +405,86 @@ class AlleleGuiEMBL(Tkinter.Frame):
                 tkMessageBox.showinfo('Cannot Submit Project XML', 
                     'Sorry, I failed to submit the project XML file\nand I cannot continue.\n' 
                     +  str(sys.exc_info()[1]))
-                return   
-                            
-            # Create a new project REST
-            # Open Response, determine if success
+                restLog.write('Failure to upload project submission file:' + str(sys.exc_info()[1]) + '\n')
+                return
             
-            # If errors:
-                # report Errors and give up
-            # else:
-                # store accession#        
-            
-            
-        else: #(existing project)
+            restLog.write('New study has been uploaded, accession:' + str(getConfigurationValue('study_accession')) + '\n')
+               
+        # existing project, we will use the supplied accession #    
+        else: 
+            restLog.write('Using existing study accession:' + str(getConfigurationValue('study_accession')) + '\n')
+            # projectAccessionNumber = getConfigurationValue('study_accession')
             pass
+        
+        # Generate Analysis and Analysis Submission xmls
+        try:
+            analysisFileName = join(workingDirectory, 'analysis.xml')
+            analysisText = createAnalysisXML(analysisFileName, md5HashValue, zippedShortFileName)
+            
+            analysisSubmissionFileName = join(workingDirectory, 'analysis_submission.xml')
+            analysisSubmissionText = createAnalysisSubmissionXML(analysisSubmissionFileName
+                ,'analysis_sub_' + dateTimeNow
+                ,'analysis.xml')
+            
+        except Exception:
+            print 'Cannot Create Analysis Submission XML'
+            print sys.exc_info()[1]
+            tkMessageBox.showinfo('Cannot Create Analysis Submission XML', 
+                'Sorry, I failed to create a Analysis XML file\nand I cannot continue.\n' 
+                +  str(sys.exc_info()[1]))
+            restLog.write('Failure to create analysis submission file:' + str(sys.exc_info()[1]) + '\n')
+            return
+        
+        restLog.write('Analysis Submission XML files were created.\n')
+                    
+        # Use REST to submit this analysis
+        try:
+            # Return value should be a tuple:
+            # (Success, analysisAccessionNumber, Messages[])   
+            (analysisSubmissionSuccess, analysisAccessionNumber, analysisErrorMessages) = performAnalysisSubmission(analysisSubmissionFileName,analysisFileName)
+            
+            if(analysisSubmissionSuccess):
+                # Great. The analysis was created successfully. 
+                pass
+            else:
+                messageText = ('There was a problem in the Analysis Submission.\n' 
+                    + 'I cannot continue.\n'
+                    + 'These messages were reported by EMBL:\n')
+                for errorMessage in analysisErrorMessages:
+                    messageText += ('\n' + errorMessage + '\n')                    
+                tkMessageBox.showinfo('Cannot Submit Analysis XML via REST', messageText)
+                restLog.write('Failure to submit analysis submission file:' + str(sys.exc_info()[1]) + '\n')
+                return
+            
+        except Exception:
+            print 'Cannot Submit Analysis XML'
+            print sys.exc_info()[1]
+            tkMessageBox.showinfo('Cannot Submit Analysis XML via REST', 
+                'Sorry, I failed to submit the analysis XML file\nand I cannot continue.\n' 
+                +  str(sys.exc_info()[1]))
+            return
 
-        
-        # else (existing project)
-            # Store the project accession #
-        
-        # Generate XML Files for new sequence
-        # REST the new XML files over to them.
-        # Open response determine if success?
-        # Gather Important Accession Numbers
-        # Store accession number in our config file
+        restLog.write('New analysis has been Uploaded, accession:' + str(analysisAccessionNumber) + '\n')
+
+        restLog.close()
+
         # Popup message with Results
+        tkMessageBox.showinfo('Success uploading submission to EMBL.', 
+            'The sequence and analysis was uploaded to EMBL ENA Successfully.\n\n' 
+            + 'For your reference:\n\n'
+            + 'You can use this Project/Study accession\nnumber on future submissions:\n'
+            + 'Study Accession:' + str(getConfigurationValue('study_accession') + '\n\n')
+            + 'Use the Analysis Accession number if you\ncontact EMBL regarding this\nsequence submission:\n'
+            + 'Analysis Accession:' + str(analysisAccessionNumber) + '\n\n'
+            + 'Find your submission files here:\n'
+            + workingDirectory + '\n\n'
+            + 'If EMBL successfully validates your sequence, you will\n'
+            + 'recieve an email with an EMBL Sequence accession number.\n'
+            + 'This *SEQUENCE* accession number is necessary for IMGT submission.\n'
+            + 'Contact EMBL Support with your\nAnalysis Accession # if it has been\nmore than 48 hours since submission.\n'
 
-        tkMessageBox.showinfo('Success uploading submission.', 
-            'Everything worked fine.\n' 
-            +'Congratulations. TODO: This message should have more information in it.')
-        
-        
-        
+            )
+
         
     def sampleSequence(self):
         self.featureInputGuiObject.delete('1.0','end')
@@ -489,9 +503,13 @@ class AlleleGuiEMBL(Tkinter.Frame):
                                  
         assignConfigurationValue('choose_project','2')
         
-        assignConfigurationValue('study_name','HLA_Analysis_Project')
-        assignConfigurationValue('study_description','Our laboratory performs HLA typing for Research')
+        assignConfigurationValue('study_identifier','HLA_Analysis_Project')
+        assignConfigurationValue('study_short_title','HLA Typing for Cancer Research.')
         assignConfigurationValue('study_abstract','An abstract is a more in-depth description of the nature of the research project.')
+        
+        assignConfigurationValue('analysis_alias','unique_HLA_analysis_alias')
+        assignConfigurationValue('analysis_title','Novel HLA sequence from patient with Leukemia')
+        assignConfigurationValue('analysis_description','This is an HLA-A sequence from a patient. It was discovered that he has Leukemia, so we decided to sequence his HLA.')
         
         self.constructSubmission()
         
@@ -547,7 +565,7 @@ class AlleleGuiEMBL(Tkinter.Frame):
             + 'm.tilanus@mumc.nl\n\n'
             
             + 'This code will be hosted at:\n'
-            + 'https://github.com/transplantation-\nimmunology/EMBL-HLA-Submission\n'
+            + 'https://github.com/transplantation-\nimmunology/saddle-bags\n'
             + 'You will find more information on\n'
             + 'EMBL\'s data format on that page.'
 
@@ -578,12 +596,6 @@ class AlleleGuiEMBL(Tkinter.Frame):
             allGen = SubmissionGeneratorEMBL()
             roughFeatureSequence = self.featureInputGuiObject.get('1.0', 'end')
 
-            # TODO: I uncommented these, hope there is no problem.
-            #allGen.inputSampleID = getConfigurationValue('sample_id')
-            #allGen.inputGene = getConfigurationValue('gene')
-            #allGen.inputAllele = getConfigurationValue('allele_name')
-            #allGen.inputClass = getConfigurationValue('class')            
-            
             allGen.sequenceAnnotation = annotateRoughInputSequence(roughFeatureSequence)
 
             enaSubmission = allGen.buildENASubmission()

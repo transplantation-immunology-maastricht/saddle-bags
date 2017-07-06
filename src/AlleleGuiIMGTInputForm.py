@@ -1,17 +1,17 @@
-# This file is part of EMBL-HLA-Submission.
+# This file is part of saddle-bags.
 #
-# EMBL-HLA-Submission is free software: you can redistribute it and/or modify
+# saddle-bags is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Lesser General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# EMBL-HLA-Submission is distributed in the hope that it will be useful,
+# saddle-bags is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU Lesser General Public License for more details.
 #
 # You should have received a copy of the GNU Lesser General Public License
-# along with EMBL-HLA-Submission. If not, see <http://www.gnu.org/licenses/>.
+# along with saddle-bags. If not, see <http://www.gnu.org/licenses/>.
 
 import os
 
@@ -46,6 +46,9 @@ class AlleleGuiIMGTInputForm(VerticalScrolledFrame):
         
         # To define the exit behavior.  Save and exit.
         self.parent.protocol('WM_DELETE_WINDOW', self.saveOptions)
+        
+        # Define the return behavior.  Same as "close window" etc
+        root.bind('<Return>', self.returnFunction)
         
         self.instructionsFrame = Tkinter.Frame(self.interior)  
         self.instructionText = Tkinter.StringVar()       
@@ -224,12 +227,12 @@ class AlleleGuiIMGTInputForm(VerticalScrolledFrame):
         self.inputSex = Tkinter.StringVar() 
         self.inputSexEntry = Tkinter.Entry(self.submissionDetailsInputFrame2, width=formInputWidth, textvariable=self.inputSex).grid(row=4, column=1)
 
-        # Cosanguinous (T/F)
-        self.cosanguinousInstrText = Tkinter.StringVar()
-        self.cosanguinousInstrText.set('Sample is Cosanguinous:')
-        self.cosanguinousInstrLabel = Tkinter.Label(self.submissionDetailsInputFrame2, width=labelInputWidth, height=1, textvariable=self.cosanguinousInstrText).grid(row=5, column=0)
-        self.inputCosanguinous = Tkinter.StringVar() 
-        self.inputCosanguinousEntry = Tkinter.Entry(self.submissionDetailsInputFrame2, width=formInputWidth, textvariable=self.inputCosanguinous).grid(row=5, column=1)
+        # Consanguineous (T/F)
+        self.consanguineousInstrText = Tkinter.StringVar()
+        self.consanguineousInstrText.set('Sample is Consanguineous:')
+        self.consanguineousInstrLabel = Tkinter.Label(self.submissionDetailsInputFrame2, width=labelInputWidth, height=1, textvariable=self.consanguineousInstrText).grid(row=5, column=0)
+        self.inputConsanguineous = Tkinter.StringVar() 
+        self.inputConsanguineousEntry = Tkinter.Entry(self.submissionDetailsInputFrame2, width=formInputWidth, textvariable=self.inputConsanguineous).grid(row=5, column=1)
         
         # Homozygous (T/F)
         self.homozygousInstrText = Tkinter.StringVar()
@@ -288,6 +291,11 @@ class AlleleGuiIMGTInputForm(VerticalScrolledFrame):
         self.saveOptionsFrame.pack()
         
         self.loadOptions()
+        
+    # I needed a function for the return keypress to latch onto.
+    # It is just a wrapper for the saveOptions method.
+    def returnFunction(self, event):
+        self.saveOptions()
 
     # submissionOptions is a dictionary, passed by the parent.
     def loadOptions(self):
@@ -343,8 +351,8 @@ class AlleleGuiIMGTInputForm(VerticalScrolledFrame):
             self.inputEthnicOrigin.set(getConfigurationValue('ethnic_origin'))          
         if getConfigurationValue('sex') is not None:
             self.inputSex.set(getConfigurationValue('sex'))              
-        if getConfigurationValue('cosanguinous') is not None:
-            self.inputCosanguinous.set(getConfigurationValue('cosanguinous'))          
+        if getConfigurationValue('consanguineous') is not None:
+            self.inputConsanguineous.set(getConfigurationValue('consanguineous'))          
         if getConfigurationValue('homozygous') is not None:
             self.inputHomozygous.set(getConfigurationValue('homozygous'))  
             
@@ -353,7 +361,6 @@ class AlleleGuiIMGTInputForm(VerticalScrolledFrame):
 
 
     def saveOptions(self):
-        # TODO: Save the options to our configuration dictionary
         # Close the window
         if (self.checkOptions()):
             print ('Saving Options....')
@@ -383,11 +390,9 @@ class AlleleGuiIMGTInputForm(VerticalScrolledFrame):
             assignConfigurationValue('sex', self.inputSex.get())
             
             # TODO: Accepted values are 'Yes', 'No', 'Unknown'
-            assignConfigurationValue('cosanguinous', self.inputCosanguinous.get())
+            assignConfigurationValue('consanguineous', self.inputConsanguineous.get())
             assignConfigurationValue('homozygous', self.inputHomozygous.get())
-            
-            
-                        
+   
             self.parent.destroy() 
             
         else:
@@ -449,9 +454,9 @@ class AlleleGuiIMGTInputForm(VerticalScrolledFrame):
             return False
         
         # TODO: Accepted values are 'Yes', 'No', 'Unknown' I think
-        if (not self.inputCosanguinous.get()):
+        if (not self.inputConsanguineous.get()):
             tkMessageBox.showwarning('Missing Form Value',
-                'Please indicate if the sample is cosanguinous or not.')
+                'Please indicate if the sample is consanguineous or not.')
             return False
         if (not self.inputHomozygous.get()):
             tkMessageBox.showwarning('Missing Form Value',

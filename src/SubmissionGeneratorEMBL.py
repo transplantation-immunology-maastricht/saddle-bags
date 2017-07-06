@@ -1,17 +1,17 @@
-# This file is part of EMBL-HLA-Submission.
+# This file is part of saddle-bags.
 #
-# EMBL-HLA-Submission is free software: you can redistribute it and/or modify
+# saddle-bags is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Lesser General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# EMBL-HLA-Submission is distributed in the hope that it will be useful,
+# saddle-bags is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU Lesser General Public License for more details.
 #
 # You should have received a copy of the GNU Lesser General Public License
-# along with EMBL-HLA-Submission. If not, see <http://www.gnu.org/licenses/>.
+# along with saddle-bags. If not, see <http://www.gnu.org/licenses/>.
 
 from Bio.Seq import Seq
 from Bio.Alphabet import generic_dna
@@ -29,19 +29,7 @@ from AlleleSubCommon import *
 class SubmissionGeneratorEMBL():   
     
     def __init__(self):
- 
-        # TODO: These values are stored in a config file. I don't think I need to assign them.
-        # Except the HLAGene value, initialize that.
-        # Comment out the rest of these initializations.
- 
-        #self.inputFileName = ''
-        #self.outputFileName = ''
         self.sequenceAnnotation = HLAGene()
-        #getConfigurationValue('sample_id') = 0
-        #getConfigurationValue('gene') = ''
-        #getConfigurationValue('allele_name') = '' 
-        #s#elf.inputClass = ''
-        #self.isPseudoGene = False
 
 
     def printHeader(self):      

@@ -1,20 +1,17 @@
-# This file is part of EMBL-HLA-Submission.
+# This file is part of saddle-bags.
 #
-# EMBL-HLA-Submission is free software: you can redistribute it and/or modify
+# saddle-bags is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Lesser General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# EMBL-HLA-Submission is distributed in the hope that it will be useful,
+# saddle-bags is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU Lesser General Public License for more details.
 #
 # You should have received a copy of the GNU Lesser General Public License
-# along with EMBL-HLA-Submission. If not, see <http://www.gnu.org/licenses/>.
-
-
-#import os
+# along with saddle-bags. If not, see <http://www.gnu.org/licenses/>.
 
 from AlleleSubCommon import *
 
@@ -35,22 +32,26 @@ def writeToXml(fullXmlFilePath, xmlElementTree):
     
     return prettyXmlText
 
-def createProjectXML(fullXmlFilePath, projectName, projectDescription, projectAbstract):
+def getCenterName():
+    # TODO: Should I use REST here? 
+    # Probably not, center_name is not required in the xmls.
+    return 'Center_Name'
+
+def createProjectXML(fullXmlFilePath):
+    # They are called "Project" in xml, but "Study" on the website.
+    # Project = Study
     root = ET.Element('PROJECT_SET')
-    # TODO: How do I get the center name?  
-    # Maybe I should get this via REST?
+
+    projectID = getConfigurationValue('study_identifier')
+    projectShortTitle = getConfigurationValue('study_short_title')
+    projectAbstract = getConfigurationValue('study_abstract')
     
-    # Ok this is really confusing.
-    # According to the docs, http://ena-docs.readthedocs.io/en/latest/prog_01.html
-    # "alias" attribute on the project node contains projectName
-    # "title" node contains project description
-    # "description" node is the project abstract 
-    # EMBL should be more consistent in their terminology.
     projectElement = ET.SubElement(root, 'PROJECT')
-    projectElement.set('alias', projectName)
-    projectElement.set('center_name', 'Maastricht University Medical Center' )
+    projectElement.set('alias', projectID)
+    # Center Name is optional according to schemas.  Forget it. EMBL Knows our login info.
+    #projectElement.set('center_name', getCenterName() )
     titleElement = ET.SubElement(projectElement, 'TITLE')
-    titleElement.text = projectDescription
+    titleElement.text = projectShortTitle
     descriptionElement = ET.SubElement(projectElement, 'DESCRIPTION')
     descriptionElement.text = projectAbstract
     submissionProjectElement = ET.SubElement(projectElement, 'SUBMISSION_PROJECT')
@@ -58,17 +59,59 @@ def createProjectXML(fullXmlFilePath, projectName, projectDescription, projectAb
 
     return writeToXml(fullXmlFilePath, root)
     
-def createProjectSubmissionXML(submissionAlias, fullXmlFilePath):    
+def createProjectSubmissionXML(fullXmlFilePath, submissionAlias, shortProjectFileName):    
     root = ET.Element('SUBMISSION')
-    # TODO: How do I get the center name?  
-    # Maybe I should get this via REST?
     root.set('alias', submissionAlias)
-    root.set('center_name', 'Maastricht University Medical Center' )
+    # Center Name is optional according to schemas.  Forget it.
+    #root.set('center_name', getCenterName() )
     actionsElement = ET.SubElement(root, 'ACTIONS')    
     actionElement = ET.SubElement(actionsElement, 'ACTION')
     addElement = ET.SubElement(actionElement, 'ADD')  
-    addElement.set('source','project.xml')
+    addElement.set('source',shortProjectFileName)
     addElement.set('schema','project')
+
+    return writeToXml(fullXmlFilePath, root)
+
+def createAnalysisXML(fullXmlFilePath, checksumValue, flatfileZipFileName):
+    # An analysis xml is just a wrapper for a sequence submission. 
+    root = ET.Element('ANALYSIS_SET')
+
+    # TODO: I haven't created these three analysis configuration values yet.
+    # Probably need to add this to the GUI, or somehow generate them automagically.   
+    analysisElement = ET.SubElement(root, 'ANALYSIS')
+    analysisElement.set('alias', getConfigurationValue('analysis_alias'))
+    
+    titleElement = ET.SubElement(analysisElement, 'TITLE')
+    titleElement.text = (getConfigurationValue('analysis_title'))
+    
+    descriptionElement = ET.SubElement(analysisElement, 'DESCRIPTION')
+    descriptionElement.text = (getConfigurationValue('analysis_description'))
+    
+    studyRefElement = ET.SubElement(analysisElement, 'STUDY_REF')
+    studyRefElement.set('accession', getConfigurationValue('study_accession'))
+    
+    analysisTypeElement = ET.SubElement(analysisElement, 'ANALYSIS_TYPE')
+    sequenceFlatfileElement = ET.SubElement(analysisTypeElement, 'SEQUENCE_FLATFILE')
+    
+    filesElement = ET.SubElement(analysisElement, 'FILES')
+    
+    fileElement = ET.SubElement(filesElement, 'FILE')
+    fileElement.set('checksum', checksumValue)
+    fileElement.set('checksum_method', 'MD5')
+    fileElement.set('filename', flatfileZipFileName)
+    fileElement.set('filetype', 'flatfile')
+
+    return writeToXml(fullXmlFilePath, root)
+    
+def createAnalysisSubmissionXML(fullXmlFilePath, submissionAlias, shortAnalysisFileName):    
+    root = ET.Element('SUBMISSION')
+    
+    root.set('alias', submissionAlias)
+    actionsElement = ET.SubElement(root, 'ACTIONS')    
+    actionElement = ET.SubElement(actionsElement, 'ACTION')
+    addElement = ET.SubElement(actionElement, 'ADD')  
+    addElement.set('source',shortAnalysisFileName)
+    addElement.set('schema','analysis')
 
     return writeToXml(fullXmlFilePath, root)
     

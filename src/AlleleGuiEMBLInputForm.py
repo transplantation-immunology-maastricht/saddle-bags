@@ -1,17 +1,17 @@
-# This file is part of EMBL-HLA-Submission.
+# This file is part of saddle-bags.
 #
-# EMBL-HLA-Submission is free software: you can redistribute it and/or modify
+# saddle-bags is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Lesser General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# EMBL-HLA-Submission is distributed in the hope that it will be useful,
+# saddle-bags is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU Lesser General Public License for more details.
 #
 # You should have received a copy of the GNU Lesser General Public License
-# along with EMBL-HLA-Submission. If not, see <http://www.gnu.org/licenses/>.
+# along with saddle-bags. If not, see <http://www.gnu.org/licenses/>.
 
 import os
 
@@ -32,21 +32,49 @@ class AlleleGuiEMBLInputForm(Tkinter.Frame):
         
         # To define the exit behavior.  Save and exit.
         self.parent.protocol('WM_DELETE_WINDOW', self.saveOptions)
+        
+        # Define the return behavior.  Same as "close window" etc
+        root.bind('<Return>', self.returnFunction)
   
         # This window should not be resizeable. I guess.
         self.parent.resizable(width=False, height=False)
         
-        self.instructionsFrame = Tkinter.Frame(self)  
-        self.instructionText = Tkinter.StringVar()       
-        self.instructionText.set('\nThese options are required for an EMBL allele submission.\n'
-            + 'Login Credentials will not be stored, but they will be sent to EMBL via\n'
-            + 'secure https connection.\n')        
-        Tkinter.Label(self.instructionsFrame, width=85, height=6, textvariable=self.instructionText).pack()
-        self.instructionsFrame.pack()
-        
-        #Standard Inputs widths for the form elements
+                #Standard Inputs widths for the form elements
         formInputWidth = 30
         labelInputWidth = 30
+        
+        self.instructionsFrame = Tkinter.Frame(self)  
+        self.instructionText = Tkinter.StringVar()       
+        self.instructionText.set('\nThese options are required for an EMBL allele submission.\n')        
+        Tkinter.Label(self.instructionsFrame, width=85, height=3, textvariable=self.instructionText).pack()
+        self.instructionsFrame.pack()
+        
+        self.submissionDetailsInputFrame2 = Tkinter.Frame(self)
+  
+        self.sampleIDInstrText = Tkinter.StringVar()
+        self.sampleIDInstrText.set('Sample ID:')
+        self.sampleIDinstrLabel = Tkinter.Label(self.submissionDetailsInputFrame2, width=labelInputWidth, height=1, textvariable=self.sampleIDInstrText).grid(row=0, column=0)
+        self.inputSampleID = Tkinter.StringVar()
+        self.inputSampleIDEntry = Tkinter.Entry(self.submissionDetailsInputFrame2, width=formInputWidth, textvariable=self.inputSampleID).grid(row=0, column=1)
+
+        self.geneInstrStringVar = Tkinter.StringVar()
+        self.geneInstrStringVar.set('Gene:')
+        self.geneInstrLabel = Tkinter.Label(self.submissionDetailsInputFrame2, width=labelInputWidth, height=1, textvariable=self.geneInstrStringVar).grid(row=1, column=0)
+        self.inputGene = Tkinter.StringVar()        
+        self.inputGeneEntry = Tkinter.Entry(self.submissionDetailsInputFrame2, width=formInputWidth, textvariable=self.inputGene).grid(row=1, column=1)
+
+        self.chooseClassIntVar = IntVar()
+        self.chooseClassIntVar.set(1)
+        Radiobutton(self.submissionDetailsInputFrame2, text="HLA Class I ", variable=self.chooseClassIntVar, value=1).grid(row=2, column=0)
+        Radiobutton(self.submissionDetailsInputFrame2, text="HLA Class II", variable=self.chooseClassIntVar, value=2).grid(row=2, column=1)
+
+        self.alleleInstrText = Tkinter.StringVar()
+        self.alleleInstrText.set('Allele Local Name:')
+        self.alleleInstrLabel = Tkinter.Label(self.submissionDetailsInputFrame2, width=labelInputWidth, height=1, textvariable=self.alleleInstrText).grid(row=3, column=0)
+        self.inputAllele = Tkinter.StringVar() 
+        self.inputAlleleEntry = Tkinter.Entry(self.submissionDetailsInputFrame2, width=formInputWidth, textvariable=self.inputAllele).grid(row=3, column=1)
+
+        self.submissionDetailsInputFrame2.pack()
                 
                 
         # Make a frame to contain the Test/Production radio buttons.
@@ -56,8 +84,10 @@ class AlleleGuiEMBLInputForm(Tkinter.Frame):
         self.testProductionInstrText.set('\nBy default, you submit to the EMBL test servers,\n'
             + 'where submissions are regularly deleted.\n'
             + 'change this option if you want to submit to the live EMBL environment.\n'
+            + 'Login Credentials will not be stored, but they will be sent\n'
+            + 'to EMBL via secure https connection.\n'
             )
-        self.alleleInstrLabel = Tkinter.Label(self.testProductionFrame, width=70, height=5, textvariable=self.testProductionInstrText).pack()#.grid(row=2, column=0)
+        self.alleleInstrLabel = Tkinter.Label(self.testProductionFrame, width=70, height=7, textvariable=self.testProductionInstrText).pack()#.grid(row=2, column=0)
  
         # 1 = Test.  0 = Production/live server
         self.chooseTestServersIntVar = IntVar()
@@ -83,30 +113,33 @@ class AlleleGuiEMBLInputForm(Tkinter.Frame):
         self.inputPassword = Tkinter.StringVar()
         self.inputPasswordEntry = Tkinter.Entry(self.submissionDetailsInputFrame, width=formInputWidth, textvariable=self.inputPassword, show="*").grid(row=1, column=1)
   
-        self.sampleIDInstrText = Tkinter.StringVar()
-        self.sampleIDInstrText.set('Sample ID:')
-        self.sampleIDinstrLabel = Tkinter.Label(self.submissionDetailsInputFrame, width=labelInputWidth, height=1, textvariable=self.sampleIDInstrText).grid(row=2, column=0)
-        self.inputSampleID = Tkinter.StringVar()
-        self.inputSampleIDEntry = Tkinter.Entry(self.submissionDetailsInputFrame, width=formInputWidth, textvariable=self.inputSampleID).grid(row=2, column=1)
-
-        self.geneInstrStringVar = Tkinter.StringVar()
-        self.geneInstrStringVar.set('Gene:')
-        self.geneInstrLabel = Tkinter.Label(self.submissionDetailsInputFrame, width=labelInputWidth, height=1, textvariable=self.geneInstrStringVar).grid(row=3, column=0)
-        self.inputGene = Tkinter.StringVar()        
-        self.inputGeneEntry = Tkinter.Entry(self.submissionDetailsInputFrame, width=formInputWidth, textvariable=self.inputGene).grid(row=3, column=1)
-
-        self.chooseClassIntVar = IntVar()
-        self.chooseClassIntVar.set(1)
-        Radiobutton(self.submissionDetailsInputFrame, text="HLA Class I ", variable=self.chooseClassIntVar, value=1).grid(row=4, column=0)
-        Radiobutton(self.submissionDetailsInputFrame, text="HLA Class II", variable=self.chooseClassIntVar, value=2).grid(row=4, column=1)
-
-        self.alleleInstrText = Tkinter.StringVar()
-        self.alleleInstrText.set('Allele Local Name:')
-        self.alleleInstrLabel = Tkinter.Label(self.submissionDetailsInputFrame, width=labelInputWidth, height=1, textvariable=self.alleleInstrText).grid(row=5, column=0)
-        self.inputAllele = Tkinter.StringVar() 
-        self.inputAlleleEntry = Tkinter.Entry(self.submissionDetailsInputFrame, width=formInputWidth, textvariable=self.inputAllele).grid(row=5, column=1)
-
         self.submissionDetailsInputFrame.pack()
+        
+        
+        # Frame to specify Analysis Information
+        self.newAnalysisFrame = Tkinter.Frame(self)            
+
+        self.analysisAliasInstrText = Tkinter.StringVar()
+        self.analysisAliasInstrText.set('Analysis Alias:')
+        self.analysisAliasInstrLabel = Tkinter.Label(self.newAnalysisFrame, width=labelInputWidth, height=1, textvariable=self.analysisAliasInstrText).grid(row=0, column=0)
+        self.inputAnalysisAlias = Tkinter.StringVar()
+        self.inputStudyIdEntry = Tkinter.Entry(self.newAnalysisFrame, width=formInputWidth, textvariable=self.inputAnalysisAlias).grid(row=0, column=1)
+
+        self.analysisTitleInstrText = Tkinter.StringVar()
+        self.analysisTitleInstrText.set('Analysis Title:')
+        self.analysisTitleInstrLabel = Tkinter.Label(self.newAnalysisFrame, width=labelInputWidth, height=1, textvariable=self.analysisTitleInstrText).grid(row=1, column=0)
+        self.inputAnalysisTitle = Tkinter.StringVar()
+        self.inputAnalysisTitleEntry = Tkinter.Entry(self.newAnalysisFrame, width=formInputWidth, textvariable=self.inputAnalysisTitle).grid(row=1, column=1)
+
+        self.analysisDescriptionInstrText = Tkinter.StringVar()
+        self.analysisDescriptionInstrText.set('Analysis Description:')
+        self.analysisDescriptionInstrLabel = Tkinter.Label(self.newAnalysisFrame, width=labelInputWidth, height=1, textvariable=self.analysisDescriptionInstrText).grid(row=2, column=0)
+        self.inputAnalysisDescription = Tkinter.StringVar()
+        self.inputAnalysisDescriptionEntry = Tkinter.Entry(self.newAnalysisFrame, width=formInputWidth, textvariable=self.inputAnalysisDescription).grid(row=2, column=1)
+        
+        self.newAnalysisFrame.pack()
+        
+        
         
         # A Frame for specifing the details of the Study / Project
         self.projectDetailsFrame = Tkinter.Frame(self)
@@ -125,7 +158,7 @@ class AlleleGuiEMBLInputForm(Tkinter.Frame):
         self.existingProjectFrame = Tkinter.Frame(self.projectDetailsFrame)
         Radiobutton(self.existingProjectFrame, text="Use this study accession:", variable=self.chooseProjectIntVar, value=1).grid(row=0,column=0)
         self.inputStudyAccession = Tkinter.StringVar()
-        self.inputStudyNameEntry = Tkinter.Entry(self.existingProjectFrame, width=formInputWidth, textvariable=self.inputStudyAccession).grid(row=0, column=1)
+        self.inputStudyIdEntry = Tkinter.Entry(self.existingProjectFrame, width=formInputWidth, textvariable=self.inputStudyAccession).grid(row=0, column=1)
         self.existingProjectFrame.pack()
         
         
@@ -139,20 +172,20 @@ class AlleleGuiEMBLInputForm(Tkinter.Frame):
 
         self.newProjectFrame = Tkinter.Frame(self.projectDetailsFrame)            
 
-        self.studyNameInstrText = Tkinter.StringVar()
-        self.studyNameInstrText.set('Study Name:')
-        self.studyNameInstrLabel = Tkinter.Label(self.newProjectFrame, width=labelInputWidth, height=1, textvariable=self.studyNameInstrText).grid(row=0, column=0)
-        self.inputStudyName = Tkinter.StringVar()
-        self.inputStudyNameEntry = Tkinter.Entry(self.newProjectFrame, width=formInputWidth, textvariable=self.inputStudyName).grid(row=0, column=1)
+        self.studyIdInstrText = Tkinter.StringVar()
+        self.studyIdInstrText.set('Short Study Identifier:')
+        self.studyIdInstrLabel = Tkinter.Label(self.newProjectFrame, width=labelInputWidth, height=1, textvariable=self.studyIdInstrText).grid(row=0, column=0)
+        self.inputStudyId = Tkinter.StringVar()
+        self.inputStudyIdEntry = Tkinter.Entry(self.newProjectFrame, width=formInputWidth, textvariable=self.inputStudyId).grid(row=0, column=1)
 
-        self.studyShortDescriptionInstrText = Tkinter.StringVar()
-        self.studyShortDescriptionInstrText.set('Short Description:')
-        self.studyShortDescriptionInstrLabel = Tkinter.Label(self.newProjectFrame, width=labelInputWidth, height=1, textvariable=self.studyShortDescriptionInstrText).grid(row=1, column=0)
-        self.inputStudyShortDescription = Tkinter.StringVar()
-        self.inputStudyShortDescriptionEntry = Tkinter.Entry(self.newProjectFrame, width=formInputWidth, textvariable=self.inputStudyShortDescription).grid(row=1, column=1)
+        self.studyShortTitleInstrText = Tkinter.StringVar()
+        self.studyShortTitleInstrText.set('Descriptive Study Title:')
+        self.studyShortTitleInstrLabel = Tkinter.Label(self.newProjectFrame, width=labelInputWidth, height=1, textvariable=self.studyShortTitleInstrText).grid(row=1, column=0)
+        self.inputStudyShortTitle = Tkinter.StringVar()
+        self.inputStudyShortTitleEntry = Tkinter.Entry(self.newProjectFrame, width=formInputWidth, textvariable=self.inputStudyShortTitle).grid(row=1, column=1)
 
         self.studyAbstractInstrText = Tkinter.StringVar()
-        self.studyAbstractInstrText.set('Study Abstract:')
+        self.studyAbstractInstrText.set('Study Description / Abstract:')
         self.studyAbstractInstrLabel = Tkinter.Label(self.newProjectFrame, width=labelInputWidth, height=1, textvariable=self.studyAbstractInstrText).grid(row=2, column=0)
         self.inputStudyAbstract = Tkinter.StringVar()
         self.inputStudyAbstractEntry = Tkinter.Entry(self.newProjectFrame, width=formInputWidth, textvariable=self.inputStudyAbstract).grid(row=2, column=1)
@@ -166,7 +199,15 @@ class AlleleGuiEMBLInputForm(Tkinter.Frame):
         Tkinter.Button(self.saveOptionsFrame, text='Save Options', command=self.saveOptions).grid(row=0, column=0)
         self.saveOptionsFrame.pack()
         
+        # TODO: Should there be a cancel button, to close this window without saving?
+        
         self.loadOptions()
+
+    # I needed a function for the return keypress to latch onto.
+    # It is just a wrapper for the saveOptions method.
+    def returnFunction(self, event):
+        self.saveOptions()
+       
 
     # submissionOptions is a dictionary, passed by the parent.
     def loadOptions(self):
@@ -204,11 +245,11 @@ class AlleleGuiEMBLInputForm(Tkinter.Frame):
         if getConfigurationValue('study_accession') is not None:
             self.inputStudyAccession.set(getConfigurationValue('study_accession'))
             
-        if getConfigurationValue('study_name') is not None:
-            self.inputStudyName.set(getConfigurationValue('study_name'))
+        if getConfigurationValue('study_identifier') is not None:
+            self.inputStudyId.set(getConfigurationValue('study_identifier'))
             
-        if getConfigurationValue('study_description') is not None:
-            self.inputStudyShortDescription.set(getConfigurationValue('study_description'))
+        if getConfigurationValue('study_short_title') is not None:
+            self.inputStudyShortTitle.set(getConfigurationValue('study_short_title'))
             
         if getConfigurationValue('study_abstract') is not None:
             self.inputStudyAbstract.set(getConfigurationValue('study_abstract'))
@@ -216,12 +257,16 @@ class AlleleGuiEMBLInputForm(Tkinter.Frame):
         if getConfigurationValue('test_submission') is not None:
             # 1 = Test.  0 = Production/live server
             self.chooseTestServersIntVar.set(int(getConfigurationValue('test_submission')))
- 
-        
             
+        if getConfigurationValue('analysis_alias') is not None:
+            self.inputAnalysisAlias.set(getConfigurationValue('analysis_alias'))
+        if getConfigurationValue('analysis_title') is not None:
+            self.inputAnalysisTitle.set(getConfigurationValue('analysis_title'))
+        if getConfigurationValue('analysis_description') is not None:
+            self.inputAnalysisDescription.set(getConfigurationValue('analysis_description'))
+
 
     def saveOptions(self):
-        # TODO: Save the options to our configuration dictionary
         # Close the window
         if (self.checkOptions()):
             print ('Saving Options....')
@@ -236,10 +281,13 @@ class AlleleGuiEMBLInputForm(Tkinter.Frame):
             assignConfigurationValue('allele_name', self.inputAllele.get())
             assignConfigurationValue('choose_project', str(self.chooseProjectIntVar.get()))    
             assignConfigurationValue('study_accession', self.inputStudyAccession.get())                    
-            assignConfigurationValue('study_name', self.inputStudyName.get())            
-            assignConfigurationValue('study_description', self.inputStudyShortDescription.get())
+            assignConfigurationValue('study_identifier', self.inputStudyId.get())            
+            assignConfigurationValue('study_short_title', self.inputStudyShortTitle.get())
             assignConfigurationValue('study_abstract', self.inputStudyAbstract.get())
             assignConfigurationValue('test_submission', str(self.chooseTestServersIntVar.get()))
+            assignConfigurationValue('analysis_alias', str(self.inputAnalysisAlias.get()))
+            assignConfigurationValue('analysis_title', str(self.inputAnalysisTitle.get()))
+            assignConfigurationValue('analysis_description', str(self.inputAnalysisDescription.get()))
             
             self.parent.destroy() 
             
@@ -248,11 +296,8 @@ class AlleleGuiEMBLInputForm(Tkinter.Frame):
             pass
         
     def checkOptions(self):
-        # TODO this method
-        print ('Checking options.')
-
-        #chooseProjectIntVar
-        
+        #print ('Checking options.')
+       
         # Don't check the EMBL Username
         # Don't check the EMBL Password
         
@@ -282,12 +327,12 @@ class AlleleGuiEMBLInputForm(Tkinter.Frame):
             
         elif(str(self.chooseProjectIntVar.get()) == '2'):
             # Use New Project
-            if (not self.inputStudyName.get()):
+            if (not self.inputStudyId.get()):
                 tkMessageBox.showwarning('Missing Form Value',
                     'You are missing a Study Name. Please try again.')
                 return False
             
-            if (not self.inputStudyShortDescription.get()):
+            if (not self.inputStudyShortTitle.get()):
                 tkMessageBox.showwarning('Missing Form Value',
                     'You are missing a Study Description. Please try again.')
                 return False
@@ -299,14 +344,32 @@ class AlleleGuiEMBLInputForm(Tkinter.Frame):
                 return False
             
         else:
-            raise Exception ('Unknown value of self.chooseProjectIntVar. I expect 1 or 2. Observed:' + str(self.chooseProjectIntVar)) 
+            raise Exception ('Unknown value of self.chooseProjectIntVar. I expect 1 or 2. Observed:' + str(self.chooseProjectIntVar))
+        
+        
+        if (not self.inputAnalysisAlias.get()):
+            tkMessageBox.showwarning('Missing Form Value',
+                'You are missing an Analysis Alias. Please try again.')
+            return False        
+        
+        if (not self.inputAnalysisTitle.get()):
+            tkMessageBox.showwarning('Missing Form Value',
+                'You are missing an Analysis Title. Please try again.')
+            return False        
+        
+        if (not self.inputAnalysisDescription.get()):
+            tkMessageBox.showwarning('Missing Form Value',
+                'You are missing an Analysis Description. Please try again.')
+            return False
+        
+    
 
         # All options look good, right?
+        
+        
         return True
     
     
     def closeWindow(self):
-        #writeConfigurationFile()
-
         self.parent.destroy()        
     

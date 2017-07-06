@@ -1,19 +1,17 @@
-# This file is part of EMBL-HLA-Submission.
+# This file is part of saddle-bags.
 #
-# EMBL-HLA-Submission is free software: you can redistribute it and/or modify
+# saddle-bags is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Lesser General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# EMBL-HLA-Submission is distributed in the hope that it will be useful,
+# saddle-bags is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU Lesser General Public License for more details.
 #
 # You should have received a copy of the GNU Lesser General Public License
-# along with EMBL-HLA-Submission. If not, see <http://www.gnu.org/licenses/>.
-
-
+# along with saddle-bags. If not, see <http://www.gnu.org/licenses/>.
 
 import os
 from os.path import expanduser
@@ -189,7 +187,7 @@ class AlleleGuiIMGT(Tkinter.Frame):
         
         assignConfigurationValue('ethnic_origin', 'Unknown')
         assignConfigurationValue('sex', 'Unknown')
-        assignConfigurationValue('cosanguinous', 'Unknown')
+        assignConfigurationValue('consanguineous', 'Unknown')
         assignConfigurationValue('homozygous', 'Unknown')
 
         
@@ -247,7 +245,7 @@ class AlleleGuiIMGT(Tkinter.Frame):
             + 'm.tilanus@mumc.nl\n\n'
             
             + 'This code will be hosted at:\n'
-            + 'https://github.com/transplantation-\nimmunology/EMBL-HLA-Submission\n'
+            + 'https://github.com/transplantation-\nimmunology/saddle-bags\n'
             + 'You will find more information on\n'
             + 'IMGT\'s data format on that page.'
 
@@ -275,11 +273,6 @@ class AlleleGuiIMGT(Tkinter.Frame):
             allGen = SubmissionGeneratorIMGT()
             roughFeatureSequence = self.featureInputGuiObject.get('1.0', 'end')
 
-            # Don't assign these, they should already be stored in our configuration.
-            #allGen.inputSampleID = getConfigurationValue('sample_id')
-            #allGen.inputGene = getConfigurationValue('gene')
-           # allGen.inputAllele = getConfigurationValue('allele_name')
-            
             allGen.sequenceAnnotation = annotateRoughInputSequence(roughFeatureSequence)
             imgtSubmission = allGen.buildIMGTSubmission()
             
