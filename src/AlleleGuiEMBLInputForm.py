@@ -296,6 +296,9 @@ class AlleleGuiEMBLInputForm(Tkinter.Frame):
             pass
         
     def checkOptions(self):
+        # TODO: THis is really annoying. I should allow them to close this screen without providing all the information
+        # Im sure a user will complain about this.
+        
         #print ('Checking options.')
        
         # Don't check the EMBL Username

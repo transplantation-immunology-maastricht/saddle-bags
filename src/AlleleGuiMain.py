@@ -61,8 +61,8 @@ class AlleleGuiMain(Tkinter.Frame):
         self.moreInfoFrame = Tkinter.Frame(self)
         Tkinter.Button(self.moreInfoFrame, text='Generate an EMBL submission', command=lambda: self.openAlleleSubGUI('EMBL')).grid(row=0, column=0)
         Tkinter.Button(self.moreInfoFrame, text='Generate an IMGT submission', command=lambda: self.openAlleleSubGUI('IMGT')).grid(row=0, column=1)
-        Tkinter.Button(self.moreInfoFrame, text='  How to use this tool   ', command=self.howToUse).grid(row=1, column=0)
-        Tkinter.Button(self.moreInfoFrame, text='Contacting or Citing MUMC', command=self.contactInformation).grid(row=1, column=1)
+        Tkinter.Button(self.moreInfoFrame, text='    How to use this tool     ', command=self.howToUse).grid(row=1, column=0)
+        Tkinter.Button(self.moreInfoFrame, text='Contacting and Citing MUMC', command=self.contactInformation).grid(row=1, column=1)
         self.moreInfoFrame.pack()
         
         # Frame for the exit button
