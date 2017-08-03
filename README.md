@@ -1,5 +1,5 @@
 # Saddlebags
-A tool for generating allele submissions for the EMBL and IMGT nucleotide databases. 
+A tool for generating allele submissions for the EMBL and IMGT/HLA nucleotide databases. 
 
 ## Download the executable
 Download an executable for Windows from the Release page.
@@ -27,7 +27,7 @@ source deactivate
 ```  
 Windows:  
 ```  
-conda create --name AlleleSubEnvironment biopython six pywin32  
+conda create --name AlleleSubEnvironment biopython six pywin32 pycurl
 call activate AlleleSubEnvironment && pip install pyinstaller packaging && call deactivate  
 ```
 
