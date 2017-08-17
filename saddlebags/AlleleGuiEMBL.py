@@ -617,6 +617,10 @@ class AlleleGuiEMBL(Tkinter.Frame):
                 + 'Use the \'Submission Options\' button.\n'
                 + 'Missing Data: ' + str(e))
             
+        except Exception, e:
+            tkMessageBox.showerror('Error Constructing Submission.'
+                , str(e))
+            
     def saveAndExit(self):
         assignConfigurationValue('sequence', self.featureInputGuiObject.get('1.0', 'end'))
         self.parent.destroy()

@@ -16,7 +16,7 @@
 from Bio.Seq import Seq
 from Bio.Alphabet import generic_dna
 import sys
-import tkMessageBox
+#import tkMessageBox
 
 import math
 
@@ -202,23 +202,48 @@ class SubmissionGeneratorEMBL():
         # Do a quick sanity check.  If we are missing either UTR I should warn the user.
         # But move on with your life, this is not worth getting upset over.
         if (not geneHas3UTR and not geneHas5UTR):
-            tkMessageBox.showinfo('Missing UTRs', 
-                'This sequence has no 5\' or 3\' UTR.\n\n' + 
+            #tkMessageBox.showinfo('Missing UTRs', 
+            #    'This sequence has no 5\' or 3\' UTR.\n\n' + 
+            #    'Use lowercase nucleotides at the\n' + 
+            #    'beginning and end of your DNA\n' +
+            #    'sequence to specify the 5\' and 3\' UTRs.' )
+            
+            # TODO: Make specific exception type for this.
+            # Raising generic exceptions is bad, it can mask problems.
+            # Should be a "sequenceFormattingException" or something like that.
+            raise Exception( 
+               'This sequence has no 5\' or 3\' UTR.\n\n' + 
                 'Use lowercase nucleotides at the\n' + 
                 'beginning and end of your DNA\n' +
                 'sequence to specify the 5\' and 3\' UTRs.' )
         elif (not geneHas5UTR):
-            tkMessageBox.showinfo('Missing 5\' UTR', 
+            #tkMessageBox.showinfo('Missing 5\' UTR', 
+            #    'This sequence has no 5\' UTR.\n\n' + 
+            #    'Use lowercase nucleotides at the\n' + 
+            #    'beginning and end of your DNA\n' +
+            #    'sequence to specify the 5\' and 3\' UTRs.' ) 
+            
+            # TODO: Make specific exception type for this.
+            # Raising generic exceptions is bad, it can mask problems.
+            raise Exception(  
                 'This sequence has no 5\' UTR.\n\n' + 
                 'Use lowercase nucleotides at the\n' + 
                 'beginning and end of your DNA\n' +
-                'sequence to specify the 5\' and 3\' UTRs.' )            
+                'sequence to specify the 5\' and 3\' UTRs.' )           
         elif (not geneHas3UTR):
-            tkMessageBox.showinfo('Missing 3\' UTR', 
+            #tkMessageBox.showinfo('Missing 3\' UTR', 
+            #    'This sequence has no 3\' UTR.\n\n' + 
+            ##    'Use lowercase nucleotides at the\n' + 
+            #    'beginning and end of your DNA\n' +
+            #    'sequence to specify the 5\' and 3\' UTRs.' )  
+            
+            # TODO: Make specific exception type for this.
+            # Raising generic exceptions is bad, it can mask problems.
+            raise Exception(   
                 'This sequence has no 3\' UTR.\n\n' + 
                 'Use lowercase nucleotides at the\n' + 
                 'beginning and end of your DNA\n' +
-                'sequence to specify the 5\' and 3\' UTRs.' )    
+                'sequence to specify the 5\' and 3\' UTRs.' ) 
         else:
             print('The UTRs look fine.')
             pass
@@ -302,8 +327,10 @@ class SubmissionGeneratorEMBL():
             documentBuffer += ('//\n')
             
         else: 
-            tkMessageBox.showinfo('No HLA Sequence Found', 
-                'The HLA sequence is empty.\nPlease fill in an annotated HLA sequence\nbefore generating the submission.' )
+            #tkMessageBox.showinfo('No HLA Sequence Found', 
+            #    'The HLA sequence is empty.\nPlease fill in an annotated HLA sequence\nbefore generating the submission.' )
+            # TODO: Make a specific exception type for this.
+            raise Exception('The HLA sequence is empty.\nPlease fill in an annotated HLA sequence\nbefore generating the submission.' )
             return None
 
 
