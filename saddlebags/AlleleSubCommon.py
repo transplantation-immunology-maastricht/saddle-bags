@@ -22,12 +22,16 @@ from os import makedirs
 from Bio.Seq import Seq
 from Bio.Alphabet import generic_dna
 
+# TODO: Maybe I shouldn't have GUI methods in here.
+# But it's hard to refactor those out.
+# I can use the HlaSequenceException class.  And catch the exception further upstream
+# That's the strategy.
 import tkMessageBox
 
 import sys
-from os.path import dirname, join, abspath, isfile, expanduser
+from os.path import join, isfile, expanduser
 
-from HLAGene import *
+from HlaGene import HlaGene, GeneLocus
 
 # This is a short wrapper method to use biopython's translation method. 
 # Most of this code is just checking for things that went wrong
@@ -135,21 +139,54 @@ def translateSequence(inputSequence):
         raise
 
 
+# 
+def isSequenceAlreadyAnnotated(inputSequenceText):
+    # The easy case.
+    if ('a' in inputSequenceText and
+        'g' in inputSequenceText and
+        'c' in inputSequenceText and
+        't' in inputSequenceText and
+        'A' in inputSequenceText and
+        'G' in inputSequenceText and
+        'C' in inputSequenceText and
+        'T' in inputSequenceText
+        ):
+        return True
+    
+    # TODO: This isn't perfect. It must have all 8 nucleotides to return true.
+    # Circle back on this one later.
+    return False
+
+def parseExons(roughFeatureSequence, alleleCallWithGFE):
+    
+    # TODO: Parse the JSON in the alleleCallWithGFE.  
+    # There should be some information about the exons in here.
+    # ex = uppercase
+    # utr = lowercase
+    
+    annotatedSequence = roughFeatureSequence   
+    annotatedSequence = 'aaaCCCgggTTTaaacgttga'
+    return annotatedSequence
+    
+
+def cleanSequence(inputSequenceText):
+    # Trim out any spaces, tabs, newlines. 
+    cleanedSequence = inputSequenceText.replace(' ','').replace('\n','').replace('\t','').replace('\r','')
+    return cleanedSequence
 
 # The input file should be a string of nucleotides, with capital letters to identify exons and introns.
 # Annotations are expected and read in this format:
 # fiveprimeutrEXONONEintrononeEXONTWOintrontwoEXONTHREEthreeprimeutr
 # agctagctagctAGCTAGCtagctagctAGCTAGCtagctagctAGCTAGCTAgctagctagctag
 # All spaces, line feeds, and tabs are removed and ignored.  
-def annotateRoughInputSequence(inputSequenceText):
+def identifyGenomicFeatures(inputSequenceText):
 
     # TODO: I should accept a Fasta Input. 
     # Disregard the header line completely. Is there still sequence?
-    resultGeneLoci = HLAGene()
+    resultGeneLoci = HlaGene()
     
-    # Trim out any spaces, tabs, newlines.  Uppercase.
-    cleanedGene = inputSequenceText.replace(' ','').replace('\n','').replace('\t','').replace('\r','')
-
+    cleanedGene = cleanSequence(inputSequenceText)
+    
     # Capitalize, so I can store a copy of the full unannotated sequence.
     unannotatedGene = cleanedGene.upper()
     resultGeneLoci.fullSequence = unannotatedGene
@@ -285,10 +322,6 @@ def writeConfigurationFile():
     xmlOutput.write(prettyXmlText)
     xmlOutput.close()
 
-
-
-
-
 def loadConfigurationFile():
     assignConfigName()
     
@@ -306,6 +339,7 @@ def loadConfigurationFile():
         assignConfigurationValue('embl_ftp_upload_site_prod', 'webin.ebi.ac.uk')
         assignConfigurationValue('embl_rest_address_test', 'https://www-test.ebi.ac.uk/ena/submit/drop-box/submit/')
         assignConfigurationValue('embl_rest_address_prod', 'https://www.ebi.ac.uk/ena/submit/drop-box/submit/')
+        assignConfigurationValue('nmdp_act_rest_address', 'http://act.b12x.org/act' )
 
     else:
         print ('The config file already exists, I will load it:\n' + globalVariables['config_file_location'])

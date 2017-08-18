@@ -16,14 +16,15 @@
 import os
 
 import Tkinter, Tkconstants, tkFileDialog, tkMessageBox
-from Tkinter import *
+#from Tkinter import *
+import Tkinter as Tk
 
-from AlleleGuiEMBL import AlleleGuiEMBL
-from AlleleGuiIMGT import AlleleGuiIMGT
+from EmblSubGui import EmblSubGui
+from ImgtSubGui import ImgtSubGui
 
-from AlleleSubCommon import *
+from AlleleSubCommon import loadConfigurationFile, writeConfigurationFile
 
-class AlleleGuiMain(Tkinter.Frame):
+class AlleleSubMainGui(Tkinter.Frame):
 
     # Initialize the GUI
     def __init__(self, root):
@@ -183,10 +184,10 @@ class AlleleGuiMain(Tkinter.Frame):
         
         if(submissionType=='IMGT'):
             print ('Opening the IMGT Submission GUI')
-            AlleleGuiIMGT(self.alleleSubRoot).pack()
+            ImgtSubGui(self.alleleSubRoot).pack()
         elif(submissionType=='EMBL'):
             print ('Opening the EMBL Submission GUI')
-            AlleleGuiEMBL(self.alleleSubRoot).pack()
+            EmblSubGui(self.alleleSubRoot).pack()
         else:
             raise Exception('Unknown Submission Type.  I expected IMGT or EMBL:' + str(submissionType))
         

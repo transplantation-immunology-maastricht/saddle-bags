@@ -13,11 +13,11 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with saddle-bags. If not, see <http://www.gnu.org/licenses/>.
 
-
-
 from Tkinter import Scrollbar, Frame, Canvas, VERTICAL, RIGHT, Y, LEFT, BOTH, TRUE, FALSE, NW
 
+# Credit to Jeff Epler at https://emergent.unpythonic.net/
 # http://tkinter.unpythonic.net/wiki/VerticalScrolledFrame
+# Not sure how to properly credit him but this is a nice class.
 
 class VerticalScrolledFrame(Frame):
     def __init__(self, parent, *args, **kw):

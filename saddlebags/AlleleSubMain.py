@@ -16,8 +16,8 @@
 import Tkinter
 import sys
 
-from AlleleGuiMain import AlleleGuiMain
-from AlleleSubCommon import *
+from AlleleSubMainGui import AlleleSubMainGui
+from AlleleSubCommon import loadConfigurationFile
 
 SoftwareVersion = 'saddlebags Version 1.1'
     
@@ -34,7 +34,7 @@ if __name__=='__main__':
             print('\n\n\n\n\n***Starting the HLA Allele Submission Tool***\n')
 
             root = Tkinter.Tk()
-            AlleleGuiMain(root).pack()
+            AlleleSubMainGui(root).pack()
             root.mainloop()
 
             print('Done.  Hooray.')
