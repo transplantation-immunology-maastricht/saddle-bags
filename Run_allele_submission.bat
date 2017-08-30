@@ -17,5 +17,5 @@
 
 :: See the file README.MD for how to set up your anaconda environment.
 
-activate AlleleSubEnvironment && cd src && python AlleleSubmissionMain.py && deactivate
+activate minionvironment && cd saddlebags && python AlleleSubMain.py && deactivate
 
