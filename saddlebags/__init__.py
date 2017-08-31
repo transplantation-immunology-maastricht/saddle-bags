@@ -13,12 +13,8 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with saddle-bags. If not, see <http://www.gnu.org/licenses/>.
 
-# See the file README.MD for how to set up your anaconda environment.
-
-cd saddlebags
-
-source activate minionvironment
-python AlleleSubMain.py
-source deactivate
 
 
+__author__ = """Ben Matern"""
+__email__ = 'ben.matern@mumc.nl'
+__version__ = '0.0.1'

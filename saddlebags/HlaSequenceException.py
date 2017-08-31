@@ -13,12 +13,7 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with saddle-bags. If not, see <http://www.gnu.org/licenses/>.
 
-# See the file README.MD for how to set up your anaconda environment.
 
-cd saddlebags
-
-source activate minionvironment
-python AlleleSubMain.py
-source deactivate
-
-
+# Super simple stuff here, kids. We're defining an exception class.
+class HlaSequenceException(Exception):
+    pass

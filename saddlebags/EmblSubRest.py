@@ -13,15 +13,12 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with saddle-bags. If not, see <http://www.gnu.org/licenses/>.
 
-
-
-
-from AlleleSubCommon import *
+from AlleleSubCommon import getConfigurationValue, createOutputFile
 import pycurl
 import StringIO
 
 import xml.etree.ElementTree as ET
-import xml.dom.minidom
+#import xml.dom.minidom
 
 # Here we have methods to perform REST interactions necessary for EMBL submission.
 

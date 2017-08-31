@@ -13,22 +13,24 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with saddle-bags. If not, see <http://www.gnu.org/licenses/>.
 
-import sys
-
 import datetime
+# TODO: Get rid of the GUI / tk code from this file.  It belongs elsewhere.
+# Instead, raise an HlaSequenceException and catch it somewhere upstream.
 import tkMessageBox
 
-from AlleleSubCommon import *
-#import math
+from AlleleSubCommon import getConfigurationValue
+from HlaGene import HlaGene
 
-from HLAGene import *
+
+# TODO: I believe we can use biopython's SeqIO class to generate this submission.
+# Do it that way.
 
 # The AlleleGenerator class contains logic to generate an IMGT HLA allele submission 
 # In ENA format.  
-class SubmissionGeneratorIMGT():   
+class ImgtSubGenerator():   
     
     def __init__(self):
-        self.sequenceAnnotation = HLAGene()
+        self.sequenceAnnotation = HlaGene()
     
     # Create the text submission based on the IMGT format.
     def buildIMGTSubmission(self):    

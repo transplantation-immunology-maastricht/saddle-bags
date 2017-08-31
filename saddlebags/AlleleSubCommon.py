@@ -22,12 +22,18 @@ from os import makedirs
 from Bio.Seq import Seq
 from Bio.Alphabet import generic_dna
 
+# TODO: Maybe I shouldn't have GUI methods in here.
+# But it's hard to refactor those out.
+# I can use the HlaSequenceException class.  And catch the exception further upstream
+# That's the strategy.
 import tkMessageBox
 
-import sys
-from os.path import dirname, join, abspath, isfile, expanduser
+import json
 
-from HLAGene import *
+import sys
+from os.path import join, isfile, expanduser
+
+from HlaGene import HlaGene, GeneLocus
 
 # This is a short wrapper method to use biopython's translation method. 
 # Most of this code is just checking for things that went wrong
@@ -128,28 +134,202 @@ def translateSequence(inputSequence):
     
     except Exception:
         print 'Problem when translating protein:'
+        print sys.exc_info()[0]
         print sys.exc_info()[1]
         tkMessageBox.showinfo('Protein Translation Error', 
-            'I could not translate your protein:\n' +  str(sys.exc_info()[1]))
+            'I could not translate your protein:\n' +  str(sys.exc_info()[0]))
         
         raise
 
 
+# 
+def isSequenceAlreadyAnnotated(inputSequenceText):
+    # The easy case.
+    if ('a' in inputSequenceText and
+        'g' in inputSequenceText and
+        'c' in inputSequenceText and
+        't' in inputSequenceText and
+        'A' in inputSequenceText and
+        'G' in inputSequenceText and
+        'C' in inputSequenceText and
+        'T' in inputSequenceText
+        ):
+        return True
+    
+    # TODO: This isn't perfect. It must have all 8 nucleotides to return true.
+    # Circle back on this one later.
+    return False
+
+def parseExons(roughFeatureSequence, alleleCallWithGFEJson):
+    
+    # TODO: Parse the JSON in the alleleCallWithGFEJson.  
+    # There should be some information about the exons in here.
+    # ex = uppercase
+    # utr = lowercase
+    
+    try:
+
+        
+        fivePrimeSequence = ''
+        threePrimeSequence = ''
+        exonDictionary = {}
+        intronDictionary = {}
+        
+        
+        #print ('AlleleCallJSON:\n' + alleleCallWithGFEJson)
+        # import string as json
+        parsedJson = json.loads(alleleCallWithGFEJson)
+        # now parsedJson should be a normal dictionary.
+        # loop through dictionary keys
+        
+        if (len(parsedJson.keys()) > 1):
+            
+            # Is sequence novel?
+            if 'typing_status' in parsedJson.keys():
+                print ('typing_status element was found.')
+            else:
+                raise Exception ('No typing_status element was found in Json results. Cannot continue.')
+            
+            typingStatusDictionary = parsedJson['typing_status']
+            
+            # Loop through the recognized Features
+            if 'features' in parsedJson.keys():
+                # We found features.
+                featureList = parsedJson['features']
+                print 'This many Known Features:' + str(len(featureList))
+                
+                for featureDictionary in featureList:
+                    
+                    term=str(featureDictionary['term'])
+                    rank=str(featureDictionary['rank'])
+                    sequence= str(featureDictionary['sequence'])
+                    
+                    #print ('Known Feature' 
+                    #    + ':' + term
+                    #    + ':' + rank
+                    #    + ':' + sequence)
+                    
+                    if(term == 'five_prime_UTR'):
+                        fivePrimeSequence = sequence.lower()
+                    elif(term == 'three_prime_UTR'):
+                        threePrimeSequence = sequence.lower()
+                    elif(term == 'exon'):    
+                        exonDictionary[rank] = sequence.upper()
+                    elif(term == 'intron'):    
+                        intronDictionary[rank] = sequence.lower()
+                    else:
+                        raise Exception('Unknown Feature Term, expected exon or intron:' + term)
+                
+                #print ('fivePrimeSequence:\n' + str(fivePrimeSequence))
+                #print ('threePrimeSequence:\n' + str(threePrimeSequence))
+                #print ('exonCount:\n' + str(len(exonDictionary.keys())))
+                #print ('intronCount:\n' + str(len(intronDictionary.keys())))
+            else:
+                raise Exception ('Unable to identify any HLA exon features, unable to annotate sequence.')
+                # no features found
+                #return roughFeatureSequence
+                
+            # Loop through the Novel Features
+            if 'novel_features' in typingStatusDictionary.keys():
+                print ('Novel Features were found.')
+                # We found features.
+                featureList = typingStatusDictionary['novel_features']
+                #print 'This many Novel Features:' + str(len(featureList))
+                
+                for featureDictionary in featureList:
+
+                    term=str(featureDictionary['term'])
+                    rank=str(featureDictionary['rank'])
+                    sequence= str(featureDictionary['sequence'])
+                    
+                    #print ('Novel Feature' 
+                    #    + ':' + term
+                    #    + ':' + rank
+                    #    + ':' + sequence)
+                    
+                    if(term == 'five_prime_UTR'):
+                        fivePrimeSequence = sequence.lower()
+                    elif(term == 'three_prime_UTR'):
+                        threePrimeSequence = sequence.lower()
+                    elif(term == 'exon'):    
+                        exonDictionary[rank] = sequence.upper()
+                    elif(term == 'intron'):    
+                        intronDictionary[rank] = sequence.lower()
+                    else:
+                        raise Exception('Unknown Feature Term, expected exon or intron:' + term)
+                
+            else:
+                print ('No novel features were found. Presumably this is a known HLA allele. No problem.')
+                #raise Exception ('Unable to identify any HLA exon features, unable to annotate sequence.')
+
+            
+            annotatedSequence = fivePrimeSequence + '\n'
+
+            # arbitrarily choose 50.
+            # TODO: this loop range is arbitrary. 
+            # Maybe indexString should just loop through the exon and intron dictionarys
+            for i in range(1,50):
+                indexString = str(i)
+                if indexString in exonDictionary.keys():
+                    #print ('annotating exon#' + indexString + ':' + str(exonDictionary[indexString]))
+                    annotatedSequence += (str(exonDictionary[indexString]) + '\n')
+                    
+                if indexString in intronDictionary.keys():
+                    #print ('annotating intron#' + indexString + ':' + str(intronDictionary[indexString]))
+                    annotatedSequence += (str(intronDictionary[indexString]) + '\n')
+                
+            annotatedSequence += threePrimeSequence
+            
+            #print ('FOUND THIS ANNOTATED SEQUENCE:\n' + str(annotatedSequence))
+            
+            # Do the annotated sequence and rough sequence match?
+            if(cleanSequence(annotatedSequence).upper() == cleanSequence(roughFeatureSequence).upper()):
+            
+                return annotatedSequence
+            
+            else:
+                raise Exception('Annotated sequence and rough sequence do not match. Something went wrong. Unable to annotate features.')
+        
+    
+            
+        else:
+            raise Exception ('No keys found in the JSON Dictionary, unable to annotate sequence.')
+            # no keys in JSON dictionary.
+            #return roughFeatureSequence
+
+    
+        raise Exception ('Reached end of parsing without returning a value.')
+    
+    
+    except Exception:
+        print 'Exception when parsing exons:'
+        print sys.exc_info()[0]
+        print sys.exc_info()[1]
+        tkMessageBox.showinfo('Exon Parsing Error', 
+            'I had trouble annotating your sequence:\n' +  str(sys.exc_info()[0]) + str(sys.exc_info()[1])) 
+        return roughFeatureSequence
+        
+        #raise
+        
+
+def cleanSequence(inputSequenceText):
+    # Trim out any spaces, tabs, newlines. 
+    cleanedSequence = inputSequenceText.replace(' ','').replace('\n','').replace('\t','').replace('\r','')
+    return cleanedSequence
 
 # The input file should be a string of nucleotides, with capital letters to identify exons and introns.
 # Annotations are expected and read in this format:
 # fiveprimeutrEXONONEintrononeEXONTWOintrontwoEXONTHREEthreeprimeutr
 # agctagctagctAGCTAGCtagctagctAGCTAGCtagctagctAGCTAGCTAgctagctagctag
 # All spaces, line feeds, and tabs are removed and ignored.  
-def annotateRoughInputSequence(inputSequenceText):
+def identifyGenomicFeatures(inputSequenceText):
 
     # TODO: I should accept a Fasta Input. 
     # Disregard the header line completely. Is there still sequence?
-    resultGeneLoci = HLAGene()
+    resultGeneLoci = HlaGene()
     
-    # Trim out any spaces, tabs, newlines.  Uppercase.
-    cleanedGene = inputSequenceText.replace(' ','').replace('\n','').replace('\t','').replace('\r','')
-
+    cleanedGene = cleanSequence(inputSequenceText)
+    
     # Capitalize, so I can store a copy of the full unannotated sequence.
     unannotatedGene = cleanedGene.upper()
     resultGeneLoci.fullSequence = unannotatedGene
@@ -285,10 +465,6 @@ def writeConfigurationFile():
     xmlOutput.write(prettyXmlText)
     xmlOutput.close()
 
-
-
-
-
 def loadConfigurationFile():
     assignConfigName()
     
@@ -306,6 +482,7 @@ def loadConfigurationFile():
         assignConfigurationValue('embl_ftp_upload_site_prod', 'webin.ebi.ac.uk')
         assignConfigurationValue('embl_rest_address_test', 'https://www-test.ebi.ac.uk/ena/submit/drop-box/submit/')
         assignConfigurationValue('embl_rest_address_prod', 'https://www.ebi.ac.uk/ena/submit/drop-box/submit/')
+        assignConfigurationValue('nmdp_act_rest_address', 'http://act.b12x.org/act' )
 
     else:
         print ('The config file already exists, I will load it:\n' + globalVariables['config_file_location'])

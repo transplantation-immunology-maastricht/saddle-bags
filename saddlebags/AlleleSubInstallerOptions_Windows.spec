@@ -23,10 +23,10 @@
 block_cipher = None
 
 
-a = Analysis(['AlleleSubmissionMain.py'],
+a = Analysis(['AlleleSubMain.py'],
              binaries=None,
              datas=None,
-             hiddenimports=['six', 'packaging', 'packaging.requirements', 'packaging.version', 'packaging.specifiers', 'Tkinter', 'tkFileDialog', 'Tkconstants'],
+             hiddenimports=['six', 'packaging', 'packaging.requirements', 'packaging.version', 'packaging.specifiers', 'Tkinter', 'tkFileDialog', 'Tkconstants', 'saddlebags.AlleleSubMainGui'],
              hookspath=[],
              runtime_hooks=[],
              excludes=['tkinter'],

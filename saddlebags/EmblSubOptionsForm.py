@@ -13,14 +13,12 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with saddle-bags. If not, see <http://www.gnu.org/licenses/>.
 
-import os
+import Tkinter, Tkconstants, tkMessageBox
+from Tkinter import Radiobutton, IntVar
 
-import Tkinter, Tkconstants, tkFileDialog, tkMessageBox
-from Tkinter import *
+from AlleleSubCommon import getConfigurationValue, assignConfigurationValue
 
-from AlleleSubCommon import *
-
-class AlleleGuiEMBLInputForm(Tkinter.Frame):
+class EmblSubOptionsForm(Tkinter.Frame):
         
     # Initialize the GUI
     def __init__(self, root):
@@ -28,7 +26,7 @@ class AlleleGuiEMBLInputForm(Tkinter.Frame):
         root.title("Choose EMBL Submission Options")
         self.parent = root
 
-        button_opt = {'fill': Tkconstants.BOTH, 'padx': 35, 'pady': 5}
+        #button_opt = {'fill': Tkconstants.BOTH, 'padx': 35, 'pady': 5}
         
         # To define the exit behavior.  Save and exit.
         self.parent.protocol('WM_DELETE_WINDOW', self.saveOptions)
@@ -296,6 +294,10 @@ class AlleleGuiEMBLInputForm(Tkinter.Frame):
             pass
         
     def checkOptions(self):
+        
+        # TODO: THis is really annoying. I should allow them to close this screen without providing all the information
+        # Im sure a user will complain about this.
+        
         #print ('Checking options.')
        
         # Don't check the EMBL Username

@@ -20,13 +20,13 @@ import Tkinter, Tkconstants, tkFileDialog, tkMessageBox
 from Tkinter import IntVar, Radiobutton
 #from ttk import *
 
-from AlleleSubCommon import *
+#from AlleleSubCommon import *
 from ScrolledWindow import VerticalScrolledFrame
 
 # I am using this ScrolledWindow class instead of a Frame.
 # This interface is too big for one screen, need a scrollbar.
 
-class AlleleGuiIMGTInputForm(VerticalScrolledFrame):
+class ImgtSubOptionsForm(VerticalScrolledFrame):
         
     # Initialize the GUI
     def __init__(self, root):

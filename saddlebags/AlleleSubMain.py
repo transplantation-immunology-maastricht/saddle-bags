@@ -16,9 +16,15 @@
 import Tkinter
 import sys
 
-from AlleleGuiMain import AlleleGuiMain
-from AlleleSubCommon import *
-
+# This exception handling is necessary for packaging the modules in pyinstaller.
+# The namespace(?) is required to find the modules in pyinstaller.  
+try:
+    from AlleleSubMainGui import AlleleSubMainGui
+    from AlleleSubCommon import loadConfigurationFile
+except:
+    from saddlebags.AlleleSubMainGui import AlleleSubMainGui
+    from saddlebags.AlleleSubCommon import loadConfigurationFile
+    
 SoftwareVersion = 'saddlebags Version 1.1'
     
 if __name__=='__main__':
@@ -34,7 +40,7 @@ if __name__=='__main__':
             print('\n\n\n\n\n***Starting the HLA Allele Submission Tool***\n')
 
             root = Tkinter.Tk()
-            AlleleGuiMain(root).pack()
+            AlleleSubMainGui(root).pack()
             root.mainloop()
 
             print('Done.  Hooray.')

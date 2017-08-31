@@ -13,31 +13,29 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with saddle-bags. If not, see <http://www.gnu.org/licenses/>.
 
-
-import os
+import sys
 from os import makedirs
-from os.path import expanduser, join, isdir
+from os.path import expanduser, join, isdir, split
 
 import datetime
 import hashlib
 import ftplib
 import gzip
 import shutil
-#import pycurl
-#import StringIO
 
 import Tkinter, Tkconstants, tkFileDialog, tkMessageBox
-from Tkinter import *
+from Tkinter import Scrollbar, BOTTOM, RIGHT, X, Y, NONE, HORIZONTAL, NORMAL, DISABLED
 
-from SubmissionGeneratorEMBL import SubmissionGeneratorEMBL
-from AlleleGuiEMBLInputForm import AlleleGuiEMBLInputForm
-from AlleleSubCommon import *
-from AlleleSubmissionEMBLXml import *
-from AlleleSubmissionEMBLRestMethods import *
-#from HLAGene import HLAGene
+from EmblSubGenerator import EmblSubGenerator
+from EmblSubOptionsForm import EmblSubOptionsForm
+from AlleleSubCommon import createOutputFile, getConfigurationValue, assignConfigurationValue, parseExons, isSequenceAlreadyAnnotated, identifyGenomicFeatures
+from EmblSubXml import createProjectXML, createProjectSubmissionXML, createAnalysisSubmissionXML , createAnalysisXML
+from EmblSubRest import performProjectSubmission, performAnalysisSubmission
+from AlleleSubCommonRest import fetchSequenceAlleleCallWithGFE
+from HlaSequenceException import HlaSequenceException
 
 # The AlleleGui class is an extension of Tkinter.  The GUI elements and interactions are specified in this class.
-class AlleleGuiEMBL(Tkinter.Frame):
+class EmblSubGui(Tkinter.Frame):
 
     # I shouldn't need to write a select-All method but TK is kind of annoying.
     def selectall(self, event):
@@ -110,6 +108,8 @@ class AlleleGuiEMBL(Tkinter.Frame):
         self.submissionOptionsButton.grid(row=0, column=0)
         self.generateSubmissionButton = Tkinter.Button(self.submButtonFrame, text=unichr(8681) + ' Generate an EMBL submission ' + unichr(8681), command=self.constructSubmission)
         self.generateSubmissionButton.grid(row=0, column=1)
+        self.annotateFeaturesButton = Tkinter.Button(self.submButtonFrame, text='Annotate Exons & Introns' , command=self.annotateInputSequence)
+        self.annotateFeaturesButton.grid(row=0, column=2)
         self.submButtonFrame.pack()
 
        
@@ -156,7 +156,7 @@ class AlleleGuiEMBL(Tkinter.Frame):
         
         emblOptionsRoot = Tkinter.Toplevel()
         emblOptionsRoot.bind("<Destroy>", self.enableGUI)
-        AlleleGuiEMBLInputForm(emblOptionsRoot).pack()
+        EmblSubOptionsForm(emblOptionsRoot).pack()
         
         # Set the X and the Y Position of the options window, so it is nearby.  
         emblOptionsRoot.update()        
@@ -186,9 +186,7 @@ class AlleleGuiEMBL(Tkinter.Frame):
         
         return hashValue
 
-
-
-
+    # TODO: This method is long, can i clean it up at all?
     def uploadSubmission(self):
         print('Uploading Submission to EMBL')
         
@@ -217,6 +215,7 @@ class AlleleGuiEMBL(Tkinter.Frame):
         
         # TODO: Make a REST log.
         # For each step report success or failure.  Same as popup messages.
+        # Looks like I did thisalready, probably delete this TODO
         
         
 
@@ -484,8 +483,7 @@ class AlleleGuiEMBL(Tkinter.Frame):
             + 'Contact EMBL Support with your\nAnalysis Accession # if it has been\nmore than 48 hours since submission.\n'
 
             )
-
-        
+      
     def sampleSequence(self):
         self.featureInputGuiObject.delete('1.0','end')
         self.featureInputGuiObject.insert('1.0', 'aag\nCGTCGT\nccg\nGGCTGA\naat')
@@ -588,15 +586,50 @@ class AlleleGuiEMBL(Tkinter.Frame):
         # TODO: Did I detect any exceptions? Maybe I don't have permission to write that file
         # I saw an error when i wrote to a network drive once. 
 
+     
+     
+    def annotateInputSequence(self): 
+        try:
+            self.disableGUI()
+            roughNucleotideSequence = self.featureInputGuiObject.get('1.0', 'end')
         
+            alleleCallWithGFE = fetchSequenceAlleleCallWithGFE(roughNucleotideSequence, getConfigurationValue('gene'))
+            annotatedSequence = parseExons(roughNucleotideSequence, alleleCallWithGFE)
+            self.featureInputGuiObject.delete('1.0','end')    
+            self.featureInputGuiObject.insert('1.0', annotatedSequence) 
+    
+            self.enableGUI()
+            
+        except Exception, e:
+            tkMessageBox.showerror('Error Annotating Input Sequence.'
+                , str(e))
+            raise
+            
     # Gather sequence information from the input elements, and generate a text EMBL submission.
     def constructSubmission(self):
         try:
+            roughNucleotideSequence = self.featureInputGuiObject.get('1.0', 'end')
+            annotatedSequence = None
+            
+            if (isSequenceAlreadyAnnotated(roughNucleotideSequence)):
+                annotatedSequence = roughNucleotideSequence
+                
+            else:
+                if (tkMessageBox.askyesno('Auto - Annotate Exons?'
+                    , 'It looks like your sequence features have not been identified.\n' +
+                    'Would you like to annotate using NMDP / Be The Match\n' +
+                    'Gene Feature Enumeration Tool?')):
+                    
+                    self.annotateInputSequence()
+                    annotatedSequence = self.featureInputGuiObject.get('1.0', 'end')
+                else:
+                    # You chose not to annotate.  Hope this works out for you.
+                    annotatedSequence = roughNucleotideSequence
+                    
 
-            allGen = SubmissionGeneratorEMBL()
-            roughFeatureSequence = self.featureInputGuiObject.get('1.0', 'end')
-
-            allGen.sequenceAnnotation = annotateRoughInputSequence(roughFeatureSequence)
+                
+            allGen = EmblSubGenerator()
+            allGen.sequenceAnnotation = identifyGenomicFeatures(annotatedSequence)
 
             enaSubmission = allGen.buildENASubmission()
                         
@@ -616,6 +649,15 @@ class AlleleGuiEMBL(Tkinter.Frame):
                 ,'You are missing some required information.\n'
                 + 'Use the \'Submission Options\' button.\n'
                 + 'Missing Data: ' + str(e))
+           
+        except HlaSequenceException, e:
+            tkMessageBox.showerror('I see a problem with Sequence Format.'
+                , str(e))
+           
+        except Exception, e:
+            tkMessageBox.showerror('Error Constructing Submission.'
+                , str(e))
+            raise
             
     def saveAndExit(self):
         assignConfigurationValue('sequence', self.featureInputGuiObject.get('1.0', 'end'))
@@ -635,10 +677,10 @@ class AlleleGuiEMBL(Tkinter.Frame):
         # Choosing the widgets individually, this makes the most sense I think.
         self.howToUseButton.config(state=newState) 
         self.exampleButton.config(state=newState)         
-        self.featureInputGuiObject.config(state=newState)
+        #self.featureInputGuiObject.config(state=newState)
         self.submissionOptionsButton.config(state=newState)
         self.generateSubmissionButton.config(state=newState)
-        self.submOutputGuiObject.config(state=newState)
+        #self.submOutputGuiObject.config(state=newState)
         self.uploadButton.config(state=newState)
         self.saveSubmissionButton.config(state=newState)
         self.exitButton.config(state=newState)

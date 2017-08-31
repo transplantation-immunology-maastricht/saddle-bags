@@ -13,19 +13,19 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with saddle-bags. If not, see <http://www.gnu.org/licenses/>.
 
-import os
+#import os
 from os.path import expanduser
 
 import Tkinter, Tkconstants, tkFileDialog, tkMessageBox
-from Tkinter import *
+from Tkinter import Scrollbar, BOTTOM, RIGHT, X, Y, HORIZONTAL, NONE, NORMAL, DISABLED
 
-from SubmissionGeneratorIMGT import SubmissionGeneratorIMGT
-from AlleleGuiIMGTInputForm import AlleleGuiIMGTInputForm
-from AlleleSubCommon import *
+from ImgtSubGenerator import ImgtSubGenerator
+from ImgtSubOptionsForm import ImgtSubOptionsForm
+from AlleleSubCommon import assignConfigurationValue, identifyGenomicFeatures
 #from HLAGene import HLAGene
 
 # The AlleleGui class is an extension of Tkinter.  The GUI elements and interactions are specified in this class.
-class AlleleGuiIMGT(Tkinter.Frame):
+class ImgtSubGui(Tkinter.Frame):
 
     # I shouldn't need to write a select-All method but TK is kind of annoying.
     def selectall(self, event):
@@ -146,7 +146,7 @@ class AlleleGuiIMGT(Tkinter.Frame):
         
         imgtOptionsRoot = Tkinter.Toplevel()
         imgtOptionsRoot.bind("<Destroy>", self.enableGUI)
-        AlleleGuiIMGTInputForm(imgtOptionsRoot).pack()
+        ImgtSubOptionsForm(imgtOptionsRoot).pack()
 
         # Set the X and the Y Position of the options window, so it is nearby.  
         imgtOptionsRoot.update()        
@@ -270,10 +270,10 @@ class AlleleGuiIMGT(Tkinter.Frame):
     def constructSubmission(self):
         try:
 
-            allGen = SubmissionGeneratorIMGT()
+            allGen = ImgtSubGenerator()
             roughFeatureSequence = self.featureInputGuiObject.get('1.0', 'end')
 
-            allGen.sequenceAnnotation = annotateRoughInputSequence(roughFeatureSequence)
+            allGen.sequenceAnnotation = identifyGenomicFeatures(roughFeatureSequence)
             imgtSubmission = allGen.buildIMGTSubmission()
             
             if (imgtSubmission is None or len(imgtSubmission) < 1):

@@ -28,7 +28,7 @@ class GeneLocus():
         return 1 + self.endIndex - self.beginIndex     
 
 # The Gene class represents an entire HLA Gene, consisting of a series of loci.
-class HLAGene():
+class HlaGene():
 
     def __init__(self):
         self.fullSequence = ''
