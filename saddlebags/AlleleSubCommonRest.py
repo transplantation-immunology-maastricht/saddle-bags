@@ -51,8 +51,8 @@ def fetchSequenceAlleleCallWithGFE(rawSequence, locus):
 
     responseText = curlResponseBuffer.getvalue()
     
-    print ('Received Response Text:\n'
-        + str(responseText))
+    #print ('Received Response Text:\n'
+    #    + str(responseText))
     
     return responseText
     

@@ -16,7 +16,7 @@
 import os
 
 import Tkinter, Tkconstants, tkFileDialog, tkMessageBox
-#from Tkinter import *
+from Tkinter import DISABLED
 import Tkinter as Tk
 
 from EmblSubGui import EmblSubGui
@@ -48,20 +48,24 @@ class AlleleSubMainGui(Tkinter.Frame):
         # This window should not be resizeable. I guess.
         self.parent.resizable(width=False, height=False)
 
+        # TODO: Enable the IMGT feature
+
         # Instruction Frame
         self.instructionFrame = Tkinter.Frame(self)
         self.instructionText = Tkinter.StringVar()       
         self.instructionText.set('\nSaddlebags is an HLA Allele Submission Generator.\n'
             + 'You can generate an allele submission text file for either\n'
-            + 'the EMBL/ENA or IMGT/HLA nucleotide databases. You must choose:\n'
+            + 'the EMBL/ENA or IMGT/HLA nucleotide databases. You must choose:\n\n'
+            + '(IMGT Submission is under development, and has been disabled for the Workshop.\n'
+            + 'Please use the standard IMGT web interface for HLA submission.)\n'
             )
-        Tkinter.Label(self.instructionFrame, width=85, height=5, textvariable=self.instructionText).pack()
+        Tkinter.Label(self.instructionFrame, width=85, height=8, textvariable=self.instructionText).pack()
         self.instructionFrame.pack()
            
         # Make a frame for the more-info buttons
         self.moreInfoFrame = Tkinter.Frame(self)
         Tkinter.Button(self.moreInfoFrame, text='Generate an EMBL submission', command=lambda: self.openAlleleSubGUI('EMBL')).grid(row=0, column=0)
-        Tkinter.Button(self.moreInfoFrame, text='Generate an IMGT submission', command=lambda: self.openAlleleSubGUI('IMGT')).grid(row=0, column=1)
+        Tkinter.Button(self.moreInfoFrame, text='Generate an IMGT submission', command=lambda: self.openAlleleSubGUI('IMGT'), state=DISABLED).grid(row=0, column=1)
         Tkinter.Button(self.moreInfoFrame, text='    How to use this tool     ', command=self.howToUse).grid(row=1, column=0)
         Tkinter.Button(self.moreInfoFrame, text='Contacting and Citing MUMC', command=self.contactInformation).grid(row=1, column=1)
         self.moreInfoFrame.pack()

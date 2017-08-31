@@ -621,6 +621,7 @@ class EmblSubGui(Tkinter.Frame):
                     'Gene Feature Enumeration Tool?')):
                     
                     self.annotateInputSequence()
+                    annotatedSequence = self.featureInputGuiObject.get('1.0', 'end')
                 else:
                     # You chose not to annotate.  Hope this works out for you.
                     annotatedSequence = roughNucleotideSequence

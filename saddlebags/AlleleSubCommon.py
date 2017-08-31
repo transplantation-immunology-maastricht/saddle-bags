@@ -28,6 +28,8 @@ from Bio.Alphabet import generic_dna
 # That's the strategy.
 import tkMessageBox
 
+import json
+
 import sys
 from os.path import join, isfile, expanduser
 
@@ -132,9 +134,10 @@ def translateSequence(inputSequence):
     
     except Exception:
         print 'Problem when translating protein:'
+        print sys.exc_info()[0]
         print sys.exc_info()[1]
         tkMessageBox.showinfo('Protein Translation Error', 
-            'I could not translate your protein:\n' +  str(sys.exc_info()[1]))
+            'I could not translate your protein:\n' +  str(sys.exc_info()[0]))
         
         raise
 
@@ -157,17 +160,157 @@ def isSequenceAlreadyAnnotated(inputSequenceText):
     # Circle back on this one later.
     return False
 
-def parseExons(roughFeatureSequence, alleleCallWithGFE):
+def parseExons(roughFeatureSequence, alleleCallWithGFEJson):
     
-    # TODO: Parse the JSON in the alleleCallWithGFE.  
+    # TODO: Parse the JSON in the alleleCallWithGFEJson.  
     # There should be some information about the exons in here.
     # ex = uppercase
     # utr = lowercase
     
-    annotatedSequence = roughFeatureSequence   
-    annotatedSequence = 'aaaCCCgggTTTaaacgttga'
-    return annotatedSequence
+    try:
+
+        
+        fivePrimeSequence = ''
+        threePrimeSequence = ''
+        exonDictionary = {}
+        intronDictionary = {}
+        
+        
+        #print ('AlleleCallJSON:\n' + alleleCallWithGFEJson)
+        # import string as json
+        parsedJson = json.loads(alleleCallWithGFEJson)
+        # now parsedJson should be a normal dictionary.
+        # loop through dictionary keys
+        
+        if (len(parsedJson.keys()) > 1):
+            
+            # Is sequence novel?
+            if 'typing_status' in parsedJson.keys():
+                print ('typing_status element was found.')
+            else:
+                raise Exception ('No typing_status element was found in Json results. Cannot continue.')
+            
+            typingStatusDictionary = parsedJson['typing_status']
+            
+            # Loop through the recognized Features
+            if 'features' in parsedJson.keys():
+                # We found features.
+                featureList = parsedJson['features']
+                print 'This many Known Features:' + str(len(featureList))
+                
+                for featureDictionary in featureList:
+                    
+                    term=str(featureDictionary['term'])
+                    rank=str(featureDictionary['rank'])
+                    sequence= str(featureDictionary['sequence'])
+                    
+                    #print ('Known Feature' 
+                    #    + ':' + term
+                    #    + ':' + rank
+                    #    + ':' + sequence)
+                    
+                    if(term == 'five_prime_UTR'):
+                        fivePrimeSequence = sequence.lower()
+                    elif(term == 'three_prime_UTR'):
+                        threePrimeSequence = sequence.lower()
+                    elif(term == 'exon'):    
+                        exonDictionary[rank] = sequence.upper()
+                    elif(term == 'intron'):    
+                        intronDictionary[rank] = sequence.lower()
+                    else:
+                        raise Exception('Unknown Feature Term, expected exon or intron:' + term)
+                
+                #print ('fivePrimeSequence:\n' + str(fivePrimeSequence))
+                #print ('threePrimeSequence:\n' + str(threePrimeSequence))
+                #print ('exonCount:\n' + str(len(exonDictionary.keys())))
+                #print ('intronCount:\n' + str(len(intronDictionary.keys())))
+            else:
+                raise Exception ('Unable to identify any HLA exon features, unable to annotate sequence.')
+                # no features found
+                #return roughFeatureSequence
+                
+            # Loop through the Novel Features
+            if 'novel_features' in typingStatusDictionary.keys():
+                print ('Novel Features were found.')
+                # We found features.
+                featureList = typingStatusDictionary['novel_features']
+                #print 'This many Novel Features:' + str(len(featureList))
+                
+                for featureDictionary in featureList:
+
+                    term=str(featureDictionary['term'])
+                    rank=str(featureDictionary['rank'])
+                    sequence= str(featureDictionary['sequence'])
+                    
+                    #print ('Novel Feature' 
+                    #    + ':' + term
+                    #    + ':' + rank
+                    #    + ':' + sequence)
+                    
+                    if(term == 'five_prime_UTR'):
+                        fivePrimeSequence = sequence.lower()
+                    elif(term == 'three_prime_UTR'):
+                        threePrimeSequence = sequence.lower()
+                    elif(term == 'exon'):    
+                        exonDictionary[rank] = sequence.upper()
+                    elif(term == 'intron'):    
+                        intronDictionary[rank] = sequence.lower()
+                    else:
+                        raise Exception('Unknown Feature Term, expected exon or intron:' + term)
+                
+            else:
+                print ('No novel features were found. Presumably this is a known HLA allele. No problem.')
+                #raise Exception ('Unable to identify any HLA exon features, unable to annotate sequence.')
+
+            
+            annotatedSequence = fivePrimeSequence + '\n'
+
+            # arbitrarily choose 50.
+            # TODO: this loop range is arbitrary. 
+            # Maybe indexString should just loop through the exon and intron dictionarys
+            for i in range(1,50):
+                indexString = str(i)
+                if indexString in exonDictionary.keys():
+                    #print ('annotating exon#' + indexString + ':' + str(exonDictionary[indexString]))
+                    annotatedSequence += (str(exonDictionary[indexString]) + '\n')
+                    
+                if indexString in intronDictionary.keys():
+                    #print ('annotating intron#' + indexString + ':' + str(intronDictionary[indexString]))
+                    annotatedSequence += (str(intronDictionary[indexString]) + '\n')
+                
+            annotatedSequence += threePrimeSequence
+            
+            #print ('FOUND THIS ANNOTATED SEQUENCE:\n' + str(annotatedSequence))
+            
+            # Do the annotated sequence and rough sequence match?
+            if(cleanSequence(annotatedSequence).upper() == cleanSequence(roughFeatureSequence).upper()):
+            
+                return annotatedSequence
+            
+            else:
+                raise Exception('Annotated sequence and rough sequence do not match. Something went wrong. Unable to annotate features.')
+        
     
+            
+        else:
+            raise Exception ('No keys found in the JSON Dictionary, unable to annotate sequence.')
+            # no keys in JSON dictionary.
+            #return roughFeatureSequence
+
+    
+        raise Exception ('Reached end of parsing without returning a value.')
+    
+    
+    except Exception:
+        print 'Exception when parsing exons:'
+        print sys.exc_info()[0]
+        print sys.exc_info()[1]
+        tkMessageBox.showinfo('Exon Parsing Error', 
+            'I had trouble annotating your sequence:\n' +  str(sys.exc_info()[0]) + str(sys.exc_info()[1])) 
+        return roughFeatureSequence
+        
+        #raise
+        
 
 def cleanSequence(inputSequenceText):
     # Trim out any spaces, tabs, newlines. 
