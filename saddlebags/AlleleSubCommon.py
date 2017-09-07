@@ -182,12 +182,15 @@ def parseExons(roughFeatureSequence, alleleCallWithGFEJson):
         # now parsedJson should be a normal dictionary.
         # loop through dictionary keys
         
+        print ('Resulting JSON value:\n' + str(parsedJson))
+        
         if (len(parsedJson.keys()) > 1):
             
             # Is sequence novel?
             if 'typing_status' in parsedJson.keys():
                 print ('typing_status element was found.')
             else:
+                print ('JSON Results:' + str(parsedJson))
                 raise Exception ('No typing_status element was found in Json results. Cannot continue.')
             
             typingStatusDictionary = parsedJson['typing_status']
@@ -261,8 +264,28 @@ def parseExons(roughFeatureSequence, alleleCallWithGFEJson):
             else:
                 print ('No novel features were found. Presumably this is a known HLA allele. No problem.')
                 #raise Exception ('Unable to identify any HLA exon features, unable to annotate sequence.')
+            
+            if (len(fivePrimeSequence) < 1):
+                print ('Rough Sequence:\n' + cleanSequence(roughFeatureSequence).upper())
+                print ('Annotated Sequence:\n' + cleanSequence(annotatedSequence).upper())
+                raise Exception('GFE service did not find a 5\' UTR sequence. You will need to annotate the genomic features manually.')
+            # What if the reported 5' UTR is less than what is returned by GFE?
+            elif cleanSequence(fivePrimeSequence).upper() in cleanSequence(roughFeatureSequence).upper():
+                # This means that we provided a longer sequence than what is available in the GFE service.
+                #tkMessageBox.showinfo('Short 5\' Sequence', 
+                #    'The 5\' sequence from the GFE service is shorter than your provided sequence.\n'
+                #    + 'I will use your sequence instead.'
+                #     )
+                beginIndex = cleanSequence(roughFeatureSequence).upper().find(cleanSequence(fivePrimeSequence).upper())
+                endIndex = beginIndex + len(fivePrimeSequence)
+                print ('GFE sequence exists in rough sequence, at index: (' + str(beginIndex) + ':' + str(endIndex) + ')')
+                print ('previous fivePrime Sequence=\n' + fivePrimeSequence)
+                fivePrimeSequence = cleanSequence(roughFeatureSequence)[0:endIndex].lower()
+                print ('new fivePrime Sequence=\n' + fivePrimeSequence)
+            #print ('FOUND THIS ANNOTATED SEQUENCE:\n' + str(annotatedSequence))
 
             
+            print ('Annotating 5\' UTR:' + str(fivePrimeSequence))
             annotatedSequence = fivePrimeSequence + '\n'
 
             # arbitrarily choose 50.
@@ -271,24 +294,47 @@ def parseExons(roughFeatureSequence, alleleCallWithGFEJson):
             for i in range(1,50):
                 indexString = str(i)
                 if indexString in exonDictionary.keys():
-                    #print ('annotating exon#' + indexString + ':' + str(exonDictionary[indexString]))
+                    print ('Annotating exon#' + indexString + ':' + str(exonDictionary[indexString]))
                     annotatedSequence += (str(exonDictionary[indexString]) + '\n')
                     
                 if indexString in intronDictionary.keys():
-                    #print ('annotating intron#' + indexString + ':' + str(intronDictionary[indexString]))
+                    print ('Annotating intron#' + indexString + ':' + str(intronDictionary[indexString]))
                     annotatedSequence += (str(intronDictionary[indexString]) + '\n')
                 
-            annotatedSequence += threePrimeSequence
+            print ('Annotating 3\' UTR:' + str(threePrimeSequence))
             
-            #print ('FOUND THIS ANNOTATED SEQUENCE:\n' + str(annotatedSequence))
+            if (len(threePrimeSequence) < 1):
+                #print ('Rough Sequence:\n' + cleanSequence(roughFeatureSequence).upper())
+                #print ('Annotated Sequence:\n' + cleanSequence(annotatedSequence).upper())
+
+                #raise Exception('GFE service did not find a 3\' UTR sequence. You will need to annotate the genomic features manually.')
+                print('There is no three prime sequence.')
+                
+                # if sequence so far is in the rough sequence
+                if cleanSequence(annotatedSequence).upper() in cleanSequence(roughFeatureSequence).upper():
+                    # use rest of the sequence as the UTR.
+                    beginIndex = cleanSequence(roughFeatureSequence).upper().find(cleanSequence(annotatedSequence).upper()) + len(cleanSequence(annotatedSequence))
+                    #endIndex = len(roughFeatureSequence)
+                    threePrimeSequence = cleanSequence(roughFeatureSequence)[beginIndex:].lower()
+                    print('Using the rest of the sequence as the 3\' UTR:\n' + threePrimeSequence)
+                    annotatedSequence += threePrimeSequence
+                
+                
+            else:
             
+                annotatedSequence += threePrimeSequence
+            
+            # TODO: I need to have better checks here.  What is missing?
             # Do the annotated sequence and rough sequence match?
             if(cleanSequence(annotatedSequence).upper() == cleanSequence(roughFeatureSequence).upper()):
             
                 return annotatedSequence
             
             else:
-                raise Exception('Annotated sequence and rough sequence do not match. Something went wrong. Unable to annotate features.')
+                print ('Rough Sequence:\n' + cleanSequence(roughFeatureSequence).upper())
+                print ('Annotated Sequence:\n' + cleanSequence(annotatedSequence).upper())
+
+                raise Exception('Annotated sequence and rough sequence do not match. You will have to manually annotate the features.')
         
     
             
@@ -306,7 +352,7 @@ def parseExons(roughFeatureSequence, alleleCallWithGFEJson):
         print sys.exc_info()[0]
         print sys.exc_info()[1]
         tkMessageBox.showinfo('Exon Parsing Error', 
-            'I had trouble annotating your sequence:\n' +  str(sys.exc_info()[0]) + str(sys.exc_info()[1])) 
+            'I had trouble annotating your sequence:\n' +  str(str(sys.exc_info()[1]) + '. You will have to annotate manually.')) 
         return roughFeatureSequence
         
         #raise
@@ -476,13 +522,7 @@ def loadConfigurationFile():
         # I think I'll use this value for both EMBL and IMGT submissions, if it applies.
         assignConfigurationValue('test_submission', '1')
         
-        # I'm storing FTP without the ftp:// identifier, because it is not necessary.
-        # The test and prod ftp sites have the same address. This is intentional, embl doesn't have a test ftp
-        assignConfigurationValue('embl_ftp_upload_site_test', 'webin.ebi.ac.uk')
-        assignConfigurationValue('embl_ftp_upload_site_prod', 'webin.ebi.ac.uk')
-        assignConfigurationValue('embl_rest_address_test', 'https://www-test.ebi.ac.uk/ena/submit/drop-box/submit/')
-        assignConfigurationValue('embl_rest_address_prod', 'https://www.ebi.ac.uk/ena/submit/drop-box/submit/')
-        assignConfigurationValue('nmdp_act_rest_address', 'http://act.b12x.org/act' )
+
 
     else:
         print ('The config file already exists, I will load it:\n' + globalVariables['config_file_location'])
@@ -493,4 +533,13 @@ def loadConfigurationFile():
         for child in root:
             assignConfigurationValue(child.tag, child.text)
             
+    # TODO: I meant to have this inside the if/else.  Moved it temporarily because I need this information in there.
+            
+    # I'm storing FTP without the ftp:// identifier, because it is not necessary.
+    # The test and prod ftp sites have the same address. This is intentional, embl doesn't have a test ftp
+    assignConfigurationValue('embl_ftp_upload_site_test', 'webin.ebi.ac.uk')
+    assignConfigurationValue('embl_ftp_upload_site_prod', 'webin.ebi.ac.uk')
+    assignConfigurationValue('embl_rest_address_test', 'https://www-test.ebi.ac.uk/ena/submit/drop-box/submit/')
+    assignConfigurationValue('embl_rest_address_prod', 'https://www.ebi.ac.uk/ena/submit/drop-box/submit/')
+    assignConfigurationValue('nmdp_act_rest_address', 'http://act.b12x.org/act' )
        

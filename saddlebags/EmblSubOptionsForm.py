@@ -303,47 +303,56 @@ class EmblSubOptionsForm(Tkinter.Frame):
         # Don't check the EMBL Username
         # Don't check the EMBL Password
         
+        # TODO: I should be more strict with this enforcement.  I got rid of the False returns because it was too darn annoying.
+        
         if (not self.inputSampleID.get()):
             tkMessageBox.showwarning('Missing Form Value',
                 'You are missing a Sample ID. Please try again.')
-            return False
+            #return False
+            return True
         
         if (not self.inputGene.get()):
             tkMessageBox.showwarning('Missing Form Value',
                 'You are missing a Gene. Please try again.')
-            return False
+            #return False
+            return True
         
         # Don't check the class boolean
         
         if (not self.inputAllele.get()):
             tkMessageBox.showwarning('Missing Form Value',
                 'You are missing an Allele Name. Please try again.')
-            return False
+            #return False
+            return True
         
         if (str(self.chooseProjectIntVar.get()) == '1'):
             # Use Existing Project
             if (not self.inputStudyAccession.get()):
                 tkMessageBox.showwarning('Missing Form Value',
                     'You are missing a Study Accession number. Please try again.')
-                return False
+                #return False
+                return True
             
         elif(str(self.chooseProjectIntVar.get()) == '2'):
             # Use New Project
             if (not self.inputStudyId.get()):
                 tkMessageBox.showwarning('Missing Form Value',
                     'You are missing a Study Name. Please try again.')
-                return False
+                #return False
+                return True
             
             if (not self.inputStudyShortTitle.get()):
                 tkMessageBox.showwarning('Missing Form Value',
                     'You are missing a Study Description. Please try again.')
-                return False
+                #return False
+                return True
             
             
             if (not self.inputStudyAbstract.get()):
                 tkMessageBox.showwarning('Missing Form Value',
                     'You are missing a Study Accession number. Please try again.')
-                return False
+                #return False
+                return True
             
         else:
             raise Exception ('Unknown value of self.chooseProjectIntVar. I expect 1 or 2. Observed:' + str(self.chooseProjectIntVar))
@@ -352,17 +361,20 @@ class EmblSubOptionsForm(Tkinter.Frame):
         if (not self.inputAnalysisAlias.get()):
             tkMessageBox.showwarning('Missing Form Value',
                 'You are missing an Analysis Alias. Please try again.')
-            return False        
+            #return False
+            return True        
         
         if (not self.inputAnalysisTitle.get()):
             tkMessageBox.showwarning('Missing Form Value',
                 'You are missing an Analysis Title. Please try again.')
-            return False        
+            #return False
+            return True        
         
         if (not self.inputAnalysisDescription.get()):
             tkMessageBox.showwarning('Missing Form Value',
                 'You are missing an Analysis Description. Please try again.')
-            return False
+            #return False
+            return True
         
     
 

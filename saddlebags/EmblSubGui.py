@@ -562,7 +562,7 @@ class EmblSubGui(Tkinter.Frame):
             + 'to Marcel Tilanus:\n'
             + 'm.tilanus@mumc.nl\n\n'
             
-            + 'This code will be hosted at:\n'
+            + 'This code is hosted at:\n'
             + 'https://github.com/transplantation-\nimmunology/saddle-bags\n'
             + 'You will find more information on\n'
             + 'EMBL\'s data format on that page.'
