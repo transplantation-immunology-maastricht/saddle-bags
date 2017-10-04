@@ -28,7 +28,7 @@ from Tkinter import Scrollbar, BOTTOM, RIGHT, X, Y, NONE, HORIZONTAL, NORMAL, DI
 
 from EmblSubGenerator import EmblSubGenerator
 from EmblSubOptionsForm import EmblSubOptionsForm
-from AlleleSubCommon import createOutputFile, getConfigurationValue, assignConfigurationValue, parseExons, isSequenceAlreadyAnnotated, identifyGenomicFeatures
+from AlleleSubCommon import createOutputFile, getConfigurationValue, assignConfigurationValue, parseExons, isSequenceAlreadyAnnotated, identifyGenomicFeatures, assignIcon
 from EmblSubXml import createProjectXML, createProjectSubmissionXML, createAnalysisSubmissionXML , createAnalysisXML
 from EmblSubRest import performProjectSubmission, performAnalysisSubmission
 from AlleleSubCommonRest import fetchSequenceAlleleCallWithGFE
@@ -46,6 +46,9 @@ class EmblSubGui(Tkinter.Frame):
         Tkinter.Frame.__init__(self, root)
         root.title("Create and Submit an EMBL Sequence Submission")
         self.parent = root
+        
+        # Assign the icon of this sub-window.
+        assignIcon(self.parent)
 
         # Ctrl-A doesn't work by default in TK.  I guess I need to do it myself.
         root.bind_class("Text","<Control-a>", self.selectall)
@@ -104,12 +107,13 @@ class EmblSubGui(Tkinter.Frame):
 
         # Create  Frame for "Generate Submission" button.
         self.submButtonFrame = Tkinter.Frame(self)
-        self.submissionOptionsButton = Tkinter.Button(self.submButtonFrame, text='Submission Options', command=self.chooseSubmissionOptions)
+        self.submissionOptionsButton = Tkinter.Button(self.submButtonFrame, text='1) Submission Options', command=self.chooseSubmissionOptions)
         self.submissionOptionsButton.grid(row=0, column=0)
-        self.generateSubmissionButton = Tkinter.Button(self.submButtonFrame, text=unichr(8681) + ' Generate an EMBL submission ' + unichr(8681), command=self.constructSubmission)
-        self.generateSubmissionButton.grid(row=0, column=1)
-        self.annotateFeaturesButton = Tkinter.Button(self.submButtonFrame, text='Annotate Exons & Introns' , command=self.annotateInputSequence)
-        self.annotateFeaturesButton.grid(row=0, column=2)
+        self.annotateFeaturesButton = Tkinter.Button(self.submButtonFrame, text='2) Annotate Exons & Introns' , command=self.annotateInputSequence)
+        self.annotateFeaturesButton.grid(row=0, column=1)
+        self.generateSubmissionButton = Tkinter.Button(self.submButtonFrame, text='3) Generate an EMBL submission', command=self.constructSubmission)
+        self.generateSubmissionButton.grid(row=0, column=2)
+        
         self.submButtonFrame.pack()
 
        
@@ -139,10 +143,10 @@ class EmblSubGui(Tkinter.Frame):
         self.submOutputFrame.pack(expand=True, fill='both')
 
         self.uploadSubmissionFrame = Tkinter.Frame(self)        
-        self.uploadButton = Tkinter.Button(self.uploadSubmissionFrame, text='Upload Submission to EMBL', command=self.uploadSubmission)
-        self.uploadButton.pack(**button_opt)
-        self.saveSubmissionButton = Tkinter.Button(self.uploadSubmissionFrame, text='Save Submission to My Computer', command=self.saveSubmissionFile)
+        self.saveSubmissionButton = Tkinter.Button(self.uploadSubmissionFrame, text='4) Save Submission to My Computer', command=self.saveSubmissionFile)
         self.saveSubmissionButton.pack(**button_opt)
+        self.uploadButton = Tkinter.Button(self.uploadSubmissionFrame, text='5) Upload Submission to EMBL', command=self.uploadSubmission)
+        self.uploadButton.pack(**button_opt)
         self.exitButton = Tkinter.Button(self.uploadSubmissionFrame, text='Exit', command=self.saveAndExit)
         self.exitButton.pack(**button_opt)
         self.uploadSubmissionFrame.pack()
@@ -268,6 +272,7 @@ class EmblSubGui(Tkinter.Frame):
             
             outputFileObject = open(submissionFileName, 'w') 
             outputFileObject.write(submissionText) 
+            restLog.write('Submission Text:\n' + submissionText)
             outputFileObject.close()        
         
         except Exception:
@@ -282,7 +287,7 @@ class EmblSubGui(Tkinter.Frame):
             restLog.write('Failure to create submission file:' + str(sys.exc_info()[1]) + '\n')
             return
         
-        restLog.write('Submission file was created:' + str(submissionFileName) + '\n')
+        restLog.write('Submission file was created:\n' + str(submissionFileName) + '\n')
         
         # gzip the submission file.  Make a gz file.
         try:
@@ -302,7 +307,7 @@ class EmblSubGui(Tkinter.Frame):
             restLog.write('Failure to create zip file:' + str(sys.exc_info()[1]) + '\n')
             return
         
-        restLog.write('Zip file was created:' + str(zippedFileName) + '\n')
+        restLog.write('Zip file was created:\n' + str(zippedFileName) + '\n')
         
         # Calculate an MD5SUM
         try:
@@ -318,7 +323,7 @@ class EmblSubGui(Tkinter.Frame):
             restLog.write('Failure to create zip file:' + str(sys.exc_info()[1]) + '\n')
             return
         
-        restLog.write('md5 file was created:' + str(md5FileName) + '\n')
+        restLog.write('md5 file was created:\n' + str(md5FileName) + '\n')
 
         # Use FTP  to send the file to EMBL
         try:
@@ -375,12 +380,15 @@ class EmblSubGui(Tkinter.Frame):
                 return
             
             restLog.write('Project Submission XML files were created.\n')
+            restLog.write('Project Text:\n' + projectText)
+            restLog.write('Project Submission Text:\n' + projectText)
+            
                         
             # Use REST to submit this project
             try:
                 # Return value should be a tuple:
                 # (Success, ProjectAccession, Messages[])   
-                (projectSubmissionSuccess, projectAccessionNumber, projectErrorMessages) = performProjectSubmission(projectSubmissionFileName,projectFileName)
+                (projectSubmissionSuccess, projectAccessionNumber, projectErrorMessages) = performProjectSubmission(projectSubmissionFileName,projectFileName, restLog)
                 
                 if(projectSubmissionSuccess):
                     # Great. The project was created successfully. 
@@ -395,7 +403,7 @@ class EmblSubGui(Tkinter.Frame):
                     for errorMessage in projectErrorMessages:
                         messageText += ('\n' + errorMessage + '\n')                    
                     tkMessageBox.showinfo('Cannot Submit Project XML via REST', messageText)
-                    restLog.write('Failure to submit project submission file:' + str(sys.exc_info()[1]) + '\n')
+                    restLog.write('Failure to submit project submission file:' + str(sys.exc_info()[1]) + '\n' + messageText + '\n')
                     return
                 
             except Exception:
@@ -440,7 +448,7 @@ class EmblSubGui(Tkinter.Frame):
         try:
             # Return value should be a tuple:
             # (Success, analysisAccessionNumber, Messages[])   
-            (analysisSubmissionSuccess, analysisAccessionNumber, analysisErrorMessages) = performAnalysisSubmission(analysisSubmissionFileName,analysisFileName)
+            (analysisSubmissionSuccess, analysisAccessionNumber, analysisErrorMessages) = performAnalysisSubmission(analysisSubmissionFileName,analysisFileName, restLog)
             
             if(analysisSubmissionSuccess):
                 # Great. The analysis was created successfully. 
@@ -478,8 +486,8 @@ class EmblSubGui(Tkinter.Frame):
             + 'Find your submission files here:\n'
             + workingDirectory + '\n\n'
             + 'If EMBL successfully validates your sequence, you will\n'
-            + 'recieve an email with an EMBL Sequence accession number.\n'
-            + 'This *SEQUENCE* accession number is necessary for IMGT submission.\n'
+            + 'receive an email with an EMBL Sequence accession number.\n'
+            + 'This accession number is necessary for IMGT/HLA submission.\n'
             + 'Contact EMBL Support with your\nAnalysis Accession # if it has been\nmore than 48 hours since submission.\n'
 
             )
@@ -522,27 +530,39 @@ class EmblSubGui(Tkinter.Frame):
             + 'This tool requires you to submit a\n'
             + 'full length HLA allele, including\n'
             + '5\' and 3\' UTRs.\n\n'
+     
+            + 'To create & submit an EMBL HLA submission:\n\n'
+            + '1.) Paste a full-length HLA sequence in\n'
+            + 'the Annotated Sequence text area.\n'
+            + '2.) Push [Submission Options] and provide\n'
+            + 'the necessary sequence metadata.\n'
+            + '3.) Push [Annotate Exons & Introns] to\n'
+            + 'annotate your exons automatically.\n'
+            + '4.) Push [Generate an EMBL submission]\n'
+            + 'button to generate a submission.\n'
+            + '5.) Push [Upload Submission to EMBL]\n'
+            + 'to submit the sequence\n'
+            + 'using EMBL Webin REST interface\n\n'
+            
+            + 'If exon annotation is not available,\n'
+            + 'it may be necessary to annotate manually.\n\n'
+
+            + 'Sequences should follow this pattern:\n'
+            + '5\'utr EX1 int1 EX2 ... EX{X} 3\'utr\n\n'  
             
             + 'Use capital letters for exons,\n'
             + 'lowercase for introns & UTRs.\n\n'
             
-            + 'Push the "Example Sequence" button to see a small example of'
-            + ' a formatted sequence.\n'
-            + 'Sequences should follow this pattern:\n'
-            + '5\'utr EX1 int1 EX2 ... EX{X} 3\'utr\n\n'
+            + 'Push the "Example Sequence" button to see\n'
+            + 'an example of a formatted sequence.\n\n'
             
-            + 'To use this tool:\n'
-            + '1.) Fill in a Sample ID, Gene Name, and Allele.'
-            + ' This text will be included in the submission.\n'
-            + '2.) Paste your formatted sequence in the\n'
-            + 'Annotated Sequence text area.\n'
-            + '3.) Push \"Generate an EMBL submission\" button'
-            + ' to generate a submission.\n'
-            + '4.) Push the "Save the submission" button'
-            + ' to store the submission on your computer.\nYou can submit this file to EMBL.\n\n'
+            + 'More information available\n'
+            + 'on the MUMC Github Page:\n'
+            + 'https://github.com/transplantation-\n'
+            + 'immunology-maastricht/saddle-bags'
             
-            + 'All spaces, tabs, and newlines are'
-            + ' removed before the nucleotide sequence is translated.'
+            
+           
             )
         
     def contactInformation(self):
@@ -591,13 +611,30 @@ class EmblSubGui(Tkinter.Frame):
     def annotateInputSequence(self): 
         try:
             self.disableGUI()
-            roughNucleotideSequence = self.featureInputGuiObject.get('1.0', 'end')
-        
-            alleleCallWithGFE = fetchSequenceAlleleCallWithGFE(roughNucleotideSequence, getConfigurationValue('gene'))
-            annotatedSequence = parseExons(roughNucleotideSequence, alleleCallWithGFE)
-            self.featureInputGuiObject.delete('1.0','end')    
-            self.featureInputGuiObject.insert('1.0', annotatedSequence) 
+            self.update()   
+            
+            
+            # Popup.  This uses NMDP BTM ACT tool to annotate sequences.
+            if (tkMessageBox.askyesno('Annotate Exons?'
+                , 'This will annotate your exons using the\n'
+                + 'NMDP: BeTheMatch Gene Feature\n'
+                + 'Enumeration / Allele Calling Tool.\n\n'
+                + 'Please verify you have chosen the correct\n'
+                + 'HLA Gene Locus in the\n' 
+                + 'Submission Options menu.\n\n'
+                + 'Do you want to continue?'
+                
+                )):
+            
+            
+                roughNucleotideSequence = self.featureInputGuiObject.get('1.0', 'end')
+            
+                alleleCallWithGFE = fetchSequenceAlleleCallWithGFE(roughNucleotideSequence, getConfigurationValue('gene'))
+                annotatedSequence = parseExons(roughNucleotideSequence, alleleCallWithGFE)
+                self.featureInputGuiObject.delete('1.0','end')    
+                self.featureInputGuiObject.insert('1.0', annotatedSequence) 
     
+            self.update()
             self.enableGUI()
             
         except Exception, e:
@@ -617,7 +654,7 @@ class EmblSubGui(Tkinter.Frame):
             else:
                 if (tkMessageBox.askyesno('Auto - Annotate Exons?'
                     , 'It looks like your sequence features have not been identified.\n' +
-                    'Would you like to annotate using NMDP / Be The Match\n' +
+                    'Would you like to annotate using NMDP: BeTheMatch\n' +
                     'Gene Feature Enumeration Tool?')):
                     
                     self.annotateInputSequence()
@@ -680,6 +717,7 @@ class EmblSubGui(Tkinter.Frame):
         #self.featureInputGuiObject.config(state=newState)
         self.submissionOptionsButton.config(state=newState)
         self.generateSubmissionButton.config(state=newState)
+        self.annotateFeaturesButton.config(state=newState)
         #self.submOutputGuiObject.config(state=newState)
         self.uploadButton.config(state=newState)
         self.saveSubmissionButton.config(state=newState)

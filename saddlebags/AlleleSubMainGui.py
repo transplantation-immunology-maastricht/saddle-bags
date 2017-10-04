@@ -22,7 +22,7 @@ import Tkinter as Tk
 from EmblSubGui import EmblSubGui
 from ImgtSubGui import ImgtSubGui
 
-from AlleleSubCommon import loadConfigurationFile, writeConfigurationFile
+from AlleleSubCommon import loadConfigurationFile, writeConfigurationFile, assignIcon
 
 class AlleleSubMainGui(Tkinter.Frame):
 
@@ -36,7 +36,9 @@ class AlleleSubMainGui(Tkinter.Frame):
 
     # Initialize GUI elements
     def initialize(self):
-
+        
+        assignIcon(self.parent)
+        
         button_opt = {'fill': Tkconstants.BOTH, 'padx': 35, 'pady': 5}
         
         # Load configuration
@@ -54,12 +56,12 @@ class AlleleSubMainGui(Tkinter.Frame):
         self.instructionFrame = Tkinter.Frame(self)
         self.instructionText = Tkinter.StringVar()       
         self.instructionText.set('\nSaddlebags is an HLA Allele Submission Generator.\n'
-            + 'You can generate an allele submission text file for either\n'
-            + 'the EMBL/ENA or IMGT/HLA nucleotide databases. You must choose:\n\n'
-            + '(IMGT Submission is under development, and has been disabled for the Workshop.\n'
-            + 'Please use the standard IMGT web interface for HLA submission.)\n'
+            + 'You can generate an allele submission text file for\n'
+            + 'the EMBL/ENA nucleotide database. You must choose:\n\n'
+            #+ '(IMGT Submission is under development, and has been disabled for the Workshop.\n'
+            #+ 'Please use the standard IMGT web interface for HLA submission.)\n'
             )
-        Tkinter.Label(self.instructionFrame, width=85, height=8, textvariable=self.instructionText).pack()
+        Tkinter.Label(self.instructionFrame, width=85, height=5, textvariable=self.instructionText).pack()
         self.instructionFrame.pack()
            
         # Make a frame for the more-info buttons
@@ -98,31 +100,28 @@ class AlleleSubMainGui(Tkinter.Frame):
             'This software is to be used to create an\n'
             + 'EMBL-formatted submission document,\n'
             + 'which specifies a (novel) HLA allele.\n\n'       
-                       
-            + 'This tool requires you to submit a\n'
-            + 'full length HLA allele, including\n'
-            + '5\' and 3\' UTRs.\n\n'
+           
+            + 'To create & submit an EMBL HLA submission:\n\n'
+            + '1.) Choose [Generate an EMBL submission].\n'
+            + '2.) Paste a full-length HLA sequence in\n'
+            + 'the Annotated Sequence text area.\n'
+            + '3.) Push [Submission Options] and provide\n'
+            + 'the necessary sequence metadata.\n'
+            + '4.) Push [Annotate Exons & Introns] to\n'
+            + 'annotate your exons automatically.\n'
+            + '5.) Push [Generate an EMBL submission]\n'
+            + 'button to generate a submission.\n'
+            + '6.) Push [Upload Submission to EMBL]\n'
+            + 'to submit the sequence\n'
+            + 'using EMBL Webin REST interface\n\n'
             
-            + 'Use capital letters for exons,\n'
-            + 'lowercase for introns & UTRs.\n\n'
+            + 'Submission to IPD-IMGT/HLA is disabled.\n'
+            + 'This functionality will be added to\n' 
+            + 'future versions of SaddleBags.\n\n'
             
-            + 'Push the "Example Sequence" button to see a small example of'
-            + ' a formatted sequence.\n'
-            + 'Sequences should follow this pattern:\n'
-            + '5\'utr EX1 int1 EX2 ... EX{X} 3\'utr\n\n'
-            
-            + 'To use this tool:\n'
-            + '1.) Fill in a Sample ID, Gene Name, and Allele.'
-            + ' This text will be included in the submission.\n'
-            + '2.) Paste your formatted sequence in the\n'
-            + 'Annotated Sequence text area.\n'
-            + '3.) Push \"Generate an EMBL submission\" button'
-            + ' to generate a submission.\n'
-            + '4.) Push the "Save the submission" button'
-            + ' to store the submission on your computer.\nYou can submit this file to EMBL.\n\n'
-            
-            + 'All spaces, tabs, and newlines are'
-            + ' removed before the nucleotide sequence is translated.'
+            + 'All spaces, tabs, and newlines are\n'
+            + 'removed from your sequence before\n'
+            + 'the nucleotide sequence is translated.'
             )
         
         
@@ -144,7 +143,7 @@ class AlleleSubMainGui(Tkinter.Frame):
             + 'm.tilanus@mumc.nl\n\n'
             
             + 'This code will be hosted at:\n'
-            + 'https://github.com/transplantation-\nimmunology/saddle-bags\n'
+            + 'https://github.com/transplantation-\nimmunology-maastricht/saddle-bags\n'
             + 'You will find more information on\n'
             + 'EMBL\'s data format on that page.'
 
