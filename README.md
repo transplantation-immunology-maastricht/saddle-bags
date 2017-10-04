@@ -1,9 +1,9 @@
 # Saddlebags
-A tool for generating allele submissions for the EMBL and IMGT/HLA nucleotide databases. 
+A tool for generating allele submissions for the EMBL nucleotide database. 
 
 ## Download the executable
 Download an executable for Windows from the Release page.
-[Download Saddlebags for Windows Here](https://github.com/transplantation-immunology/saddle-bags/releases)
+[Download Saddlebags for Windows Here](https://github.com/transplantation-immunology-maastricht/saddle-bags/releases)
 
 ## Run using Python
 Alternatively, you can run this program using Python 2.7. This works for Mac and Linux users (or Windows). There are prerequesites, I recommend you install them inside an Anaconda environment. See Run_allele_submission.sh and Run_allele_submission.bat for an example of this in Linux and Windows environments, respectively.
@@ -20,15 +20,15 @@ To set up the environment in anaconda:
 
 Linux/Mac:  
 ```
-conda create --name AlleleSubEnvironment biopython six pycurl 
-source activate AlleleSubEnvironment  
+conda create --name minionvironment biopython six pycurl
+source activate minionvironment  
 pip install pyinstaller packaging  
 source deactivate  
 ```  
 Windows:  
 ```  
-conda create --name AlleleSubEnvironment biopython six pywin32 pycurl
-call activate AlleleSubEnvironment && pip install pyinstaller packaging && call deactivate  
+conda create --name minionvironment biopython six pywin32 pycurl
+call activate minionvironment && pip install pyinstaller packaging && call deactivate  
 ```
 
 ## Run using a bash or .bat script using anaconda
@@ -42,7 +42,13 @@ Windows:
 Run_allele_submission.bat
 ```
 
-## Input Data
+## Annotating your exons
+This service uses the [NMDP BeTheMatch Allele Calling Tool](https://github.com/nmdp-bioinformatics/service-act) to automatically annotate the genomic features of a full length HLA sequence. 
+
+If the service is unavailable, or you are annotating nonstandard sequences, it may be necessary to identify your genomic features manually. We have provided a list of common sequences surrounding exon boundaries to assist with this. See the [Release Page](https://github.com/transplantation-immunology/saddle-bags/releases) for a .pdf reference.  These sequences can probably be found within your HLA consensus sequence at exon boundary sites. It may also help to use the [IMGT/HLA sequence alignment tool](http://www.ebi.ac.uk/ipd/imgt/hla/align.html) for more information on common exon patterns.
+
+## Sequence Format for Manual Annotation
+
 Input data sequence must consist of  
 1) 5' UTR  
 2) Any number of Exons, with an introns distributed between them.  
@@ -66,18 +72,16 @@ tagctagct
 AGCTAGCTA  
 gctagctagctag  
 
-## Annotating your exons
-Identifying the exons in your HLA sequence is a nontrivial challenge. We have provided a list of common sequences surrounding exon boundaries. See the [Release Page](https://github.com/transplantation-immunology/saddle-bags/releases) for a .pdf reference.  These sequences can probably be found within your HLA consensus sequence at exon boundary sites. It may also help to use the [IMGT/HLA sequence alignment tool](http://www.ebi.ac.uk/ipd/imgt/hla/align.html) for more information on common exon patterns.
 
 ## EMBL Metadata Input format
-Sample ID: Specified by the submitting laboratory, you may use a value that is informative to you.
-Gene:
-Class I or II:
-Allele Local Name:
+Sample ID: Specified by the submitting laboratory, you may use a value that is informative to you, such as a sample or experiment number.
+Gene: Specify the gene name.  For example, 'HLA-A'
+Class I or II: This tool requires a full-length Class I or II HLA sequence.
+Allele Local Name: Specify a identifier for this sequence. You may use the name of the next-closest HLA allele.
 
 Saddlebags will submit to EMBL Test environment by default, you must specify that the software target the Live / Production environment.
 
-EMBL sequence submissions must be associated with a Study/Project. You may specify the accession number of an existing EMBL study (Get this accession number from [EMBL Webin](https://www.ebi.ac.uk/ena/submit/sra/#home) ), or Saddlebags can create a new project to your specifications.
+EMBL sequence submissions must be associated with a Study/Project. You may specify the accession number of an existing EMBL study (Get this accession number from [EMBL Webin](https://www.ebi.ac.uk/ena/submit/sra/#home) ), or Saddlebags can create a new project to your specifications. This sequence metadata is collected by Saddlebags and included in the EMBL submission.
 
 
 ## For more information on EMBL's ENA format:  
@@ -87,6 +91,4 @@ ftp://ftp.ebi.ac.uk/pub/databases/embl/doc/usrman.txt
 ftp://ftp.ebi.ac.uk/pub/databases/embl/doc/FT_current.html  
 http://www.ebi.ac.uk/ena/software/flat-file-validator  
 
-## For more information on IMGT metadata:
 
-TODO: Put a description of the IMGT metadata form. There is lots of information that goes in here, and much of it is confusing.  How should Primers and Sequencing methodology be provided? What are the options for Ethnic Origin or Sex or Cosanguineous?
