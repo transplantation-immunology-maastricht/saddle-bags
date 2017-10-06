@@ -160,9 +160,9 @@ class ImgtSubGenerator():
         # TODO: James suggested that I only allow valid fully-sequenced alleles.
         # Should I validate this, or should I leave that work to IMGT?
         
-        sourceText += 'FT                  /HLA-A*="02:01,03new"\n'
-        sourceText += 'FT                  /HLA-C*="07,-"\n'
-        sourceText += 'FT                  /HLA-B*="07,-"\n'
+        sourceText += 'FT                  /HLA-A*="01"\n'
+        sourceText += 'FT                  /HLA-C*="07"\n'
+        sourceText += 'FT                  /HLA-B*="07"\n'
         sourceText += 'FT                  /HLA-DRB1*="15:01,-"\n'
         
         return sourceText
@@ -191,33 +191,22 @@ class ImgtSubGenerator():
         # Errr, nodes underneath the Primer nodes.
         # They put a "tab" character between some of this data.  Why? Because Tabs, sigh.
                 
-        methodsText += 'FT                  /primer_1="97022    GAGCCCCGCTTCAACGCC    E2    257-274"\n'
-        methodsText += 'FT                  /primer_2="09148    CCAGGCGTGGCTCTCAGA    5UT    -265--248"\n'
-        methodsText += 'FT                  /primer_3="09152    AACCTACGTAGGGTCCTTCA    5UT    -161--142"\n'
-        methodsText += 'FT                  /primer_4="09154    AGTGTCGTCGCGGTCGCT    5UT    -72--55"\n'
-        methodsText += 'FT                  /primer_5="09167    CAGACSCCGAGGATGGCC    5UT    -12-6"\n'
-        methodsText += 'FT                  /primer_6="09162    AACACCCAACACACATTAGGT    I7    2745-2765"\n'
-        methodsText += 'FT                  /primer_7="09168    GGGAGCACAGGTCAGCGTGGGAAG    3UT    3075-3098"\n'
-        methodsText += 'FT                  /primer_8="98008    GTTTAGGCCAAAAATYCCCCC    I2    635-655"\n'
+        methodsText += 'FT                  /primer_1=""\n'
+        methodsText += 'FT                  /primer_2=""\n'
+        methodsText += 'FT                  /primer_3=""\n'
+        methodsText += 'FT                  /primer_4=""\n'
+        methodsText += 'FT                  /primer_5=""\n'
+        methodsText += 'FT                  /primer_6=""\n'
+        methodsText += 'FT                  /primer_7=""\n'
+        methodsText += 'FT                  /primer_8=""\n'
         methodsText += 'FT                  /no_of_reactions="3"\n'
         methodsText += 'FT                  /sequencing_direction="Both"\n'
-        
         
         # TODO: There's something up with these primers.
         # Why are they in the comments? Did we run out of space?
         
-        methodsText += 'FT                  /method_comments="98021 GTCCAGGCTGGTGTCTGG I3 1432-1449\n' 
-        methodsText += 'FT                  01026seq GGGGAGAAGCAASGGGC I1 108-124  02100seq\n'
-        methodsText += 'FT                  CCGCACGCACCCACCG 5UT -44--29  03026 GAGGTTCCTCTAGGACCTTAA I5\n'
-        methodsText += 'FT                  2439-2459  03052 TAAGGAGGGAGAYGGGGGT I4 1847-1865  03055\n'
-        methodsText += 'FT                  CTGCYGTGAKGTGGAGGAG E5 2035-2053  14256 GAATCCTCCTGGGTTTCCAG\n'
-        methodsText += 'FT                  I3 1115-1134  97094seq TGTCGTCCACGTAGC E2 279-293  98070\n'
-        methodsText += 'FT                  GGCCTAAACTGAAAATGAAACC I2 622-643  00029 GGTCCCAATTGTCTCCCCTC\n'
-        methodsText += 'FT                  I3 1055-1074  02038seq GGCCAGCAATGATGC E5 1981-1995  03017\n'
-        methodsText += 'FT                  CCTTTGCAGAAACAAAGTCAGGGT 3UT 2970-2993  03050\n'
-        methodsText += 'FT                  TTAAGGTCCTAGAGGAACCTC I5 2439-2459  14019 CCAGACACCAGCCTGGAC\n'
-        methodsText += 'FT                  I3 1432-1449      Exons and introns are defined as in regular\n'
-        methodsText += 'FT                  HLA genes although in this allele a stopcodon is present in\n'
+        methodsText += 'FT                  /method_comments=""\n'
+        methodsText += 'FT                  HLA genes  present in\n'
         methodsText += 'FT                  Exon 2."\n'
         
         # This is the "closest allele, right?"

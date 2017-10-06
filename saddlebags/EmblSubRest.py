@@ -22,22 +22,27 @@ import xml.etree.ElementTree as ET
 
 # Here we have methods to perform REST interactions necessary for EMBL submission.
 
-def performProjectSubmission(submissionFileName, projectFileName):
+def performProjectSubmission(submissionFileName, projectFileName, restLog):
     POST_DATA = [('SUBMISSION', (pycurl.FORM_FILE, submissionFileName)), 
         ('PROJECT', (pycurl.FORM_FILE, projectFileName))]
     
-    responseText = performSubmission(submissionFileName, POST_DATA)    
-    return interpretProjectSubmissionResults(responseText)
+    responseText = performSubmission(submissionFileName, POST_DATA, restLog)    
+    return interpretProjectSubmissionResults(responseText, restLog)
 
-def performAnalysisSubmission(submissionFileName, analysisFileName):
+def performAnalysisSubmission(submissionFileName, analysisFileName, restLog):
     POST_DATA = [('SUBMISSION', (pycurl.FORM_FILE, submissionFileName)), 
         ('ANALYSIS', (pycurl.FORM_FILE, analysisFileName))]
     
-    responseText = performSubmission(submissionFileName, POST_DATA)
+    responseText = performSubmission(submissionFileName, POST_DATA, restLog)
     
-    return interpretAnalysisSubmissionResults(responseText)
+    return interpretAnalysisSubmissionResults(responseText, restLog)
     
-def performSubmission(submissionFileName, POST_DATA):
+def performSubmission(submissionFileName, POST_DATA, restLog):
+    
+    restLog.write('Performing submission of ' + submissionFileName + '\n')
+    restLog.write('POST Data:\n' + str(POST_DATA) + '\n')
+    
+    
     if (str(getConfigurationValue('test_submission')) == '0'):
         print 'THIS IS A LIVE SUBMISSION AT EMBL.'
         requestURL = str(getConfigurationValue('embl_rest_address_prod')) + '?auth=ENA%20' + str(getConfigurationValue('embl_username')) + '%20' + str(getConfigurationValue('embl_password'))
@@ -69,7 +74,11 @@ def performSubmission(submissionFileName, POST_DATA):
     
     return responseText
         
-def interpretProjectSubmissionResults(responseText):    
+def interpretProjectSubmissionResults(responseText, restLog):
+    
+    restLog.write('Parsing Project Submission Results:\n' + str(responseText) + '\n')
+     
+       
     # Open XML to report results:
     root = ET.fromstring(responseText)  
     submissionSuccess = (root.attrib['success'] == 'true')
@@ -97,7 +106,11 @@ def interpretProjectSubmissionResults(responseText):
     # (Success, ProjectAccession, Messages[])      
     return (submissionSuccess,projectAccession,messages)
 
-def interpretAnalysisSubmissionResults(responseText):    
+def interpretAnalysisSubmissionResults(responseText, restLog):
+    
+    restLog.write('Parsing Analysis Submission Results:\n' + str(responseText) + '\n')
+    
+        
     root = ET.fromstring(responseText)  
     submissionSuccess = (root.attrib['success'] == 'true')
     

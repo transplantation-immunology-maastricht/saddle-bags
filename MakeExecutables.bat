@@ -21,10 +21,10 @@
 :: See the file README.MD for how to set up your anaconda environment.
 
 SET CodePath=saddlebags
-SET BinPath=..\bin
+SET BinPath=bin
 SET SpecFile=AlleleSubInstallerOptions_Windows.spec
 SET CondaEnvironment=minionvironment
 
 :: Run Pyinstaller to create executables
-cd %CodePath%
+:: cd %CodePath%
 activate %CondaEnvironment% && pyinstaller %SpecFile% --distpath %BinPath% --clean && deactivate

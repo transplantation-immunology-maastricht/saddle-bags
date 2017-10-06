@@ -16,15 +16,23 @@
 import Tkinter, Tkconstants, tkMessageBox
 from Tkinter import Radiobutton, IntVar
 
-from AlleleSubCommon import getConfigurationValue, assignConfigurationValue
+from AlleleSubCommon import getConfigurationValue, assignConfigurationValue, assignIcon
 
-class EmblSubOptionsForm(Tkinter.Frame):
+from ScrolledWindow import VerticalScrolledFrame
+
+class EmblSubOptionsForm(VerticalScrolledFrame):
         
     # Initialize the GUI
     def __init__(self, root):
-        Tkinter.Frame.__init__(self, root)
+        
+        #Tkinter.Frame.__init__(self, root)
+        VerticalScrolledFrame.__init__(self, root)
+        
         root.title("Choose EMBL Submission Options")
         self.parent = root
+        
+        # Assign the icon of this sub-window.
+        assignIcon(self.parent)
 
         #button_opt = {'fill': Tkconstants.BOTH, 'padx': 35, 'pady': 5}
         
@@ -37,17 +45,20 @@ class EmblSubOptionsForm(Tkinter.Frame):
         # This window should not be resizeable. I guess.
         self.parent.resizable(width=False, height=False)
         
-                #Standard Inputs widths for the form elements
+        #Standard Inputs widths for the form elements
         formInputWidth = 30
         labelInputWidth = 30
         
-        self.instructionsFrame = Tkinter.Frame(self)  
+        self.instructionsFrame = Tkinter.Frame(self.interior)  
         self.instructionText = Tkinter.StringVar()       
-        self.instructionText.set('\nThese options are required for an EMBL allele submission.\n')        
-        Tkinter.Label(self.instructionsFrame, width=85, height=3, textvariable=self.instructionText).pack()
+        self.instructionText.set('\nProvide this required sequence metadata, please.\n' 
+                + 'The Allele Local Name is provided by the submitting laboratory.\n'
+                + 'You may name it similar to the closest known allele,\n'
+                + 'if you wish.')        
+        Tkinter.Label(self.instructionsFrame, width=85, height=6, textvariable=self.instructionText).pack()
         self.instructionsFrame.pack()
         
-        self.submissionDetailsInputFrame2 = Tkinter.Frame(self)
+        self.submissionDetailsInputFrame2 = Tkinter.Frame(self.interior)
   
         self.sampleIDInstrText = Tkinter.StringVar()
         self.sampleIDInstrText.set('Sample ID:')
@@ -76,14 +87,14 @@ class EmblSubOptionsForm(Tkinter.Frame):
                 
                 
         # Make a frame to contain the Test/Production radio buttons.
-        self.testProductionFrame = Tkinter.Frame(self)
+        self.testProductionFrame = Tkinter.Frame(self.interior)
         
         self.testProductionInstrText = Tkinter.StringVar()
         self.testProductionInstrText.set('\nBy default, you submit to the EMBL test servers,\n'
             + 'where submissions are regularly deleted.\n'
             + 'change this option if you want to submit to the live EMBL environment.\n'
             + 'Login Credentials will not be stored, but they will be sent\n'
-            + 'to EMBL via secure https connection.\n'
+            + 'to EMBL via REST during allele submission.\n'
             )
         self.alleleInstrLabel = Tkinter.Label(self.testProductionFrame, width=70, height=7, textvariable=self.testProductionInstrText).pack()#.grid(row=2, column=0)
  
@@ -97,7 +108,7 @@ class EmblSubOptionsForm(Tkinter.Frame):
         self.testProductionFrame.pack()
      
         # Make a frame to contain the input variables
-        self.submissionDetailsInputFrame = Tkinter.Frame(self)
+        self.submissionDetailsInputFrame = Tkinter.Frame(self.interior)
 
         self.usernameInstrText = Tkinter.StringVar()
         self.usernameInstrText.set('EMBL Username:')
@@ -112,11 +123,25 @@ class EmblSubOptionsForm(Tkinter.Frame):
         self.inputPasswordEntry = Tkinter.Entry(self.submissionDetailsInputFrame, width=formInputWidth, textvariable=self.inputPassword, show="*").grid(row=1, column=1)
   
         self.submissionDetailsInputFrame.pack()
+  
+        # This frame just has instructions for how to use the Analysis options
+        self.analysisOptionsInputFrame = Tkinter.Frame(self.interior)  
+  
+        # TODO: Better instructions for how a user will use this?
+        self.analysisMetadataInstrText = Tkinter.StringVar()
+        self.analysisMetadataInstrText.set('\nEMBL will store the sequence in an "Analysis" object.\n'
+                + 'You must specify an analysis Alias, Title, and\n'
+                + 'Description for every submitted sequence.\n'
+                + 'The Alias must be unique.\n'
+            )
+        self.analysisMetadataLabel = Tkinter.Label(self.analysisOptionsInputFrame, width=70, height=5, textvariable=self.analysisMetadataInstrText).pack()#.grid(row=2, column=0)
+        self.analysisOptionsInputFrame.pack()
+       
         
         
         # Frame to specify Analysis Information
-        self.newAnalysisFrame = Tkinter.Frame(self)            
-
+        self.newAnalysisFrame = Tkinter.Frame(self.interior)    
+        
         self.analysisAliasInstrText = Tkinter.StringVar()
         self.analysisAliasInstrText.set('Analysis Alias:')
         self.analysisAliasInstrLabel = Tkinter.Label(self.newAnalysisFrame, width=labelInputWidth, height=1, textvariable=self.analysisAliasInstrText).grid(row=0, column=0)
@@ -136,18 +161,22 @@ class EmblSubOptionsForm(Tkinter.Frame):
         self.inputAnalysisDescriptionEntry = Tkinter.Entry(self.newAnalysisFrame, width=formInputWidth, textvariable=self.inputAnalysisDescription).grid(row=2, column=1)
         
         self.newAnalysisFrame.pack()
-        
-        
-        
+       
         # A Frame for specifing the details of the Study / Project
-        self.projectDetailsFrame = Tkinter.Frame(self)
+        self.projectDetailsFrame = Tkinter.Frame(self.interior)
         
         self.alleleInstrText = Tkinter.StringVar()
         self.alleleInstrText.set('\nEMBL requires that submissions are assigned to a Study/Project.\n'
-            + 'Will you provide an existing EMBL study accession #?\n'
-            + '(ex. \'PRJEB01234\')\n'
-            + 'Or will you specify a new study?\n')
-        self.alleleInstrLabel = Tkinter.Label(self.projectDetailsFrame, width=70, height=6, textvariable=self.alleleInstrText).pack()#.grid(row=2, column=0)
+            + 'You must either:\n\n'
+            + '1.) Provide an existing EMBL study/project accession #.\n'
+            + 'This was provided in a previous submission, or you can see a list of\n'
+            + 'your projects by logging into EMBL Webin. (ex. \'PRJEB01234\')\n'
+            + '\n'
+            + '2.) Specify metadata for a new study at EMBL. Provide an Identifier,\n'
+            + 'Title, and short Abstract for the new Study, and I will create\n'
+            + 'it automatically. Study Identifier must be Unique.'
+            )
+        self.alleleInstrLabel = Tkinter.Label(self.projectDetailsFrame, width=70, height=12, textvariable=self.alleleInstrText).pack()#.grid(row=2, column=0)
  
         self.chooseProjectIntVar = IntVar()
         self.chooseProjectIntVar.set(2)
@@ -193,7 +222,7 @@ class EmblSubOptionsForm(Tkinter.Frame):
         self.projectDetailsFrame.pack()
 
         # Make a frame for the save options button.
-        self.saveOptionsFrame = Tkinter.Frame(self)
+        self.saveOptionsFrame = Tkinter.Frame(self.interior)
         Tkinter.Button(self.saveOptionsFrame, text='Save Options', command=self.saveOptions).grid(row=0, column=0)
         self.saveOptionsFrame.pack()
         

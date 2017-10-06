@@ -23,9 +23,9 @@
 block_cipher = None
 
 
-a = Analysis(['AlleleSubMain.py'],
+a = Analysis(['saddlebags\AlleleSubMain.py'],
              binaries=None,
-             datas=None,
+             datas=[('images\horse_image_icon.ico', 'images')] ,
              hiddenimports=['six', 'packaging', 'packaging.requirements', 'packaging.version', 'packaging.specifiers', 'Tkinter', 'tkFileDialog', 'Tkconstants', 'saddlebags.AlleleSubMainGui'],
              hookspath=[],
              runtime_hooks=[],
@@ -44,4 +44,5 @@ exe = EXE(pyz,
           debug=False,
           strip=False,
           upx=True,
-          console=True )
+          console=False,
+          icon='images\horse_image_icon.ico' )

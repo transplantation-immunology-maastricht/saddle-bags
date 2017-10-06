@@ -16,11 +16,16 @@
 import xml.etree.ElementTree as ET
 import xml.dom.minidom
 
-from os.path import isdir, split
+from os.path import isdir, split, join, abspath
 from os import makedirs
 
 from Bio.Seq import Seq
 from Bio.Alphabet import generic_dna
+
+#from Tkinter import Image
+#from Tkinter import PhotoImage
+
+#from PIL import  Image, ImageTk
 
 # TODO: Maybe I shouldn't have GUI methods in here.
 # But it's hard to refactor those out.
@@ -28,12 +33,88 @@ from Bio.Alphabet import generic_dna
 # That's the strategy.
 import tkMessageBox
 
+
+#from PIL import  Image, ImageTk
+
 import json
 
 import sys
 from os.path import join, isfile, expanduser
 
 from HlaGene import HlaGene, GeneLocus
+
+
+def assignIcon(tkRootWindow):
+    print ('Assigning Icon for the GUI.')
+    #imageFileLocation = 'horse_image.png'
+    #iconFileLocation = '../images/horse_image_icon.ico'
+    #imagePngLocation = 'TestObject.png'
+    #imageBmpLocation = '@horse_image.bmp'
+    #imageBmpLocation = 'testbmp.bmp'
+    #imageXbmlocation = 'horse_image.xbm'
+    # imageGifLocation = 'horse_image.gif'
+    
+    # Try to assign the icon on Windows:
+    #try:
+    #    iconFileLocation = '../images/horse_image_icon.ico'
+    ##    tkRootWindow.wm_iconbitmap(iconFileLocation)
+    #except Exception:
+    #    print('Could not assign icon. Probably not running in Windows.')
+        
+    #    print sys.exc_info()[0]
+    #    print sys.exc_info()[1]
+        
+    # Find window location inside executable
+    try:
+        # PyInstaller creates a temp folder and stores path in _MEIPASS
+        base_path = sys._MEIPASS
+        #imageFileLocation = join(base_path, 'images\\horse_image_icon.ico')
+        iconFileLocation = resourcePath('images\\horse_image_icon.ico')
+        #print ('I am assigning this icon:' + imageFileLocation)
+        tkRootWindow.wm_iconbitmap(iconFileLocation)
+    except Exception:
+        #base_path = os.path.abspath(".")
+        print('Could not assign icon based on path inside executable.')
+        
+        print sys.exc_info()[0]
+        print sys.exc_info()[1]
+
+        
+    # Linux
+    # I have given up on setting an icon in linux. I can't seem to load up any file format.
+    #try:
+   #     from Tkinter import PhotoImage
+        #root = Tk()        
+    #    icon = PhotoImage(file=imageGifLocation)
+    #    tkRootWindow.tk.call('wm', 'iconphoto', tkRootWindow._w, icon)
+                #root.mainloop()
+       
+        #from PIL import  Image, ImageTk
+        #img = ImageTk.PhotoImage(Image.open(imageXbmlocation))
+        
+        #print ('Image opened.')
+        
+        #tkRootWindow.wm_iconbitmap(imageXbmlocation)
+        
+        #tkRootWindow.iconphoto(True, img)
+        
+        #img = Image("photo", file=imageFileLocation)
+        #photo = PhotoImage(file=imageFileLocation)
+        #tkRootWindow.tk.call('wm','iconphoto',tkRootWindow._w,img)
+        #img = ImageTk.PhotoImage(Image.open(imagePngLocation))
+
+    #except Exception:
+    #    print('Could not assign icon. This is probably not Linux.')
+        
+    #    print sys.exc_info()[0]
+    #    print sys.exc_info()[1]
+        
+        
+def resourcePath(relativePath):
+    if hasattr(sys, '_MEIPASS'):
+        return join(sys._MEIPASS, relativePath)
+    return join(abspath('.'), relativePath)
+
 
 # This is a short wrapper method to use biopython's translation method. 
 # Most of this code is just checking for things that went wrong
@@ -334,7 +415,7 @@ def parseExons(roughFeatureSequence, alleleCallWithGFEJson):
                 print ('Rough Sequence:\n' + cleanSequence(roughFeatureSequence).upper())
                 print ('Annotated Sequence:\n' + cleanSequence(annotatedSequence).upper())
 
-                raise Exception('Annotated sequence and rough sequence do not match. You will have to manually annotate the features.')
+                raise Exception('Annotated sequence and rough sequence do not match.')
         
     
             
@@ -352,7 +433,9 @@ def parseExons(roughFeatureSequence, alleleCallWithGFEJson):
         print sys.exc_info()[0]
         print sys.exc_info()[1]
         tkMessageBox.showinfo('Exon Parsing Error', 
-            'I had trouble annotating your sequence:\n' +  str(str(sys.exc_info()[1]) + '. You will have to annotate manually.')) 
+            'I had trouble annotating your sequence:\n' 
+            +  str(str(sys.exc_info()[1]) 
+            + '. You will have to annotate manually.')) 
         return roughFeatureSequence
         
         #raise
