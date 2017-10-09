@@ -66,8 +66,8 @@ class AlleleSubMainGui(Tkinter.Frame):
            
         # Make a frame for the more-info buttons
         self.moreInfoFrame = Tkinter.Frame(self)
-        Tkinter.Button(self.moreInfoFrame, text='Generate an EMBL submission', command=lambda: self.openAlleleSubGUI('EMBL')).grid(row=0, column=0)
-        Tkinter.Button(self.moreInfoFrame, text='Generate an IMGT submission', command=lambda: self.openAlleleSubGUI('IMGT'), state=DISABLED).grid(row=0, column=1)
+        Tkinter.Button(self.moreInfoFrame, text='Generate an EMBL/ENA submission', command=lambda: self.openAlleleSubGUI('EMBL')).grid(row=0, column=0)
+        Tkinter.Button(self.moreInfoFrame, text='Generate an IMGT/HLA submission', command=lambda: self.openAlleleSubGUI('IMGT'), state=DISABLED).grid(row=0, column=1)
         Tkinter.Button(self.moreInfoFrame, text='    How to use this tool     ', command=self.howToUse).grid(row=1, column=0)
         Tkinter.Button(self.moreInfoFrame, text='Contacting and Citing MUMC', command=self.contactInformation).grid(row=1, column=1)
         self.moreInfoFrame.pack()
@@ -186,7 +186,7 @@ class AlleleSubMainGui(Tkinter.Frame):
         self.alleleSubRoot.bind("<Destroy>", self.onCloseOtherFrame)
         
         if(submissionType=='IMGT'):
-            print ('Opening the IMGT Submission GUI')
+            print ('Opening the IPD-IMGT/HLA Submission GUI')
             ImgtSubGui(self.alleleSubRoot).pack()
         elif(submissionType=='EMBL'):
             print ('Opening the EMBL Submission GUI')
