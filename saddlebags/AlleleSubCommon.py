@@ -19,8 +19,11 @@ import xml.dom.minidom
 from os.path import isdir, split, join, abspath
 from os import makedirs
 
+from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.Alphabet import generic_dna
+
+import StringIO
 
 #from Tkinter import Image
 #from Tkinter import PhotoImage
@@ -43,32 +46,28 @@ from os.path import join, isfile, expanduser
 
 from HlaGene import HlaGene, GeneLocus
 
+def getAlleleDescription():
+    # TODO: When I fetch a GFE, it will include the next closest allele. 
+    # Should I write an allele description for it?  I can generate a description like:
+    # "The closest allele found is A*01:01 but with a polymorphism blah blah."
+    # "IMGT/HLA requires a description of the next closest allele, Should I use this one?"
+    
+    
+    return ('The next closest allele is blah blah, with a polymorphism\n'
+    + 'at an important locus.')
+    
+    
+    
+    
+            
 
 def assignIcon(tkRootWindow):
     print ('Assigning Icon for the GUI.')
-    #imageFileLocation = 'horse_image.png'
-    #iconFileLocation = '../images/horse_image_icon.ico'
-    #imagePngLocation = 'TestObject.png'
-    #imageBmpLocation = '@horse_image.bmp'
-    #imageBmpLocation = 'testbmp.bmp'
-    #imageXbmlocation = 'horse_image.xbm'
-    # imageGifLocation = 'horse_image.gif'
-    
-    # Try to assign the icon on Windows:
-    #try:
-    #    iconFileLocation = '../images/horse_image_icon.ico'
-    ##    tkRootWindow.wm_iconbitmap(iconFileLocation)
-    #except Exception:
-    #    print('Could not assign icon. Probably not running in Windows.')
-        
-    #    print sys.exc_info()[0]
-    #    print sys.exc_info()[1]
-        
+
     # Find window location inside executable
     try:
         # PyInstaller creates a temp folder and stores path in _MEIPASS
-        base_path = sys._MEIPASS
-        #imageFileLocation = join(base_path, 'images\\horse_image_icon.ico')
+        #base_path = sys._MEIPASS
         iconFileLocation = resourcePath('images\\horse_image_icon.ico')
         #print ('I am assigning this icon:' + imageFileLocation)
         tkRootWindow.wm_iconbitmap(iconFileLocation)
@@ -79,35 +78,9 @@ def assignIcon(tkRootWindow):
         print sys.exc_info()[0]
         print sys.exc_info()[1]
 
-        
     # Linux
     # I have given up on setting an icon in linux. I can't seem to load up any file format.
-    #try:
-   #     from Tkinter import PhotoImage
-        #root = Tk()        
-    #    icon = PhotoImage(file=imageGifLocation)
-    #    tkRootWindow.tk.call('wm', 'iconphoto', tkRootWindow._w, icon)
-                #root.mainloop()
-       
-        #from PIL import  Image, ImageTk
-        #img = ImageTk.PhotoImage(Image.open(imageXbmlocation))
-        
-        #print ('Image opened.')
-        
-        #tkRootWindow.wm_iconbitmap(imageXbmlocation)
-        
-        #tkRootWindow.iconphoto(True, img)
-        
-        #img = Image("photo", file=imageFileLocation)
-        #photo = PhotoImage(file=imageFileLocation)
-        #tkRootWindow.tk.call('wm','iconphoto',tkRootWindow._w,img)
-        #img = ImageTk.PhotoImage(Image.open(imagePngLocation))
-
-    #except Exception:
-    #    print('Could not assign icon. This is probably not Linux.')
-        
-    #    print sys.exc_info()[0]
-    #    print sys.exc_info()[1]
+  
         
         
 def resourcePath(relativePath):
@@ -221,6 +194,97 @@ def translateSequence(inputSequence):
             'I could not translate your protein:\n' +  str(sys.exc_info()[0]))
         
         raise
+    
+def collectAndValidateRoughSequence(guiSequenceInputObject):
+    try:
+        roughNucleotideSequence = collectRoughSequence(guiSequenceInputObject)
+        annotatedSequence = None
+
+        #Is this sequence in Fasta format?        
+        try:
+            #print('Checking if sequence is fasta format.')            
+            fileHandleObject = StringIO.StringIO(roughNucleotideSequence)
+            fastaSeqList = list(SeqIO.parse(fileHandleObject, 'fasta'))
+            #print ('The length of the fasta seq list is:' + str(len(fastaSeqList)))
+            if(len(fastaSeqList) == 1):
+                annotatedSequence = cleanSequence(str(fastaSeqList[0].seq))
+                #print ('found exactly 1 fasta sequence:' + annotatedSequence)
+                print ('The input sequence is in .fasta format.')
+            else:
+                print('This sequence is not in .fasta format.') 
+        except Exception, e:
+            print('This sequence is not in .fasta format.')            
+            #raise
+            
+        #Is this sequence in Fasta format?        
+        try:
+            #print('Checking if sequence is fastq format.')            
+            fileHandleObject = StringIO.StringIO(roughNucleotideSequence)
+            fastqSeqList = list(SeqIO.parse(fileHandleObject, 'fastq'))
+            #print ('The length of the fasta seq list is:' + str(len(fastaSeqList)))
+            if(len(fastqSeqList) == 1):
+                annotatedSequence = cleanSequence(str(fastqSeqList[0].seq))
+                #print ('found exactly 1 fasta sequence:' + annotatedSequence)
+                print ('The input sequence is in .fastq format.')
+            else:
+                print('This sequence is not in .fastq format.') 
+        except Exception, e:
+            print('This sequence is not in .fastq format.')            
+            #raise
+    
+            
+        # TODO: If this file is xml what should we do?  Just give up i suppose.
+        # We want to accept HML.  But there are too many xml formats.
+        
+        #else Is XML?
+        #    Warn user that XML isn't supported
+        #    Return the entire xml text as the sequence
+        
+        
+        # If we haven't found an annotated sequence yet, this is not fasta or fastq.
+        if(annotatedSequence is None):
+            annotatedSequence = cleanSequence(roughNucleotideSequence)
+        #    Rough text = all of the gui text.
+            
+    
+        #Are we using any nonstandard / ambiguous nucleotides?
+        for nucleotideCharacter in annotatedSequence:
+            if(nucleotideCharacter not in ('A','G','C','T','a','g','c','t')):
+                tkMessageBox.showerror('Nonstandard Nucleotide' 
+                    , 'I found a non-standard\n'
+                    + 'character in your nucleotide\n'
+                    + 'sequence: ' 
+                    + str(nucleotideCharacter) + '\n'
+                    + 'You should use standard nucleotide\n'
+                    + 'characters in your submission.\n'
+                    + 'I will attempt to continue.')
+                break
+    
+
+    
+        # TODO: Fix this last-ditch effort.
+        
+        #annotatedSequence = roughNucleotideSequence
+        return annotatedSequence
+            
+    except Exception, e:
+        tkMessageBox.showerror('Error Reading Input Sequence.'
+            , str(e))
+        raise
+                
+
+def collectRoughSequence(guiSequenceInputObject):
+    # This method gets the text from a gui object and returns it.
+    # There is no validation performed here.
+    try:
+        roughNucleotideSequence = guiSequenceInputObject.get('1.0', 'end')
+        return roughNucleotideSequence
+            
+    except Exception, e:
+        tkMessageBox.showerror('Error Reading Input Sequence.'
+            , str(e))
+        raise
+                
 
 
 # 
@@ -347,8 +411,9 @@ def parseExons(roughFeatureSequence, alleleCallWithGFEJson):
                 #raise Exception ('Unable to identify any HLA exon features, unable to annotate sequence.')
             
             if (len(fivePrimeSequence) < 1):
+                print ('I cannot find a five prime UTR.')
                 print ('Rough Sequence:\n' + cleanSequence(roughFeatureSequence).upper())
-                print ('Annotated Sequence:\n' + cleanSequence(annotatedSequence).upper())
+                #print ('Annotated Sequence:\n' + cleanSequence(annotatedSequence).upper())
                 raise Exception('GFE service did not find a 5\' UTR sequence. You will need to annotate the genomic features manually.')
             # What if the reported 5' UTR is less than what is returned by GFE?
             elif cleanSequence(fivePrimeSequence).upper() in cleanSequence(roughFeatureSequence).upper():

@@ -91,4 +91,7 @@ ftp://ftp.ebi.ac.uk/pub/databases/embl/doc/usrman.txt
 ftp://ftp.ebi.ac.uk/pub/databases/embl/doc/FT_current.html  
 http://www.ebi.ac.uk/ena/software/flat-file-validator  
 
+## Contributing:  
+More info on contributing to this project on the [MUMC Transplantation Immunology Wiki](https://github.com/transplantation-immunology-maastricht/General-information/wiki/Contributing-to-Github)
+
 
