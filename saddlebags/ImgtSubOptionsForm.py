@@ -13,14 +13,14 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with saddle-bags. If not, see <http://www.gnu.org/licenses/>.
 
-import os
+#import os
 
-import Tkinter, Tkconstants, tkFileDialog, tkMessageBox
+import Tkinter, Tkconstants, tkMessageBox
 #from Tkinter import *
 from Tkinter import IntVar, Radiobutton
 #from ttk import *
 
-#from AlleleSubCommon import *
+from AlleleSubCommon import getConfigurationValue, assignConfigurationValue
 from ScrolledWindow import VerticalScrolledFrame
 
 # I am using this ScrolledWindow class instead of a Frame.
@@ -38,7 +38,7 @@ class ImgtSubOptionsForm(VerticalScrolledFrame):
         root.title("Choose IMGT Submission Options")
         self.parent = root
 
-        button_opt = {'fill': Tkconstants.BOTH, 'padx': 35, 'pady': 5}
+        #button_opt = {'fill': Tkconstants.BOTH, 'padx': 35, 'pady': 5}
                         
         # This window should not be resizeable. I guess.
         # Maybe height should be resizeable, i don't know.
@@ -126,6 +126,8 @@ class ImgtSubOptionsForm(VerticalScrolledFrame):
         # I can require an EMBL code and disregard Genbank.  
         # Radio Buttons?  
         # EMBL / Genbank Accession #
+        # No, this tool is for EMBL submission. But this is a question for James Robinson.
+        # Should i choose between which intermediate databse they use?
         self.emblAccInstrText = Tkinter.StringVar()
         self.emblAccInstrText.set('EMBL Sequence Accession #:')
         self.emblAccInstrLabel = Tkinter.Label(self.submissionDetailsInputFrame, width=labelInputWidth, height=1, textvariable=self.emblAccInstrText).grid(row=6, column=0)
