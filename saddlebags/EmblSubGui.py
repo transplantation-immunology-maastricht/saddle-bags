@@ -39,7 +39,7 @@ class EmblSubGui(Tkinter.Frame):
     # Initialize the GUI
     def __init__(self, root):
         Tkinter.Frame.__init__(self, root)
-        root.title("Create and Submit an EMBL Sequence Submission")
+        root.title("Create and Submit an EMBL-ENA Sequence Submission")
         self.parent = root
         
         # Assign the icon of this sub-window.
@@ -58,7 +58,7 @@ class EmblSubGui(Tkinter.Frame):
         self.instructionsFrame = Tkinter.Frame(self)  
         self.instructionText = Tkinter.StringVar()       
         self.instructionText.set('\nThis tool will generate an HLA allele submission for\n'
-            + 'the EMBL / ENA nucleotide database.\n'
+            + 'the EMBL-ENA nucleotide database.\n'
             + 'If you provide login credentials, you may automatically submit the sequence.\n'
             + 'For more information:\n')
         Tkinter.Label(self.instructionsFrame, width=85, height=6, textvariable=self.instructionText).pack()
@@ -106,7 +106,7 @@ class EmblSubGui(Tkinter.Frame):
         self.submissionOptionsButton.grid(row=0, column=0)
         self.annotateFeaturesButton = Tkinter.Button(self.submButtonFrame, text='2) Annotate Exons & Introns' , command=self.annotateInputSequence)
         self.annotateFeaturesButton.grid(row=0, column=1)
-        self.generateSubmissionButton = Tkinter.Button(self.submButtonFrame, text='3) Generate an EMBL submission', command=self.constructSubmission)
+        self.generateSubmissionButton = Tkinter.Button(self.submButtonFrame, text='3) Generate an EMBL-ENA submission', command=self.constructSubmission)
         self.generateSubmissionButton.grid(row=0, column=2)
         self.submButtonFrame.pack()
 
@@ -208,14 +208,14 @@ class EmblSubGui(Tkinter.Frame):
             + 'full length HLA allele, including\n'
             + '5\' and 3\' UTRs.\n\n'
      
-            + 'To create & submit an EMBL HLA submission:\n\n'
+            + 'To create & submit an EMBL-ENA submission:\n\n'
             + '1.) Paste a full-length HLA sequence in\n'
             + 'the Annotated Sequence text area.\n'
             + '2.) Push [Submission Options] and provide\n'
             + 'the necessary sequence metadata.\n'
             + '3.) Push [Annotate Exons & Introns] to\n'
             + 'annotate your exons automatically.\n'
-            + '4.) Push [Generate an EMBL submission]\n'
+            + '4.) Push [Generate an EMBL-ENA submission]\n'
             + 'button to generate a submission.\n'
             + '5.) Push [Upload Submission to EMBL]\n'
             + 'to submit the sequence\n'
