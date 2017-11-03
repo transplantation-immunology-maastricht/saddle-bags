@@ -99,7 +99,6 @@ class EmblSubGui(Tkinter.Frame):
         self.featureInputGuiObject.pack(expand=True, fill='both') 
         self.featureInputFrame.pack(expand=True, fill='both')
 
-
         # Create  Frame for "Generate Submission" button.
         self.submButtonFrame = Tkinter.Frame(self)
         self.submissionOptionsButton = Tkinter.Button(self.submButtonFrame, text='1) Submission Options', command=self.chooseSubmissionOptions)
@@ -138,7 +137,7 @@ class EmblSubGui(Tkinter.Frame):
         self.uploadSubmissionFrame = Tkinter.Frame(self)        
         self.saveSubmissionButton = Tkinter.Button(self.uploadSubmissionFrame, text='4) Save Submission to My Computer', command=self.saveSubmissionFile)
         self.saveSubmissionButton.pack(**button_opt)
-        self.uploadButton = Tkinter.Button(self.uploadSubmissionFrame, text='5) Upload Submission to EMBL', command=self.uploadSubmission)
+        self.uploadButton = Tkinter.Button(self.uploadSubmissionFrame, text='5) Upload Submission to EMBL-ENA', command=self.uploadSubmission)
         self.uploadButton.pack(**button_opt)
         self.exitButton = Tkinter.Button(self.uploadSubmissionFrame, text='Exit', command=self.saveAndExit)
         self.exitButton.pack(**button_opt)
@@ -147,7 +146,7 @@ class EmblSubGui(Tkinter.Frame):
         self.pack(expand=True, fill='both')
          
     def chooseSubmissionOptions(self):
-        print ('Opening the EMBL Submission Options Dialog')
+        print ('Opening the EMBL-ENA Submission Options Dialog')
         
         self.disableGUI()
         
@@ -217,7 +216,7 @@ class EmblSubGui(Tkinter.Frame):
             + 'annotate your exons automatically.\n'
             + '4.) Push [Generate an EMBL-ENA submission]\n'
             + 'button to generate a submission.\n'
-            + '5.) Push [Upload Submission to EMBL]\n'
+            + '5.) Push [Upload Submission to EMBL-ENA]\n'
             + 'to submit the sequence\n'
             + 'using EMBL Webin REST interface\n\n'
             

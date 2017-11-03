@@ -28,7 +28,7 @@ class EmblSubOptionsForm(VerticalScrolledFrame):
         #Tkinter.Frame.__init__(self, root)
         VerticalScrolledFrame.__init__(self, root)
         
-        root.title("Choose EMBL Submission Options")
+        root.title("Choose EMBL-ENA Submission Options")
         self.parent = root
         
         # Assign the icon of this sub-window.
@@ -90,11 +90,11 @@ class EmblSubOptionsForm(VerticalScrolledFrame):
         self.testProductionFrame = Tkinter.Frame(self.interior)
         
         self.testProductionInstrText = Tkinter.StringVar()
-        self.testProductionInstrText.set('\nBy default, you submit to the EMBL test servers,\n'
+        self.testProductionInstrText.set('\nBy default, you submit to the EMBL-ENA test servers,\n'
             + 'where submissions are regularly deleted.\n'
-            + 'change this option if you want to submit to the live EMBL environment.\n'
+            + 'change this option if you want to submit to the live environment.\n'
             + 'Login Credentials will not be stored, but they will be sent\n'
-            + 'to EMBL via REST during allele submission.\n'
+            + 'to EMBL-ENA via REST during allele submission.\n'
             )
         self.alleleInstrLabel = Tkinter.Label(self.testProductionFrame, width=70, height=7, textvariable=self.testProductionInstrText).pack()#.grid(row=2, column=0)
  
@@ -102,8 +102,8 @@ class EmblSubOptionsForm(VerticalScrolledFrame):
         self.chooseTestServersIntVar = IntVar()
         self.chooseTestServersIntVar.set(int(getConfigurationValue('test_submission')))
  
-        Radiobutton(self.testProductionFrame, text="Submit to EMBL TEST / DEMO environment.", variable=self.chooseTestServersIntVar, value=1).pack()
-        Radiobutton(self.testProductionFrame, text="Submit to EMBL LIVE / PROD environment.", variable=self.chooseTestServersIntVar, value=0).pack()
+        Radiobutton(self.testProductionFrame, text="Submit to EMBL-ENA TEST / DEMO environment.", variable=self.chooseTestServersIntVar, value=1).pack()
+        Radiobutton(self.testProductionFrame, text="Submit to EMBL-ENA LIVE / PROD environment.", variable=self.chooseTestServersIntVar, value=0).pack()
         
         self.testProductionFrame.pack()
      
@@ -129,7 +129,7 @@ class EmblSubOptionsForm(VerticalScrolledFrame):
   
         # TODO: Better instructions for how a user will use this?
         self.analysisMetadataInstrText = Tkinter.StringVar()
-        self.analysisMetadataInstrText.set('\nEMBL will store the sequence in an "Analysis" object.\n'
+        self.analysisMetadataInstrText.set('\nEMBL-ENA will store the sequence in an "Analysis" object.\n'
                 + 'You must specify an analysis Alias, Title, and\n'
                 + 'Description for every submitted sequence.\n'
                 + 'The Alias must be unique.\n'
@@ -166,15 +166,16 @@ class EmblSubOptionsForm(VerticalScrolledFrame):
         self.projectDetailsFrame = Tkinter.Frame(self.interior)
         
         self.alleleInstrText = Tkinter.StringVar()
-        self.alleleInstrText.set('\nEMBL requires that submissions are assigned to a Study/Project.\n'
+        self.alleleInstrText.set('\nEMBL-ENA requires that submissions are assigned to a Study/Project.\n'
             + 'You must either:\n\n'
-            + '1.) Provide an existing EMBL study/project accession #.\n'
+            + '1.) Provide an existing EMBL-ENA study/project accession #.\n'
             + 'This was provided in a previous submission, or you can see a list of\n'
             + 'your projects by logging into EMBL Webin. (ex. \'PRJEB01234\')\n'
             + '\n'
-            + '2.) Specify metadata for a new study at EMBL. Provide an Identifier,\n'
-            + 'Title, and short Abstract for the new Study, and I will create\n'
-            + 'it automatically. Study Identifier must be Unique.'
+            + '2.) Specify metadata for a new study at EMBL-ENA.\n'
+            + 'Provide an Identifier, Title, and short Abstract for the new Study,\n'
+            + 'and I will create it automatically.\n'
+            + 'Study Identifier must be Unique.'
             )
         self.alleleInstrLabel = Tkinter.Label(self.projectDetailsFrame, width=70, height=12, textvariable=self.alleleInstrText).pack()#.grid(row=2, column=0)
  
@@ -267,7 +268,7 @@ class EmblSubOptionsForm(VerticalScrolledFrame):
             elif (str(getConfigurationValue('choose_project')) == '2'):
                 self.chooseProjectIntVar.set(2)
             else:
-                raise Exception('Error loading EMBL submission options. Invalid Project choice:' + str(getConfigurationValue('choose_project')))
+                raise Exception('Error loading EMBL-ENA submission options. Invalid Project choice:' + str(getConfigurationValue('choose_project')))
             
         if getConfigurationValue('study_accession') is not None:
             self.inputStudyAccession.set(getConfigurationValue('study_accession'))
