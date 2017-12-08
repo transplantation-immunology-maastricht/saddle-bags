@@ -6,30 +6,30 @@ Download an executable for Windows from the Release page.
 [Download Saddlebags for Windows Here](https://github.com/transplantation-immunology-maastricht/saddle-bags/releases)
 
 ## Run using Python
-Alternatively, you can run this program using Python 2.7. This works for Mac and Linux users (or Windows). There are prerequesites, I recommend you install them inside an Anaconda environment. See Run_allele_submission.sh and Run_allele_submission.bat for an example of this in Linux and Windows environments, respectively.
+Alternatively, you can run this program using Python 3.6. This works for Mac and Linux users (or Windows). See Run_allele_submission.sh and Run_allele_submission.bat for an example.
 
 ```
 python AlleleSubmissionMain.py
 ```
 
 ## To configure Anaconda
-Anaconda uses separate environments to run your programs in.  
-Install Anaconda for python 2.7.  
-https://www.continuum.io/downloads  
-To set up the environment in anaconda:  
+TODO: I am using a virtual environment instead of Anaconda. 
 
-Linux/Mac:  
-```
-conda create --name minionvironment biopython six pycurl
-source activate minionvironment  
-pip install pyinstaller packaging  
-source deactivate  
-```  
-Windows:  
-```  
-conda create --name minionvironment biopython six pywin32 pycurl
-call activate minionvironment && pip install pyinstaller packaging && call deactivate  
-```
+Installing pycurl was a bit difficult inside of virtualenv.
+
+https://stackoverflow.com/questions/37669428/error-in-installation-pycurl-7-19-0
+sudo apt-get install libgnutls-dev
+
+Needed the "dev" verson of python 3.6
+sudo apt-get install python3.6-dev
+
+need these packages, apt-get can find these, i think:
+biopython six pycurl, pywin32
+
+pip needs these packages too:
+pyinstaller packaging 
+
+
 
 ## Run using a bash or .bat script using anaconda
 You can execute the following scripts to run the tool inside of Anaconda:  

@@ -13,24 +13,25 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with saddle-bags. If not, see <http://www.gnu.org/licenses/>.
 
+from sys import exc_info
+
 from os.path import expanduser
 
+from tkinter import Frame, StringVar, Button, Text, Label, Toplevel, Scrollbar, messagebox, filedialog
+from tkinter.constants import BOTH, BOTTOM, RIGHT, X, Y, NONE, HORIZONTAL, NORMAL, DISABLED
 
+#import Tkinter, Tkconstants, tkFileDialog, tkMessageBox
+#from Tkinter import Scrollbar, BOTTOM, RIGHT, X, Y, NONE, HORIZONTAL, NORMAL, DISABLED
 
-import Tkinter, Tkconstants, tkFileDialog, tkMessageBox
-from Tkinter import Scrollbar, BOTTOM, RIGHT, X, Y, NONE, HORIZONTAL, NORMAL, DISABLED
-
-from EmblSubGenerator import EmblSubGenerator
-from EmblSubOptionsForm import EmblSubOptionsForm
-from EmblSubRest import performFullSubmission
-
-from AlleleSubCommon import getConfigurationValue, assignConfigurationValue, parseExons, isSequenceAlreadyAnnotated, identifyGenomicFeatures, assignIcon, collectAndValidateRoughSequence, collectRoughSequence
-
-from AlleleSubCommonRest import fetchSequenceAlleleCallWithGFE
-from HlaSequenceException import HlaSequenceException
+from saddlebags.EmblSubGenerator import EmblSubGenerator
+from saddlebags.EmblSubOptionsForm import EmblSubOptionsForm
+from saddlebags.EmblSubRest import performFullSubmission
+from saddlebags.AlleleSubCommon import getConfigurationValue, assignConfigurationValue, parseExons, isSequenceAlreadyAnnotated, identifyGenomicFeatures, assignIcon, collectAndValidateRoughSequence, collectRoughSequence, logEvent
+from saddlebags.AlleleSubCommonRest import fetchSequenceAlleleCallWithGFE
+from saddlebags.HlaSequenceException import HlaSequenceException
 
 # The AlleleGui class is an extension of Tkinter.  The GUI elements and interactions are specified in this class.
-class EmblSubGui(Tkinter.Frame):
+class EmblSubGui(Frame):
 
     # I shouldn't need to write a select-All method but TK is kind of annoying.
     def selectall(self, event):
@@ -38,7 +39,7 @@ class EmblSubGui(Tkinter.Frame):
         
     # Initialize the GUI
     def __init__(self, root):
-        Tkinter.Frame.__init__(self, root)
+        Frame.__init__(self, root)
         root.title("Create and Submit an EMBL-ENA Sequence Submission")
         self.parent = root
         
@@ -51,33 +52,33 @@ class EmblSubGui(Tkinter.Frame):
         # To define the exit behavior.  Save the input sequence text.
         self.parent.protocol('WM_DELETE_WINDOW', self.saveAndExit)
 
-        button_opt = {'fill': Tkconstants.BOTH, 'padx': 35, 'pady': 5}
+        button_opt = {'fill': BOTH, 'padx': 35, 'pady': 5}
         
         
         # A frame for the Instructions Label.
-        self.instructionsFrame = Tkinter.Frame(self)  
-        self.instructionText = Tkinter.StringVar()       
+        self.instructionsFrame = Frame(self)  
+        self.instructionText = StringVar()       
         self.instructionText.set('\nThis tool will generate an HLA allele submission for\n'
             + 'the EMBL-ENA nucleotide database.\n'
             + 'If you provide login credentials, you may automatically submit the sequence.\n'
             + 'For more information:\n')
-        Tkinter.Label(self.instructionsFrame, width=85, height=6, textvariable=self.instructionText).pack()
+        Label(self.instructionsFrame, width=85, height=6, textvariable=self.instructionText).pack()
         self.instructionsFrame.pack(expand=False, fill='both')
         
         # Make a frame for the more-info buttons
-        self.moreInfoFrame = Tkinter.Frame(self)
-        self.howToUseButton = Tkinter.Button(self.moreInfoFrame, text='How to use this tool', command=self.howToUse)
+        self.moreInfoFrame = Frame(self)
+        self.howToUseButton = Button(self.moreInfoFrame, text='How to use this tool', command=self.howToUse)
         self.howToUseButton.grid(row=0, column=0)
-        self.exampleButton = Tkinter.Button(self.moreInfoFrame, text='Example Sequence', command=self.sampleSequence)
+        self.exampleButton = Button(self.moreInfoFrame, text='Example Sequence', command=self.sampleSequence)
         self.exampleButton.grid(row=0, column=1)
         self.moreInfoFrame.pack() 
        
         # Create a frame for the input widget, add scrollbars.
-        self.featureInputFrame = Tkinter.Frame(self)
+        self.featureInputFrame = Frame(self)
         
-        self.featureInstrText = Tkinter.StringVar()
+        self.featureInstrText = StringVar()
         self.featureInstrText.set('Annotated Sequence:')
-        self.featureInstrLabel = Tkinter.Label(self.featureInputFrame, width=80, height=1, textvariable=self.featureInstrText).pack()
+        self.featureInstrLabel = Label(self.featureInputFrame, width=80, height=1, textvariable=self.featureInstrText).pack()
 
         self.featureInputXScrollbar = Scrollbar(self.featureInputFrame, orient=HORIZONTAL)
         self.featureInputXScrollbar.pack(side=BOTTOM, fill=X)
@@ -85,7 +86,7 @@ class EmblSubGui(Tkinter.Frame):
         self.featureInputYScrollbar = Scrollbar(self.featureInputFrame)
         self.featureInputYScrollbar.pack(side=RIGHT, fill=Y)
 
-        self.featureInputGuiObject = Tkinter.Text(
+        self.featureInputGuiObject = Text(
             self.featureInputFrame
             , width=80, height=8
             , wrap=NONE
@@ -100,21 +101,21 @@ class EmblSubGui(Tkinter.Frame):
         self.featureInputFrame.pack(expand=True, fill='both')
 
         # Create  Frame for "Generate Submission" button.
-        self.submButtonFrame = Tkinter.Frame(self)
-        self.submissionOptionsButton = Tkinter.Button(self.submButtonFrame, text='1) Submission Options', command=self.chooseSubmissionOptions)
+        self.submButtonFrame = Frame(self)
+        self.submissionOptionsButton = Button(self.submButtonFrame, text='1) Submission Options', command=self.chooseSubmissionOptions)
         self.submissionOptionsButton.grid(row=0, column=0)
-        self.annotateFeaturesButton = Tkinter.Button(self.submButtonFrame, text='2) Annotate Exons & Introns' , command=self.annotateInputSequence)
+        self.annotateFeaturesButton = Button(self.submButtonFrame, text='2) Annotate Exons & Introns' , command=self.annotateInputSequence)
         self.annotateFeaturesButton.grid(row=0, column=1)
-        self.generateSubmissionButton = Tkinter.Button(self.submButtonFrame, text='3) Generate an EMBL-ENA submission', command=self.constructSubmission)
+        self.generateSubmissionButton = Button(self.submButtonFrame, text='3) Generate an EMBL-ENA submission', command=self.constructSubmission)
         self.generateSubmissionButton.grid(row=0, column=2)
         self.submButtonFrame.pack()
 
         # Output interface is contained on a frame.
-        self.submOutputFrame = Tkinter.Frame(self)
+        self.submOutputFrame = Frame(self)
         
-        self.outputEMBLSubmission = Tkinter.StringVar()
+        self.outputEMBLSubmission = StringVar()
         self.outputEMBLSubmission.set('Allele Submission Preview:')
-        self.outputEMBLLabel = Tkinter.Label(self.submOutputFrame, width=80, height=1, textvariable=self.outputEMBLSubmission).pack()
+        self.outputEMBLLabel = Label(self.submOutputFrame, width=80, height=1, textvariable=self.outputEMBLSubmission).pack()
 
         self.submOutputXScrollbar = Scrollbar(self.submOutputFrame, orient=HORIZONTAL)
         self.submOutputXScrollbar.pack(side=BOTTOM, fill=X)
@@ -122,7 +123,7 @@ class EmblSubGui(Tkinter.Frame):
         self.submOutputYScrollbar = Scrollbar(self.submOutputFrame)
         self.submOutputYScrollbar.pack(side=RIGHT, fill=Y)
 
-        self.submOutputGuiObject = Tkinter.Text(
+        self.submOutputGuiObject = Text(
             self.submOutputFrame, width=80, height=8, wrap=NONE
             , xscrollcommand=self.submOutputXScrollbar.set
             , yscrollcommand=self.submOutputYScrollbar.set
@@ -134,23 +135,23 @@ class EmblSubGui(Tkinter.Frame):
         self.submOutputGuiObject.pack(expand=True, fill='both') 
         self.submOutputFrame.pack(expand=True, fill='both')
 
-        self.uploadSubmissionFrame = Tkinter.Frame(self)        
-        self.saveSubmissionButton = Tkinter.Button(self.uploadSubmissionFrame, text='4) Save Submission to My Computer', command=self.saveSubmissionFile)
+        self.uploadSubmissionFrame = Frame(self)        
+        self.saveSubmissionButton = Button(self.uploadSubmissionFrame, text='4) Save Submission to My Computer', command=self.saveSubmissionFile)
         self.saveSubmissionButton.pack(**button_opt)
-        self.uploadButton = Tkinter.Button(self.uploadSubmissionFrame, text='5) Upload Submission to EMBL-ENA', command=self.uploadSubmission)
+        self.uploadButton = Button(self.uploadSubmissionFrame, text='5) Upload Submission to EMBL-ENA', command=self.uploadSubmission)
         self.uploadButton.pack(**button_opt)
-        self.exitButton = Tkinter.Button(self.uploadSubmissionFrame, text='Exit', command=self.saveAndExit)
+        self.exitButton = Button(self.uploadSubmissionFrame, text='Exit', command=self.saveAndExit)
         self.exitButton.pack(**button_opt)
         self.uploadSubmissionFrame.pack()
         
         self.pack(expand=True, fill='both')
          
     def chooseSubmissionOptions(self):
-        print ('Opening the EMBL-ENA Submission Options Dialog')
+        logEvent ('Opening the EMBL-ENA Submission Options Dialog')
         
         self.disableGUI()
         
-        emblOptionsRoot = Tkinter.Toplevel()
+        emblOptionsRoot = Toplevel()
         emblOptionsRoot.bind("<Destroy>", self.enableGUI)
         EmblSubOptionsForm(emblOptionsRoot).pack()
         
@@ -176,10 +177,10 @@ class EmblSubGui(Tkinter.Frame):
         #assignConfigurationValue('embl_username','')
         assignConfigurationValue('embl_password','')
         
-        assignConfigurationValue('sample_id', 'Donor_12345')
+        assignConfigurationValue('sample_id', 'sample_12345')
         assignConfigurationValue('gene','HLA-C')
         assignConfigurationValue('class','1')
-        assignConfigurationValue("allele_name",'Allele:01:02')
+        assignConfigurationValue("allele_name",'Allele*01:02MstNew.6')
 
         assignConfigurationValue('study_accession','PRJEB12345')
                                  
@@ -198,7 +199,7 @@ class EmblSubGui(Tkinter.Frame):
     # This method should popup some instruction text in a wee window.
     # This should be explicit on how to use the tool.    
     def howToUse(self):
-        tkMessageBox.showinfo('How to use this tool',
+        messagebox.showinfo('How to use this tool',
             'This software is to be used to create an\n'
             + 'EMBL-formatted submission document,\n'
             + 'which specifies a (novel) HLA allele.\n\n'       
@@ -249,7 +250,7 @@ class EmblSubGui(Tkinter.Frame):
         options['parent'] = self
         options['title'] = 'Specify your output file.'
         options['initialfile'] = 'EMBL.HLA.Submission.txt'
-        outputFileObject = tkFileDialog.asksaveasfile(**self.dir_opt)
+        outputFileObject = filedialog.asksaveasfile(**self.dir_opt)
         submissionText = self.submOutputGuiObject.get('1.0', 'end')
         outputFileObject.write(submissionText)
         
@@ -263,7 +264,7 @@ class EmblSubGui(Tkinter.Frame):
             self.update()   
             
             # Popup.  This uses NMDP BTM ACT tool to annotate sequences.
-            if (tkMessageBox.askyesno('Annotate Exons?'
+            if (messagebox.askyesno('Annotate Exons?'
                 , 'This will annotate your exons using the\n'
                 + 'NMDP: BeTheMatch Gene Feature\n'
                 + 'Enumeration / Allele Calling Tool.\n\n'
@@ -283,9 +284,9 @@ class EmblSubGui(Tkinter.Frame):
             self.update()
             self.enableGUI()
             
-        except Exception, e:
-            tkMessageBox.showerror('Error Annotating Input Sequence.'
-                , str(e))
+        except Exception:
+            messagebox.showerror('Error Annotating Input Sequence.'
+                , str(exc_info()))
             raise
             
     def uploadSubmission(self):
@@ -301,7 +302,7 @@ class EmblSubGui(Tkinter.Frame):
                 annotatedSequence = roughNucleotideSequence
                 
             else:
-                if (tkMessageBox.askyesno('Auto - Annotate Exons?'
+                if (messagebox.askyesno('Auto - Annotate Exons?'
                     , 'It looks like your sequence features have not been identified.\n' +
                     'Would you like to annotate using NMDP: BeTheMatch\n' +
                     'Gene Feature Enumeration Tool?')):
@@ -318,7 +319,7 @@ class EmblSubGui(Tkinter.Frame):
             enaSubmission = allGen.buildENASubmission()
                         
             if (enaSubmission is None or len(enaSubmission) < 1):
-                tkMessageBox.showerror('Empty submission text'
+                messagebox.showerror('Empty submission text'
                     ,'You are missing some required information.\n'
                     + 'Try the \'Submission Options\' button.\n')
                 
@@ -328,19 +329,19 @@ class EmblSubGui(Tkinter.Frame):
                 self.submOutputGuiObject.delete('1.0','end')    
                 self.submOutputGuiObject.insert('1.0', enaSubmission) 
             
-        except KeyError, e:
-            tkMessageBox.showerror('Missing Submission Options'
+        except KeyError:
+            messagebox.showerror('Missing Submission Options'
                 ,'You are missing some required information.\n'
                 + 'Use the \'Submission Options\' button.\n'
-                + 'Missing Data: ' + str(e))
+                + 'Missing Data: ' + str(exc_info()))
            
-        except HlaSequenceException, e:
-            tkMessageBox.showerror('I see a problem with Sequence Format.'
-                , str(e))
+        except HlaSequenceException:
+            messagebox.showerror('I see a problem with Sequence Format.'
+                , str(exc_info()))
            
-        except Exception, e:
-            tkMessageBox.showerror('Error Constructing Submission.'
-                , str(e))
+        except Exception:
+            messagebox.showerror('Error Constructing Submission.'
+                , str(exc_info()))
             raise
             
     def saveAndExit(self):

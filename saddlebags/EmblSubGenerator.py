@@ -13,12 +13,12 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with saddle-bags. If not, see <http://www.gnu.org/licenses/>.
 
-from Bio.Seq import Seq
-from Bio.Alphabet import generic_dna
+#from Bio.Seq import Seq
+#from Bio.Alphabet import generic_dna
 
-from HlaGene import HlaGene
-from AlleleSubCommon import getConfigurationValue, translateSequence
-from HlaSequenceException import HlaSequenceException
+from saddlebags.HlaGene import HlaGene
+from saddlebags.AlleleSubCommon import getConfigurationValue, translateSequence, logEvent
+from saddlebags.HlaSequenceException import HlaSequenceException
 
 # The AlleleGenerator class contains logic to generate an EMBL HLA allele submission 
 # In ENA format.  
@@ -109,11 +109,11 @@ class EmblSubGenerator():
         
         # If this sequence has premature stop codon, add the "/pseudo" flag.
         # This indicates the gene is a /pseudo gene, not a complete protein.
-        if(str(getConfigurationValue('is_pseudo_gene') == '1')):
-            print("putting pseudo in the submission")
+        if(str(getConfigurationValue('is_pseudo_gene')) == '1'):
+            logEvent("putting pseudo in the submission")
             cdsText += ('FT                   /pseudo\n')
         else:
-            print("not putting pseudo in the submission")
+            logEvent("not putting pseudo in the submission")
             pass
         
         
@@ -216,7 +216,7 @@ class EmblSubGenerator():
                 'beginning and end of your DNA\n' +
                 'sequence to specify the 5\' and 3\' UTRs.' ) 
         else:
-            print('The UTRs look fine.')
+            logEvent('The UTRs look fine.')
             pass
         
         return featureText
@@ -284,7 +284,7 @@ class EmblSubGenerator():
             documentBuffer = ''
     
             totalLength = self.sequenceAnnotation.totalLength()
-            print('total calculated length = ' + str(totalLength))
+            logEvent('total calculated length = ' + str(totalLength))
             
             if(totalLength > 0 and self.validateInputs()):
     
@@ -307,7 +307,8 @@ class EmblSubGenerator():
     
     
             return documentBuffer
-        except HlaSequenceException, e:
+        except HlaSequenceException:
+            # Throw a fit.
             raise
     
     # Return True if our input values are all present and accomodated for.
@@ -320,28 +321,28 @@ class EmblSubGenerator():
         #raise Exception ('Validate Inputs Method is being used, after all.')
         
         if (getConfigurationValue('sample_id') is None or len(getConfigurationValue('sample_id')) < 1):
-            print('Invalid Sequence ID:' + str(getConfigurationValue('sample_id')))
+            logEvent('Invalid Sequence ID:' + str(getConfigurationValue('sample_id')))
             #raise Exception ('Invalid Sequence ID:' + str(getConfigurationValue('sample_id')))
             return False
         
         elif (self.sequenceAnnotation is None):
             #raise Exception ('Invalid Sequence Annotation:' + str(self.sequenceAnnotation))
-            print('Invalid Sequence Annotation:' + str(self.sequenceAnnotation))
+            logEvent('Invalid Sequence Annotation:' + str(self.sequenceAnnotation))
             return False
         
         elif (getConfigurationValue('gene') is None or len(getConfigurationValue('gene')) < 1):
             #raise Exception ('Invalid Input Gene:' + str(getConfigurationValue('gene')))
-            print('Invalid Input Gene:' + str(getConfigurationValue('gene')))
+            logEvent('Invalid Input Gene:' + str(getConfigurationValue('gene')))
             return False
         
         elif (getConfigurationValue('allele_name') is None or len(getConfigurationValue('allele_name')) < 1):
             #raise Exception ('Invalid Input Allele:' + str(getConfigurationValue('allele_name')))
-            print('Invalid Input Allele:' + str(getConfigurationValue('allele_name')))
+            logEvent('Invalid Input Allele:' + str(getConfigurationValue('allele_name')))
             return False
         
         elif (getConfigurationValue('class') is None or len(getConfigurationValue('class')) < 1):
             #raise Exception ('Invalid Input Class:' + str(getConfigurationValue('class')))
-            print('Invalid Input Class:' + str(getConfigurationValue('class')))
+            logEvent('Invalid Input Class:' + str(getConfigurationValue('class')))
             return False
         
         else:

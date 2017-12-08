@@ -15,10 +15,8 @@
 
 # See the file README.MD for how to set up your anaconda environment.
 
-cd saddlebags
+source /home/ben/minionvenv/bin/activate
 
-source activate minionvironment
 python AlleleSubMain.py
-source deactivate
 
 

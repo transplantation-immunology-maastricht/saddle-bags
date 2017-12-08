@@ -13,10 +13,11 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with saddle-bags. If not, see <http://www.gnu.org/licenses/>.
 
-from AlleleSubCommon import createOutputFile, getConfigurationValue
+from saddlebags.AlleleSubCommon import createOutputFile, getConfigurationValue
 
-import xml.etree.ElementTree as ET
-import xml.dom.minidom
+# XML packages use very generic method names (like parse and tostring) so I will alias this reference.
+from xml.etree import ElementTree as ET
+from xml.dom import minidom as MD
 
 # Here we have methods to create XML files necessary for EMBL submission.
 # Schemas are defined on github.
@@ -24,7 +25,7 @@ import xml.dom.minidom
 
 def writeToXml(fullXmlFilePath, xmlElementTree):
     xmlText = ET.tostring(xmlElementTree, encoding='utf8', method='xml')
-    prettyXmlText = xml.dom.minidom.parseString(xmlText).toprettyxml()
+    prettyXmlText = MD.parseString(xmlText).toprettyxml()
     
     xmlOutput = createOutputFile(fullXmlFilePath)
     xmlOutput.write(prettyXmlText)
