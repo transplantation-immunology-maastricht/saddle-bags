@@ -21,7 +21,7 @@ from datetime import datetime
 try:
     from sys import _MEIPASS
 except Exception:
-    print ('No MEIPASS Directory. I am running from a compiled EXE file.')
+    print ('No MEIPASS Directory. This is not running from a compiled EXE file.')
 
 from os import makedirs
 from os.path import join, expanduser, isfile, abspath, isdir, split
@@ -75,23 +75,17 @@ def assignIcon(tkRootWindow):
         #base_path = os.path.abspath(".")
         logEvent('Could not assign icon based on path inside executable.')
         
-        logEvent (exc_info()[0])
-        logEvent (exc_info()[1])
+        logEvent (exc_info())
 
     # Linux
     # I have given up on setting an icon in linux. I can't seem to load up any file format.
   
-        
-   
-     
+ 
 def resourcePath(relativePath):
     # Where will I find my resources? This should work in, or outside, a compiled EXE
     if hasattr(sys, '_MEIPASS'):
         return join(_MEIPASS, relativePath)
     return join(abspath('.'), relativePath)
-
-
-
 
 # This is a short wrapper method to use biopython's translation method. 
 # Most of this code is just checking for things that went wrong
@@ -210,8 +204,8 @@ def collectAndValidateRoughSequence(guiSequenceInputObject):
 
         #Is this sequence in Fasta format?        
         try:
-            #print('Checking if sequence is fasta format.')            
-            fileHandleObject = StringIO.StringIO(roughNucleotideSequence)
+            #print('Checking if sequence is fasta format.')    
+            fileHandleObject = StringIO(roughNucleotideSequence)
             fastaSeqList = list(SeqIO.parse(fileHandleObject, 'fasta'))
             #print ('The length of the fasta seq list is:' + str(len(fastaSeqList)))
             if(len(fastaSeqList) == 1):
@@ -220,15 +214,13 @@ def collectAndValidateRoughSequence(guiSequenceInputObject):
                 logEvent ('The input sequence is in .fasta format.')
             else:
                 logEvent('This sequence is not in .fasta format.') 
-        #except Exception, e:
         except Exception:
-            logEvent('This sequence is not in .fasta format.')            
-            #raise
+            logEvent('This sequence is not in .fasta format: ' + str(exc_info()))            
             
-        #Is this sequence in Fasta format?        
+        #Is this sequence in Fastq format?        
         try:
             #print('Checking if sequence is fastq format.')            
-            fileHandleObject = StringIO.StringIO(roughNucleotideSequence)
+            fileHandleObject = StringIO(roughNucleotideSequence)
             fastqSeqList = list(SeqIO.parse(fileHandleObject, 'fastq'))
             #print ('The length of the fasta seq list is:' + str(len(fastaSeqList)))
             if(len(fastqSeqList) == 1):
@@ -238,13 +230,13 @@ def collectAndValidateRoughSequence(guiSequenceInputObject):
             else:
                 logEvent('This sequence is not in .fastq format.') 
         except Exception:
-        #except Exception, e:
-            logEvent('This sequence is not in .fastq format.')            
-            #raise
+            logEvent('This sequence is not in .fastq format: ' + str(exc_info()))            
+
     
             
         # TODO: If this file is xml what should we do?  Just give up i suppose.
         # We want to accept HML.  But there are too many xml formats.
+        # Yeah I dunno about HML, we will not implement that right now.
         
         #else Is XML?
         #    Warn user that XML isn't supported

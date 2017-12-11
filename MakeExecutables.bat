@@ -23,8 +23,8 @@
 SET CodePath=saddlebags
 SET BinPath=bin
 SET SpecFile=AlleleSubInstallerOptions_Windows.spec
-SET CondaEnvironment=minionvironment
+SET VirtualEnvironmentLocation=C:\Users\ben\Envs\minionvenv\Scripts
 
 :: Run Pyinstaller to create executables
 :: cd %CodePath%
-activate %CondaEnvironment% && pyinstaller %SpecFile% --distpath %BinPath% --clean && deactivate
+activate %VirtualEnvironmentLocation%\activate && pyinstaller %SpecFile% --distpath %BinPath% --clean && deactivate

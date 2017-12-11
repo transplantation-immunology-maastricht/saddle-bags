@@ -12,22 +12,36 @@ Alternatively, you can run this program using Python 3.6. This works for Mac and
 python AlleleSubmissionMain.py
 ```
 
-## To configure Anaconda
-TODO: I am using a virtual environment instead of Anaconda. 
+## To configure Virtual Environment.
+
+Windows:
+Install Python. 3.6, 64 bit windows.
+https://www.python.org/downloads/release/python-363/
+
+Pip, i believe came with python.
+
+Install Virtual Environment. A couple steps, there is a windows wrapper to get virtual environment working with powershell. 
+Windows: Need PowerShell.
+https://virtualenv.pypa.io/en/stable/userguide/
+http://timmyreilly.azurewebsites.net/python-pip-virtualenv-installation-on-windows/
+
+make virtualenvironment:
+mkvirtualenv minionvenv
+
 
 Installing pycurl was a bit difficult inside of virtualenv.
 
 https://stackoverflow.com/questions/37669428/error-in-installation-pycurl-7-19-0
 sudo apt-get install libgnutls-dev
 
-Needed the "dev" verson of python 3.6
+In linux, i needed Needed the "dev" verson of python 3.6
 sudo apt-get install python3.6-dev
 
-need these packages, apt-get can find these, i think:
-biopython six pycurl, pywin32
+need these packages, use pip.:
+biopython six pycurl, pywin32, pyinstaller, packaging 
 
-pip needs these packages too:
-pyinstaller packaging 
+Im not sure if pywin32 is necessary, test this in windows 32 bit.
+
 
 
 
