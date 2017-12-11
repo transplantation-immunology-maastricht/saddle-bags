@@ -6,43 +6,47 @@ Download an executable for Windows from the Release page.
 [Download Saddlebags for Windows Here](https://github.com/transplantation-immunology-maastricht/saddle-bags/releases)
 
 ## Run using Python
-Alternatively, you can run this program using Python 3.6. This works for Mac and Linux users (or Windows). See Run_allele_submission.sh and Run_allele_submission.bat for an example.
-
-```
-python AlleleSubmissionMain.py
-```
+Alternatively, you can run this program using Python 3.6. The required packages can be installed within a python virtual environment. This works for Mac and Linux users, or Windows. See Run_allele_submission.bat and Run_allele_submission.sh for an example of launching Saddlebags in Windows, or Linux/Mac, respectively..
 
 ## To configure Virtual Environment.
+The general installation instructions are similar for Windows and Linux/Mac environments.
 
-Windows:
-Install Python. 3.6, 64 bit windows.
-https://www.python.org/downloads/release/python-363/
+Install the Git commandline. In Windows, there is an option to include the git bash console, I recommend doing this, as it is very useful.
 
-Pip, i believe came with python.
+Install Python 3.6, 64 or 32 bit.
+[Download Python](https://www.python.org/downloads/release/python-363/)
 
-Install Virtual Environment. A couple steps, there is a windows wrapper to get virtual environment working with powershell. 
-Windows: Need PowerShell.
-https://virtualenv.pypa.io/en/stable/userguide/
-http://timmyreilly.azurewebsites.net/python-pip-virtualenv-installation-on-windows/
+The python installer includes pip, which is necessary for the next steps.
 
-make virtualenvironment:
+Install Virtual Environment. This requires a couple steps, because there is a windows wrapper to get virtual environment working with powershell. 
+
+```
+pip install virtualenv
+pip install virtualenvwrapper-win
+```
+[More info](http://timmyreilly.azurewebsites.net/python-pip-virtualenv-installation-on-windows/)
+
+Create the virtual environment. I typically use an environment called "minionvenv":
+```
 mkvirtualenv minionvenv
+```
+The mkvirtualenv command should automatically activate the new environment. If not, activate the environment.
+```
+C:\Users\ben\Envs\minionvenv\Scripts\activate
+```
 
+Is your environment activated? Then use pip to install the packages that saddlebags needs:
+```
+pip install biopython six pycurl pyinstaller packaging 
+```
 
-Installing pycurl was a bit difficult inside of virtualenv.
+In Ubuntu, Installing pycurl was a bit difficult inside of virtualenv.
 
 https://stackoverflow.com/questions/37669428/error-in-installation-pycurl-7-19-0
 sudo apt-get install libgnutls-dev
 
 In linux, i needed Needed the "dev" verson of python 3.6
 sudo apt-get install python3.6-dev
-
-need these packages, use pip.:
-biopython six pycurl, pywin32, pyinstaller, packaging 
-
-Im not sure if pywin32 is necessary, test this in windows 32 bit.
-
-
 
 
 ## Run using a bash or .bat script using anaconda
