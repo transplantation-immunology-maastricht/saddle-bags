@@ -13,15 +13,10 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with saddle-bags. If not, see <http://www.gnu.org/licenses/>.
 
-#import os
+from tkinter import Frame, Label, StringVar, IntVar, Entry, Radiobutton, messagebox, Button
 
-import Tkinter, Tkconstants, tkMessageBox
-#from Tkinter import *
-from Tkinter import IntVar, Radiobutton
-#from ttk import *
-
-from AlleleSubCommon import getConfigurationValue, assignConfigurationValue
-from ScrolledWindow import VerticalScrolledFrame
+from saddlebags.AlleleSubCommon import getConfigurationValue, assignConfigurationValue, logEvent
+from saddlebags.ScrolledWindow import VerticalScrolledFrame
 
 # I am using this ScrolledWindow class instead of a Frame.
 # This interface is too big for one screen, need a scrollbar.
@@ -33,7 +28,7 @@ class ImgtSubOptionsForm(VerticalScrolledFrame):
         
         
         VerticalScrolledFrame.__init__(self, root)
-        #Tkinter.Frame.__init__(self, root)
+        #Frame.__init__(self, root)
         #super(500, 500)
         root.title("Choose IMGT Submission Options")
         self.parent = root
@@ -50,12 +45,12 @@ class ImgtSubOptionsForm(VerticalScrolledFrame):
         # Define the return behavior.  Same as "close window" etc
         root.bind('<Return>', self.returnFunction)
         
-        self.instructionsFrame = Tkinter.Frame(self.interior)  
-        self.instructionText = Tkinter.StringVar()       
+        self.instructionsFrame = Frame(self.interior)  
+        self.instructionText = StringVar()       
         self.instructionText.set('\nThese options are required for an IMGT allele submission.\n'
             + 'Login Credentials will not be stored, but they will be sent to IMGT via\n'
             + 'secure https connection.\n')        
-        Tkinter.Label(self.instructionsFrame, width=85, height=6, textvariable=self.instructionText).pack()
+        Label(self.instructionsFrame, width=85, height=6, textvariable=self.instructionText).pack()
         self.instructionsFrame.pack()
         
         #Standard Inputs widths for the form elements
@@ -64,47 +59,47 @@ class ImgtSubOptionsForm(VerticalScrolledFrame):
                 
         # Make a frame to contain the input variables
         # self.interior is defined in the ScrolledWindow class
-        self.submissionDetailsInputFrame = Tkinter.Frame(self.interior)
+        self.submissionDetailsInputFrame = Frame(self.interior)
 
-        self.usernameInstrText = Tkinter.StringVar()
+        self.usernameInstrText = StringVar()
         self.usernameInstrText.set('IMGT Username:')
-        self.usernameInstrLabel = Tkinter.Label(self.submissionDetailsInputFrame, width=labelInputWidth, height=1, textvariable=self.usernameInstrText).grid(row=0, column=0)
-        self.inputUsername = Tkinter.StringVar()
-        self.inputUsernameEntry = Tkinter.Entry(self.submissionDetailsInputFrame, width=formInputWidth, textvariable=self.inputUsername).grid(row=0, column=1)
+        self.usernameInstrLabel = Label(self.submissionDetailsInputFrame, width=labelInputWidth, height=1, textvariable=self.usernameInstrText).grid(row=0, column=0)
+        self.inputUsername = StringVar()
+        self.inputUsernameEntry = Entry(self.submissionDetailsInputFrame, width=formInputWidth, textvariable=self.inputUsername).grid(row=0, column=1)
 
-        self.passwordInstrText = Tkinter.StringVar()
+        self.passwordInstrText = StringVar()
         self.passwordInstrText.set('IMGT Password:')
-        self.passwordInstrLabel = Tkinter.Label(self.submissionDetailsInputFrame, width=labelInputWidth, height=1, textvariable=self.passwordInstrText).grid(row=1, column=0)
-        self.inputPassword = Tkinter.StringVar()
-        self.inputPasswordEntry = Tkinter.Entry(self.submissionDetailsInputFrame, width=formInputWidth, textvariable=self.inputPassword, show="*").grid(row=1, column=1)
+        self.passwordInstrLabel = Label(self.submissionDetailsInputFrame, width=labelInputWidth, height=1, textvariable=self.passwordInstrText).grid(row=1, column=0)
+        self.inputPassword = StringVar()
+        self.inputPasswordEntry = Entry(self.submissionDetailsInputFrame, width=formInputWidth, textvariable=self.inputPassword, show="*").grid(row=1, column=1)
         
         
         # TODO: Submitter / Laboratory ID.  
         # This is on the IMGT form.
         #Do I know this infromation? Do I need to tell user how to get it?
   
-        self.sampleIDInstrText = Tkinter.StringVar()
-        self.sampleIDInstrText.set('Sample ID:')
-        self.sampleIDinstrLabel = Tkinter.Label(self.submissionDetailsInputFrame, width=labelInputWidth, height=1, textvariable=self.sampleIDInstrText).grid(row=2, column=0)
-        self.inputSampleID = Tkinter.StringVar()
-        self.inputSampleIDEntry = Tkinter.Entry(self.submissionDetailsInputFrame, width=formInputWidth, textvariable=self.inputSampleID).grid(row=2, column=1)
+        self.sampleIDInstrText = StringVar()
+        self.sampleIDInstrText.set('Cell/Sample ID:')
+        self.sampleIDinstrLabel = Label(self.submissionDetailsInputFrame, width=labelInputWidth, height=1, textvariable=self.sampleIDInstrText).grid(row=2, column=0)
+        self.inputSampleID = StringVar()
+        self.inputSampleIDEntry = Entry(self.submissionDetailsInputFrame, width=formInputWidth, textvariable=self.inputSampleID).grid(row=2, column=1)
 
-        self.geneInstrStringVar = Tkinter.StringVar()
+        self.geneInstrStringVar = StringVar()
         self.geneInstrStringVar.set('Gene:')
-        self.geneInstrLabel = Tkinter.Label(self.submissionDetailsInputFrame, width=labelInputWidth, height=1, textvariable=self.geneInstrStringVar).grid(row=3, column=0)
-        self.inputGene = Tkinter.StringVar()        
-        self.inputGeneEntry = Tkinter.Entry(self.submissionDetailsInputFrame, width=formInputWidth, textvariable=self.inputGene).grid(row=3, column=1)
+        self.geneInstrLabel = Label(self.submissionDetailsInputFrame, width=labelInputWidth, height=1, textvariable=self.geneInstrStringVar).grid(row=3, column=0)
+        self.inputGene = StringVar()        
+        self.inputGeneEntry = Entry(self.submissionDetailsInputFrame, width=formInputWidth, textvariable=self.inputGene).grid(row=3, column=1)
 
         self.chooseClassIntVar = IntVar()
         self.chooseClassIntVar.set(1)
         Radiobutton(self.submissionDetailsInputFrame, text="HLA Class I ", variable=self.chooseClassIntVar, value=1).grid(row=4, column=0)
         Radiobutton(self.submissionDetailsInputFrame, text="HLA Class II", variable=self.chooseClassIntVar, value=2).grid(row=4, column=1)
 
-        self.alleleInstrText = Tkinter.StringVar()
+        self.alleleInstrText = StringVar()
         self.alleleInstrText.set('Allele Local Name:')
-        self.alleleInstrLabel = Tkinter.Label(self.submissionDetailsInputFrame, width=labelInputWidth, height=1, textvariable=self.alleleInstrText).grid(row=5, column=0)
-        self.inputAllele = Tkinter.StringVar() 
-        self.inputAlleleEntry = Tkinter.Entry(self.submissionDetailsInputFrame, width=formInputWidth, textvariable=self.inputAllele).grid(row=5, column=1)
+        self.alleleInstrLabel = Label(self.submissionDetailsInputFrame, width=labelInputWidth, height=1, textvariable=self.alleleInstrText).grid(row=5, column=0)
+        self.inputAllele = StringVar() 
+        self.inputAlleleEntry = Entry(self.submissionDetailsInputFrame, width=formInputWidth, textvariable=self.inputAllele).grid(row=5, column=1)
         
         
         
@@ -128,19 +123,19 @@ class ImgtSubOptionsForm(VerticalScrolledFrame):
         # EMBL / Genbank Accession #
         # No, this tool is for EMBL submission. But this is a question for James Robinson.
         # Should i choose between which intermediate databse they use?
-        self.emblAccInstrText = Tkinter.StringVar()
+        self.emblAccInstrText = StringVar()
         self.emblAccInstrText.set('EMBL Sequence Accession #:')
-        self.emblAccInstrLabel = Tkinter.Label(self.submissionDetailsInputFrame, width=labelInputWidth, height=1, textvariable=self.emblAccInstrText).grid(row=6, column=0)
-        self.inputEmblAcc = Tkinter.StringVar() 
-        self.inputEmblAccEntry = Tkinter.Entry(self.submissionDetailsInputFrame, width=formInputWidth, textvariable=self.inputEmblAcc).grid(row=6, column=1)
+        self.emblAccInstrLabel = Label(self.submissionDetailsInputFrame, width=labelInputWidth, height=1, textvariable=self.emblAccInstrText).grid(row=6, column=0)
+        self.inputEmblAcc = StringVar() 
+        self.inputEmblAccEntry = Entry(self.submissionDetailsInputFrame, width=formInputWidth, textvariable=self.inputEmblAcc).grid(row=6, column=1)
 
         
         # Release Date
-        self.releaseDateInstrText = Tkinter.StringVar()
+        self.releaseDateInstrText = StringVar()
         self.releaseDateInstrText.set('IMGT Release Date:')
-        self.releaseDateInstrLabel = Tkinter.Label(self.submissionDetailsInputFrame, width=labelInputWidth, height=1, textvariable=self.releaseDateInstrText).grid(row=7, column=0)
-        self.inputReleaseDate = Tkinter.StringVar() 
-        self.inputReleaseDateEntry = Tkinter.Entry(self.submissionDetailsInputFrame, width=formInputWidth, textvariable=self.inputReleaseDate).grid(row=7, column=1)
+        self.releaseDateInstrLabel = Label(self.submissionDetailsInputFrame, width=labelInputWidth, height=1, textvariable=self.releaseDateInstrText).grid(row=7, column=0)
+        self.inputReleaseDate = StringVar() 
+        self.inputReleaseDateEntry = Entry(self.submissionDetailsInputFrame, width=formInputWidth, textvariable=self.inputReleaseDate).grid(row=7, column=1)
         
         # Reference Details
         # Is this allele in a published paper or not?
@@ -151,62 +146,62 @@ class ImgtSubOptionsForm(VerticalScrolledFrame):
         self.submissionDetailsInputFrame.pack()
  
         
-        self.unpublishedReferenceFrame = Tkinter.Frame(self.interior)   
+        self.unpublishedReferenceFrame = Frame(self.interior)   
         
-        self.referenceInstrText = Tkinter.StringVar()
+        self.referenceInstrText = StringVar()
         self.referenceInstrText.set('\nPlease provide some information about a\npublished paper relevant to this sequence.\n')
-        self.referenceInstrLabel = Tkinter.Label(self.unpublishedReferenceFrame, width=70, height=4, textvariable=self.referenceInstrText).pack()#.grid(row=2, column=0)
+        self.referenceInstrLabel = Label(self.unpublishedReferenceFrame, width=70, height=4, textvariable=self.referenceInstrText).pack()#.grid(row=2, column=0)
              
         Radiobutton(self.unpublishedReferenceFrame, text="No Published Reference.", variable=self.publishedReferenceIntVar, value=0).pack()
         self.unpublishedReferenceFrame.pack()
 
-        self.publishedReferenceFrame = Tkinter.Frame(self.interior)
+        self.publishedReferenceFrame = Frame(self.interior)
         
         # Radio Button: Published
         Radiobutton(self.unpublishedReferenceFrame, text="Use This Reference:", variable=self.publishedReferenceIntVar, value=1).pack()
         
         # Reference Title
-        self.referenceTitleInstrText = Tkinter.StringVar()
+        self.referenceTitleInstrText = StringVar()
         self.referenceTitleInstrText.set('Reference Title:')
-        self.referenceTitleInstrLabel = Tkinter.Label(self.publishedReferenceFrame, width=labelInputWidth, height=1, textvariable=self.referenceTitleInstrText).grid(row=1, column=0)
-        self.inputReferenceTitle = Tkinter.StringVar() 
-        self.inputReferenceTitleEntry = Tkinter.Entry(self.publishedReferenceFrame, width=formInputWidth, textvariable=self.inputReferenceTitle).grid(row=1, column=1)
+        self.referenceTitleInstrLabel = Label(self.publishedReferenceFrame, width=labelInputWidth, height=1, textvariable=self.referenceTitleInstrText).grid(row=1, column=0)
+        self.inputReferenceTitle = StringVar() 
+        self.inputReferenceTitleEntry = Entry(self.publishedReferenceFrame, width=formInputWidth, textvariable=self.inputReferenceTitle).grid(row=1, column=1)
         
         # Authors
-        self.referenceAuthorsInstrText = Tkinter.StringVar()
+        self.referenceAuthorsInstrText = StringVar()
         self.referenceAuthorsInstrText.set('Reference Authors:')
-        self.referenceAuthorsInstrLabel = Tkinter.Label(self.publishedReferenceFrame, width=labelInputWidth, height=1, textvariable=self.referenceAuthorsInstrText).grid(row=2, column=0)
-        self.inputReferenceAuthors = Tkinter.StringVar() 
-        self.inputReferenceAuthorsEntry = Tkinter.Entry(self.publishedReferenceFrame, width=formInputWidth, textvariable=self.inputReferenceAuthors).grid(row=2, column=1)
+        self.referenceAuthorsInstrLabel = Label(self.publishedReferenceFrame, width=labelInputWidth, height=1, textvariable=self.referenceAuthorsInstrText).grid(row=2, column=0)
+        self.inputReferenceAuthors = StringVar() 
+        self.inputReferenceAuthorsEntry = Entry(self.publishedReferenceFrame, width=formInputWidth, textvariable=self.inputReferenceAuthors).grid(row=2, column=1)
         
         # Journal
-        self.referenceJournalInstrText = Tkinter.StringVar()
+        self.referenceJournalInstrText = StringVar()
         self.referenceJournalInstrText.set('Reference Journal:')
-        self.referenceJournalInstrLabel = Tkinter.Label(self.publishedReferenceFrame, width=labelInputWidth, height=1, textvariable=self.referenceJournalInstrText).grid(row=3, column=0)
-        self.inputReferenceJournal = Tkinter.StringVar() 
-        self.inputReferenceJournalEntry = Tkinter.Entry(self.publishedReferenceFrame, width=formInputWidth, textvariable=self.inputReferenceJournal).grid(row=3, column=1)
+        self.referenceJournalInstrLabel = Label(self.publishedReferenceFrame, width=labelInputWidth, height=1, textvariable=self.referenceJournalInstrText).grid(row=3, column=0)
+        self.inputReferenceJournal = StringVar() 
+        self.inputReferenceJournalEntry = Entry(self.publishedReferenceFrame, width=formInputWidth, textvariable=self.inputReferenceJournal).grid(row=3, column=1)
 
         self.publishedReferenceFrame.pack()
                
         # Make a frame to contain the input variables.
         # I had to make 2 of them to organize my gui, maybe I can name this better.
-        self.submissionDetailsInputFrame2 = Tkinter.Frame(self.interior)
+        self.submissionDetailsInputFrame2 = Frame(self.interior)
             
         # /alignment -> defined by IMGT sequence alignment service        
         # In this case, it is the closest known allele.
-        self.closestAlleleInstrText = Tkinter.StringVar()
+        self.closestAlleleInstrText = StringVar()
         self.closestAlleleInstrText.set('Closest Known HLA Allele:')
-        self.closestAlleleInstrLabel = Tkinter.Label(self.submissionDetailsInputFrame2, width=labelInputWidth, height=1, textvariable=self.closestAlleleInstrText).grid(row=1, column=0)
-        self.inputClosestAllele = Tkinter.StringVar() 
-        self.inputClosestAlleleEntry = Tkinter.Entry(self.submissionDetailsInputFrame2, width=formInputWidth, textvariable=self.inputClosestAllele).grid(row=1, column=1)
+        self.closestAlleleInstrLabel = Label(self.submissionDetailsInputFrame2, width=labelInputWidth, height=1, textvariable=self.closestAlleleInstrText).grid(row=1, column=0)
+        self.inputClosestAllele = StringVar() 
+        self.inputClosestAlleleEntry = Entry(self.submissionDetailsInputFrame2, width=formInputWidth, textvariable=self.inputClosestAllele).grid(row=1, column=1)
 
         # Written Description
         # Looks like this is a description of how the sequence differes from closest knnown allele
-        self.closestAlleleWrittenDescriptionInstrText = Tkinter.StringVar()
+        self.closestAlleleWrittenDescriptionInstrText = StringVar()
         self.closestAlleleWrittenDescriptionInstrText.set('Differences from Closest Allele:')
-        self.closestAlleleWrittenDescriptionInstrLabel = Tkinter.Label(self.submissionDetailsInputFrame2, width=labelInputWidth, height=1, textvariable=self.closestAlleleWrittenDescriptionInstrText).grid(row=2, column=0)
-        self.inputClosestAlleleWrittenDescription = Tkinter.StringVar() 
-        self.inputClosestAlleleWrittenDescriptionEntry = Tkinter.Entry(self.submissionDetailsInputFrame2, width=formInputWidth, textvariable=self.inputClosestAlleleWrittenDescription).grid(row=2, column=1)
+        self.closestAlleleWrittenDescriptionInstrLabel = Label(self.submissionDetailsInputFrame2, width=labelInputWidth, height=1, textvariable=self.closestAlleleWrittenDescriptionInstrText).grid(row=2, column=0)
+        self.inputClosestAlleleWrittenDescription = StringVar() 
+        self.inputClosestAlleleWrittenDescriptionEntry = Entry(self.submissionDetailsInputFrame2, width=formInputWidth, textvariable=self.inputClosestAlleleWrittenDescription).grid(row=2, column=1)
 
         
         # DONOR INFORMATION
@@ -215,81 +210,114 @@ class ImgtSubOptionsForm(VerticalScrolledFrame):
         # Wait, is this the same as the sample ID? Should I move the sample ID field down here?
         # No. I am disregarding this sample ID.
         
-        # Ethnic Origin
-        self.ethnicOriginInstrText = Tkinter.StringVar()
+        # Ethnic Origin - Text
+        self.ethnicOriginInstrText = StringVar()
         self.ethnicOriginInstrText.set('Ethnic Origin:')
-        self.ethnicOriginInstrLabel = Tkinter.Label(self.submissionDetailsInputFrame2, width=labelInputWidth, height=1, textvariable=self.ethnicOriginInstrText).grid(row=3, column=0)
-        self.inputEthnicOrigin = Tkinter.StringVar() 
-        self.inputEthnicOriginEntry = Tkinter.Entry(self.submissionDetailsInputFrame2, width=formInputWidth, textvariable=self.inputEthnicOrigin).grid(row=3, column=1)
+        self.ethnicOriginInstrLabel = Label(self.submissionDetailsInputFrame2, width=labelInputWidth, height=1, textvariable=self.ethnicOriginInstrText).grid(row=3, column=0)
+        self.inputEthnicOrigin = StringVar() 
+        self.inputEthnicOriginEntry = Entry(self.submissionDetailsInputFrame2, width=formInputWidth, textvariable=self.inputEthnicOrigin).grid(row=3, column=1)
 
-        # Sex
-        self.sexInstrText = Tkinter.StringVar()
+        # Sex - Text
+        self.sexInstrText = StringVar()
         self.sexInstrText.set('Sex:')
-        self.sexInstrLabel = Tkinter.Label(self.submissionDetailsInputFrame2, width=labelInputWidth, height=1, textvariable=self.sexInstrText).grid(row=4, column=0)
-        self.inputSex = Tkinter.StringVar() 
-        self.inputSexEntry = Tkinter.Entry(self.submissionDetailsInputFrame2, width=formInputWidth, textvariable=self.inputSex).grid(row=4, column=1)
+        self.sexInstrLabel = Label(self.submissionDetailsInputFrame2, width=labelInputWidth, height=1, textvariable=self.sexInstrText).grid(row=4, column=0)
+        self.inputSex = StringVar() 
+        self.inputSexEntry = Entry(self.submissionDetailsInputFrame2, width=formInputWidth, textvariable=self.inputSex).grid(row=4, column=1)
 
+        # TODO Make a boolean
         # Consanguineous (T/F)
-        self.consanguineousInstrText = Tkinter.StringVar()
+        self.consanguineousInstrText = StringVar()
         self.consanguineousInstrText.set('Sample is Consanguineous:')
-        self.consanguineousInstrLabel = Tkinter.Label(self.submissionDetailsInputFrame2, width=labelInputWidth, height=1, textvariable=self.consanguineousInstrText).grid(row=5, column=0)
-        self.inputConsanguineous = Tkinter.StringVar() 
-        self.inputConsanguineousEntry = Tkinter.Entry(self.submissionDetailsInputFrame2, width=formInputWidth, textvariable=self.inputConsanguineous).grid(row=5, column=1)
+        self.consanguineousInstrLabel = Label(self.submissionDetailsInputFrame2, width=labelInputWidth, height=1, textvariable=self.consanguineousInstrText).grid(row=5, column=0)
+        self.inputConsanguineous = StringVar() 
+        self.inputConsanguineousEntry = Entry(self.submissionDetailsInputFrame2, width=formInputWidth, textvariable=self.inputConsanguineous).grid(row=5, column=1)
         
+        # TODO Make a boolean
         # Homozygous (T/F)
-        self.homozygousInstrText = Tkinter.StringVar()
+        # TODO: Accepted values are 'Yes', 'No', 'Unknown'
+        # Make dropdown for this, or radio buttons.
+        self.homozygousInstrText = StringVar()
         self.homozygousInstrText.set('Sample is Homozygous:')
-        self.homozygousInstrLabel = Tkinter.Label(self.submissionDetailsInputFrame2, width=labelInputWidth, height=1, textvariable=self.homozygousInstrText).grid(row=6, column=0)
-        self.inputHomozygous = Tkinter.StringVar() 
-        self.inputHomozygousEntry = Tkinter.Entry(self.submissionDetailsInputFrame2, width=formInputWidth, textvariable=self.inputHomozygous).grid(row=6, column=1)
+        self.homozygousInstrLabel = Label(self.submissionDetailsInputFrame2, width=labelInputWidth, height=1, textvariable=self.homozygousInstrText).grid(row=6, column=0)
+        self.inputHomozygous = StringVar() 
+        self.inputHomozygousEntry = Entry(self.submissionDetailsInputFrame2, width=formInputWidth, textvariable=self.inputHomozygous).grid(row=6, column=1)
 
-        # TODO: Comments.  Where does this stuff go?  This is details about the lab of origin. I haven't tried specifying this one yet, ask James how to do it.
-        # Comments
-        
-        # Lab of Origin
+        # Lab of Origin (text)
+        self.labOriginInstrText = StringVar()
+        self.labOriginInstrText.set('Lab of Origin:')
+        self.labOriginInstrLabel = Label(self.submissionDetailsInputFrame2, width=labelInputWidth, height=1, textvariable=self.labOriginInstrText).grid(row=7, column=0)
+        self.inputLabOrigin = StringVar() 
+        self.inputLabOriginEntry = Entry(self.submissionDetailsInputFrame2, width=formInputWidth, textvariable=self.inputLabOrigin).grid(row=7, column=1)
         
         # Lab Contact
-        
-        # TODO Add form for cell availability
+        self.labContactInstrText = StringVar()
+        self.labContactInstrText.set('Lab Contact:')
+        self.labContactInstrLabel = Label(self.submissionDetailsInputFrame2, width=labelInputWidth, height=1, textvariable=self.labContactInstrText).grid(row=8, column=0)
+        self.inputLabContact = StringVar() 
+        self.inputLabContactEntry = Entry(self.submissionDetailsInputFrame2, width=formInputWidth, textvariable=self.inputLabContact).grid(row=8, column=1)
+              
         # Cell Availability
+        # Material Available (T/F)
+        self.materialAvailableInstrText = StringVar()
+        self.materialAvailableInstrText.set('Material Availability:')
+        self.materialAvailableInstrLabel = Label(self.submissionDetailsInputFrame2, width=labelInputWidth, height=1, textvariable=self.materialAvailableInstrText).grid(row=9, column=0)
+        self.inputMaterialAvailable = StringVar() 
+        self.inputMaterialAvailableEntry = Entry(self.submissionDetailsInputFrame2, width=formInputWidth, textvariable=self.inputMaterialAvailable).grid(row=9, column=1)
         
-            # Material Available (T/F)
-            
-            # Cell Bank (Text)
-            
-            # Cell Workshop Details
+        # Cell Bank (Text)
+        self.cellBankInstrText = StringVar()
+        self.cellBankInstrText.set('Cell Bank:')
+        self.cellBankInstrLabel = Label(self.submissionDetailsInputFrame2, width=labelInputWidth, height=1, textvariable=self.cellBankInstrText).grid(row=10, column=0)
+        self.inputCellBank = StringVar() 
+        self.inputCellBankEntry = Entry(self.submissionDetailsInputFrame2, width=formInputWidth, textvariable=self.inputCellBank).grid(row=10, column=1)
         
+        # Cell Workshop Details
+        # I think Cell Workshop Details is just a header. there isn't new information here, just a header. 
+        # TODO: Compare this with the IMGT Submission website, im not missing something?
         
+        self.submissionDetailsInputFrame2.pack()
         
-        
-        
-        
-        
+        # numbering these input frames are not informative. Oh well. This frame has HLA Allele calls on it.
+        self.submissionDetailsInputFrame3 = Frame(self.interior)
+
+         
         # Alternative HLA DNA Typing
-        # Loop? 
         # Dropdown Box with another Entry Field?
-        # Yeah Start with them Blank, choose gene from box.
-        # Store in globals, but don't write to config..
+        # I need:
+        # Label
+        self.sourceHLAInstrText = StringVar()
+        self.sourceHLAInstrText.set('Source HLA Types (Sequenced):')
+        self.sourceHLAInstrLabel = Label(self.submissionDetailsInputFrame3, width=labelInputWidth, height=1, textvariable=self.sourceHLAInstrText).grid(row=1, column=0)
+        # Combo Box, with source_hla dictionary keys. Sorted.
+        # Text input, with the gene specified.
+        # "Clear" button. clear out all allele calls.
+        # Configuration should be assigned whenever text changes.
+        # I Think i need a new panel for this. Yeah.
+        
         
         # Source Serology Typing
-        # Maybe the same as DNA typing
+        # Maybe the same as DNA typing?
+        # Ignore for now.
         
         # Sequencing Methods
             
         # Primers
         # This is probably a Dropdown with Entry field also.
         
+        # TODO: Comments.  Where does this stuff go?  This is details about the lab of origin. I haven't tried specifying this one yet, ask James how to do it.
+        # Comments
         
         
-        self.submissionDetailsInputFrame2.pack()
         
         
+        self.submissionDetailsInputFrame3.pack()
+
 
         
 
         # Make a frame for the save options button.
-        self.saveOptionsFrame = Tkinter.Frame(self.interior)
-        Tkinter.Button(self.saveOptionsFrame, text='Save Options', command=self.saveOptions).grid(row=0, column=0)
+        self.saveOptionsFrame = Frame(self.interior)
+        Button(self.saveOptionsFrame, text='Save Options', command=self.saveOptions).grid(row=0, column=0)
         self.saveOptionsFrame.pack()
         
         self.loadOptions()
@@ -357,6 +385,22 @@ class ImgtSubOptionsForm(VerticalScrolledFrame):
             self.inputConsanguineous.set(getConfigurationValue('consanguineous'))          
         if getConfigurationValue('homozygous') is not None:
             self.inputHomozygous.set(getConfigurationValue('homozygous'))  
+
+        if getConfigurationValue('lab_of_origin') is not None:
+            self.inputLabOrigin.set(getConfigurationValue('lab_of_origin'))          
+        if getConfigurationValue('lab_contact') is not None:
+            self.inputLabContact.set(getConfigurationValue('lab_contact')) 
+            
+        if getConfigurationValue('material_availability') is not None:
+            self.inputMaterialAvailable.set(getConfigurationValue('material_availability'))          
+        if getConfigurationValue('cell_bank') is not None:
+            self.inputCellBank.set(getConfigurationValue('cell_bank')) 
+            
+        # TODO: 
+        # Load options for HLA allele calls.
+        # Clear the combo-box, and fill it with the keys of my hla allele call dictionary.  
+            
+         
             
 
             
@@ -364,8 +408,18 @@ class ImgtSubOptionsForm(VerticalScrolledFrame):
 
     def saveOptions(self):
         # Close the window
-        if (self.checkOptions()):
-            print ('Saving Options....')
+        # TODO: If i force the user to fill in all the options, this form is really obnoxious.
+        # Instead they should be allowed to close it and I will still warn them.
+        # I can re-think this plan if people are trying to submit bad data.
+        
+        #if (self.checkOptions()):
+        
+        #Don't force user to fill in all the options:
+        self.checkOptions()
+        if(True):
+            
+            
+            logEvent ('Saving Options....')
             
             assignConfigurationValue('imgt_username', self.inputUsername.get())
             # I store this password so I can use it in the submission
@@ -392,41 +446,51 @@ class ImgtSubOptionsForm(VerticalScrolledFrame):
             assignConfigurationValue('sex', self.inputSex.get())
             
             # TODO: Accepted values are 'Yes', 'No', 'Unknown'
+            # Make dropdown for these
             assignConfigurationValue('consanguineous', self.inputConsanguineous.get())
             assignConfigurationValue('homozygous', self.inputHomozygous.get())
+            
+            assignConfigurationValue('lab_of_origin', self.inputLabOrigin.get())
+            assignConfigurationValue('lab_contact', self.inputLabContact.get())
+            
+            assignConfigurationValue('material_availability', self.inputMaterialAvailable.get())
+            assignConfigurationValue('cell_bank', self.inputCellBank.get())
+   
+            # I have saved hla calls in a dictionary. They should have been saved individually.
    
             self.parent.destroy() 
             
+            
         else:
-            #print('Not ready to save, you are missing options.')
+            #logEvent('Not ready to save, you are missing options.')
             pass
         
     def checkOptions(self):
         # TODO this method
-        print ('Checking options.')
+        logEvent ('Checking options.')
 
         # Don't check the IMGT Username
         # Don't check the IMGT Password
         
         if (not self.inputSampleID.get()):
-            tkMessageBox.showwarning('Missing Form Value',
+            messagebox.showwarning('Missing Form Value',
                 'You are missing a Sample ID. Please try again.')
             return False        
         if (not self.inputGene.get()):
-            tkMessageBox.showwarning('Missing Form Value',
+            messagebox.showwarning('Missing Form Value',
                 'You are missing a Gene. Please try again.')
             return False
         if (not self.inputAllele.get()):
-            tkMessageBox.showwarning('Missing Form Value',
+            messagebox.showwarning('Missing Form Value',
                 'You are missing an Allele Name. Please try again.')
             return False
         
         if (not self.inputEmblAcc.get()):
-            tkMessageBox.showwarning('Missing Form Value',
+            messagebox.showwarning('Missing Form Value',
                 'You are missing an EMBL Accession Number. Please try again.')
             return False
         if (not self.inputReleaseDate.get()):
-            tkMessageBox.showwarning('Missing Form Value',
+            messagebox.showwarning('Missing Form Value',
                 'You are missing an IMGT Submission Release Date. Please try again.')
             return False
         
@@ -438,33 +502,54 @@ class ImgtSubOptionsForm(VerticalScrolledFrame):
                 or (not self.inputReferenceAuthors.get())
                 or (not self.inputReferenceJournal.get())
                 ):
-                tkMessageBox.showwarning('Missing Form Value',
+                messagebox.showwarning('Missing Form Value',
                     'You are must supply information about the published Reference. Please try again.')
                 return False
 
         if (not self.inputClosestAllele.get()):
-            tkMessageBox.showwarning('Missing Form Value',
+            messagebox.showwarning('Missing Form Value',
                 'You are missing the closest known reference allele to this sequence. Please provide this information.')
             return False
         if (not self.inputEthnicOrigin.get()):
-            tkMessageBox.showwarning('Missing Form Value',
+            messagebox.showwarning('Missing Form Value',
                 'Please provide a description of an ethnic origin for this sample.')
             return False
         if (not self.inputSex.get()):
-            tkMessageBox.showwarning('Missing Form Value',
+            messagebox.showwarning('Missing Form Value',
                 'Please identify the sex for this sample.')
             return False
         
         # TODO: Accepted values are 'Yes', 'No', 'Unknown' I think
         if (not self.inputConsanguineous.get()):
-            tkMessageBox.showwarning('Missing Form Value',
+            messagebox.showwarning('Missing Form Value',
                 'Please indicate if the sample is consanguineous or not.')
             return False
         if (not self.inputHomozygous.get()):
-            tkMessageBox.showwarning('Missing Form Value',
+            messagebox.showwarning('Missing Form Value',
                 'Please indicate if the sample is homozygous or not.')
             return False
+        
+        
+        if (not self.inputLabOrigin.get()):
+            messagebox.showwarning('Missing Form Value',
+                'Please provide the name of the submitting laboratory.')
+            return False
+        if (not self.inputLabContact.get()):
+            messagebox.showwarning('Missing Form Value',
+                'Please provide the name of the laboratory contact.')
+            return False
 
+        if (not self.inputMaterialAvailable.get()):
+            messagebox.showwarning('Missing Form Value',
+                'Please indicate if the cell material is available.')
+            return False
+        if (not self.inputCellBank.get()):
+            messagebox.showwarning('Missing Form Value',
+                'Please provide the name of the cell bank where the sample can be found.')
+            return False
+
+        # TODO Validate the HLA ALlele calls. I won't do IMGT/HLA validation, I will leave that validation up to IMGT/HLA
+        # Validate A, B, DRB1. The rest, I don't care.
 
         # All options look good, right?
         return True

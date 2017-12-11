@@ -13,19 +13,24 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with saddle-bags. If not, see <http://www.gnu.org/licenses/>.
 
-import Tkinter
-import sys
+#import Tkinter
+#import sys
+from sys import argv, exc_info
+from tkinter import Tk
 
+from saddlebags.AlleleSubCommon import loadConfigurationFile
+from saddlebags.AlleleSubMainGui import AlleleSubMainGui
 # This exception handling is necessary for packaging the modules in pyinstaller.
 # The namespace(?) is required to find the modules in pyinstaller.  
-try:
-    from AlleleSubMainGui import AlleleSubMainGui
-    from AlleleSubCommon import loadConfigurationFile
-except:
-    from saddlebags.AlleleSubMainGui import AlleleSubMainGui
-    from saddlebags.AlleleSubCommon import loadConfigurationFile
+
+#try:
+#    from AlleleSubMainGui import AlleleSubMainGui
+#    from AlleleSubCommon import loadConfigurationFile
+#except:
+#    from saddlebags.AlleleSubMainGui import AlleleSubMainGui
+#    from saddlebags.AlleleSubCommon import loadConfigurationFile
     
-SoftwareVersion = 'saddlebags Version 1.1'
+SoftwareVersion = 'saddlebags Version 1.2'
     
 if __name__=='__main__':
     try:
@@ -33,23 +38,23 @@ if __name__=='__main__':
         # because there really shouldn't be any.
         # TODO: Be more graceful with this, there are better ways to read args.
         # No parameters are expected at all.  sys.argv[0] doesn't count.
-        if (len(sys.argv) == 1):
+        if (len(argv) == 1):
             
             loadConfigurationFile()
             
             print('\n\n\n\n\n***Starting the HLA Allele Submission Tool***\n')
 
-            root = Tkinter.Tk()
+            root = Tk()
             AlleleSubMainGui(root).pack()
             root.mainloop()
 
             print('Done.  Hooray.')
 
         # Print the Software Version
-        elif (len(sys.argv) == 2 and (
-            sys.argv[1].lower() == '-v' or 
-            sys.argv[1].lower() == '--version' or 
-            sys.argv[1].lower() == '-version')        
+        elif (len(argv) == 2 and (
+            argv[1].lower() == '-v' or 
+            argv[1].lower() == '--version' or 
+            argv[1].lower() == '-version')        
         ):
             print (SoftwareVersion)
             pass
@@ -61,13 +66,13 @@ if __name__=='__main__':
                 "\tRun this program using standard python call:\n" + 
                 "\t$python AlleleSubmissionMain.py\n" + 
                 "\tbiopython must be accessible in your python environment.  To run using Anaconda,\n"
-                "\tCheck readme at https://github.com/transplantation-immunology/saddle-bags\n"
+                "\tCheck readme at https://github.com/transplantation-immunology-maastricht/saddle-bags\n"
             )
 
 
     except Exception:
         # Top Level exception handling like a pro.
         # This is not really doing anything.
-        print 'Unexpected problem during execution:'
-        print sys.exc_info()[1]
+        print ('Unexpected problem during execution:')
+        print (exc_info()[1])
         raise

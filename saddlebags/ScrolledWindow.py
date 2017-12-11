@@ -13,17 +13,18 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with saddle-bags. If not, see <http://www.gnu.org/licenses/>.
 
-from Tkinter import Scrollbar, Frame, Canvas, VERTICAL, RIGHT, Y, LEFT, BOTH, TRUE, FALSE, NW
+from tkinter import Scrollbar, Frame, Canvas
+from tkinter.constants import VERTICAL, RIGHT, Y, LEFT, BOTH, TRUE, FALSE, NW
 
 # Credit to Jeff Epler at https://emergent.unpythonic.net/
 # http://tkinter.unpythonic.net/wiki/VerticalScrolledFrame
 # Not sure how to properly credit him but this is a nice class.
 
+
 class VerticalScrolledFrame(Frame):
     def __init__(self, parent, *args, **kw):
         Frame.__init__(self, parent, *args, **kw)     
                
-
         # create a canvas object and a vertical scrollbar for scrolling it
         vscrollbar = Scrollbar(self, orient=VERTICAL)
         vscrollbar.pack(fill=Y, side=RIGHT, expand=FALSE)
@@ -34,7 +35,6 @@ class VerticalScrolledFrame(Frame):
         
         # TODO: Fix the vertical scrolling behavior.  The Mouse does not work.
         
-
         # reset the view
         canvas.xview_moveto(0)
         canvas.yview_moveto(0)
@@ -42,7 +42,7 @@ class VerticalScrolledFrame(Frame):
         # create a frame inside the canvas which will be scrolled with it
         self.interior = interior = Frame(canvas)
         interior_id = canvas.create_window(0, 0, window=interior,
-                                           anchor=NW)
+            anchor=NW)
 
         # track changes to the canvas and frame width and sync them,
         # also updating the scrollbar

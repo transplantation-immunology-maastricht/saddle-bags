@@ -13,12 +13,8 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with saddle-bags. If not, see <http://www.gnu.org/licenses/>.
 
-# See the file README.MD for how to set up your anaconda environment.
+# Activate the virtual environment.
+source /home/ben/minionvenv/bin/activate
 
-cd saddlebags
-
-source activate minionvironment
+# Launch the Python.
 python AlleleSubMain.py
-source deactivate
-
-

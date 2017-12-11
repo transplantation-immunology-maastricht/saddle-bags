@@ -14,24 +14,23 @@
 # along with saddle-bags. If not, see <http://www.gnu.org/licenses/>.
 
 #import os
+from sys import exc_info
+
 from os.path import expanduser
 
-import Tkinter, Tkconstants, tkFileDialog, tkMessageBox
-from Tkinter import Scrollbar, BOTTOM, RIGHT, X, Y, HORIZONTAL, NONE, NORMAL, DISABLED
+from tkinter import messagebox, filedialog, Frame, StringVar, Button, Label, Text, Scrollbar, Toplevel
 
-from ImgtSubGenerator import ImgtSubGenerator
-from ImgtSubOptionsForm import ImgtSubOptionsForm
-from AlleleSubCommon import collectAndValidateRoughSequence, assignIcon, assignConfigurationValue, parseExons, getConfigurationValue, identifyGenomicFeatures, isSequenceAlreadyAnnotated, collectRoughSequence, getAlleleDescription
+from tkinter.constants import BOTH, NORMAL, DISABLED, X, Y, BOTTOM, RIGHT, NONE, HORIZONTAL
 
-from AlleleSubCommonRest import fetchSequenceAlleleCallWithGFE
-
-from HlaSequenceException import HlaSequenceException
-
-
+from saddlebags.ImgtSubGenerator import ImgtSubGenerator
+from saddlebags.ImgtSubOptionsForm import ImgtSubOptionsForm
+from saddlebags.AlleleSubCommon import collectAndValidateRoughSequence, assignIcon, assignConfigurationValue, parseExons, getConfigurationValue, identifyGenomicFeatures, isSequenceAlreadyAnnotated, collectRoughSequence, getAlleleDescription, getClosestAllele, logEvent
+from saddlebags.AlleleSubCommonRest import fetchSequenceAlleleCallWithGFE
+from saddlebags.HlaSequenceException import HlaSequenceException
 #from HLAGene import HLAGene
 
 # The AlleleGui class is an extension of Tkinter.  The GUI elements and interactions are specified in this class.
-class ImgtSubGui(Tkinter.Frame):
+class ImgtSubGui(Frame):
 
     # I shouldn't need to write a select-All method but TK is kind of annoying.
     def selectall(self, event):
@@ -41,7 +40,7 @@ class ImgtSubGui(Tkinter.Frame):
         
     # Initialize the GUI
     def __init__(self, root):
-        Tkinter.Frame.__init__(self, root)
+        Frame.__init__(self, root)
         root.title("Create and Save an IPD-IMGT/HLA Sequence Submission")
         self.parent = root
 
@@ -54,31 +53,31 @@ class ImgtSubGui(Tkinter.Frame):
         # To define the exit behavior.  Save the input sequence text.
         self.parent.protocol('WM_DELETE_WINDOW', self.saveAndExit)
 
-        button_opt = {'fill': Tkconstants.BOTH, 'padx': 35, 'pady': 5}
+        button_opt = {'fill': BOTH, 'padx': 35, 'pady': 5}
         
         # A frame for the Instructions Label.
-        self.instructionsFrame = Tkinter.Frame(self)  
-        self.instructionText = Tkinter.StringVar()       
+        self.instructionsFrame = Frame(self)  
+        self.instructionText = StringVar()       
         self.instructionText.set('\nThis tool will generate an HLA allele submission for\n'
             + 'the IPD-IMGT/HLA nucleotide database.\n'
             + 'For more information:\n')
-        Tkinter.Label(self.instructionsFrame, width=85, height=6, textvariable=self.instructionText).pack()
+        Label(self.instructionsFrame, width=85, height=6, textvariable=self.instructionText).pack()
         self.instructionsFrame.pack(expand=False, fill='both')
         
         # Make a frame for the more-info buttons
-        self.moreInfoFrame = Tkinter.Frame(self)
-        self.howToUseButton = Tkinter.Button(self.moreInfoFrame, text='How to use this tool', command=self.howToUse)
+        self.moreInfoFrame = Frame(self)
+        self.howToUseButton = Button(self.moreInfoFrame, text='How to use this tool', command=self.howToUse)
         self.howToUseButton.grid(row=0, column=0)
-        self.exampleButton = Tkinter.Button(self.moreInfoFrame, text='Example Sequence', command=self.sampleSequence)
+        self.exampleButton = Button(self.moreInfoFrame, text='Example Sequence', command=self.sampleSequence)
         self.exampleButton.grid(row=0, column=1)
         self.moreInfoFrame.pack() 
        
         # Create a frame for the input widget, add scrollbars.
-        self.featureInputFrame = Tkinter.Frame(self)
+        self.featureInputFrame = Frame(self)
         
-        self.featureInstrText = Tkinter.StringVar()
+        self.featureInstrText = StringVar()
         self.featureInstrText.set('Annotated Sequence:')
-        self.featureInstrLabel = Tkinter.Label(self.featureInputFrame, width=80, height=1, textvariable=self.featureInstrText).pack()
+        self.featureInstrLabel = Label(self.featureInputFrame, width=80, height=1, textvariable=self.featureInstrText).pack()
 
         self.featureInputXScrollbar = Scrollbar(self.featureInputFrame, orient=HORIZONTAL)
         self.featureInputXScrollbar.pack(side=BOTTOM, fill=X)
@@ -86,7 +85,7 @@ class ImgtSubGui(Tkinter.Frame):
         self.featureInputYScrollbar = Scrollbar(self.featureInputFrame)
         self.featureInputYScrollbar.pack(side=RIGHT, fill=Y)
 
-        self.featureInputGuiObject = Tkinter.Text(
+        self.featureInputGuiObject = Text(
             self.featureInputFrame
             , width=80, height=8
             , wrap=NONE
@@ -102,21 +101,21 @@ class ImgtSubGui(Tkinter.Frame):
 
 
         # Create  Frame for "Generate Submission" button.
-        self.submButtonFrame = Tkinter.Frame(self)
-        self.submissionOptionsButton = Tkinter.Button(self.submButtonFrame, text='1) Submission Options', command=self.chooseSubmissionOptions)
+        self.submButtonFrame = Frame(self)
+        self.submissionOptionsButton = Button(self.submButtonFrame, text='1) Submission Options', command=self.chooseSubmissionOptions)
         self.submissionOptionsButton.grid(row=0, column=0)
-        self.annotateFeaturesButton = Tkinter.Button(self.submButtonFrame, text='2) Annotate Exons & Introns' , command=self.annotateInputSequence)
+        self.annotateFeaturesButton = Button(self.submButtonFrame, text='2) Annotate Exons & Introns' , command=self.annotateInputSequence)
         self.annotateFeaturesButton.grid(row=0, column=1)
-        self.generateSubmissionButton = Tkinter.Button(self.submButtonFrame, text='3) Generate an IMGT/HLA submission', command=self.constructSubmission)
+        self.generateSubmissionButton = Button(self.submButtonFrame, text='3) Generate an IMGT/HLA submission', command=self.constructSubmission)
         self.generateSubmissionButton.grid(row=0, column=2)
         self.submButtonFrame.pack()
        
         # Output interface is contained on a frame.
-        self.submOutputFrame = Tkinter.Frame(self)
+        self.submOutputFrame = Frame(self)
         
-        self.outputEMBLSubmission = Tkinter.StringVar()
+        self.outputEMBLSubmission = StringVar()
         self.outputEMBLSubmission.set('Allele Submission Preview:')
-        self.outputEMBLLabel = Tkinter.Label(self.submOutputFrame, width=80, height=1, textvariable=self.outputEMBLSubmission).pack()
+        self.outputEMBLLabel = Label(self.submOutputFrame, width=80, height=1, textvariable=self.outputEMBLSubmission).pack()
 
         self.submOutputXScrollbar = Scrollbar(self.submOutputFrame, orient=HORIZONTAL)
         self.submOutputXScrollbar.pack(side=BOTTOM, fill=X)
@@ -124,7 +123,7 @@ class ImgtSubGui(Tkinter.Frame):
         self.submOutputYScrollbar = Scrollbar(self.submOutputFrame)
         self.submOutputYScrollbar.pack(side=RIGHT, fill=Y)
 
-        self.submOutputGuiObject = Tkinter.Text(
+        self.submOutputGuiObject = Text(
             self.submOutputFrame, width=80, height=8, wrap=NONE
             , xscrollcommand=self.submOutputXScrollbar.set
             , yscrollcommand=self.submOutputYScrollbar.set
@@ -136,24 +135,24 @@ class ImgtSubGui(Tkinter.Frame):
         self.submOutputGuiObject.pack(expand=True, fill='both') 
         self.submOutputFrame.pack(expand=True, fill='both')
 
-        self.uploadSubmissionFrame = Tkinter.Frame(self)        
-        self.saveSubmissionButton = Tkinter.Button(self.uploadSubmissionFrame, text='4) Save Submission to My Computer', command=self.saveSubmissionFile)
+        self.uploadSubmissionFrame = Frame(self)        
+        self.saveSubmissionButton = Button(self.uploadSubmissionFrame, text='4) Save Submission to My Computer', command=self.saveSubmissionFile)
         self.saveSubmissionButton.pack(**button_opt)
         # TODO: Enable IMGT Upload functionality. Also enable this button.
-        self.uploadButton = Tkinter.Button(self.uploadSubmissionFrame, text='5) Upload Submission to IPD-IMGT/HLA', command=self.uploadSubmission, state=DISABLED)        
+        self.uploadButton = Button(self.uploadSubmissionFrame, text='5) Upload Submission to IPD-IMGT/HLA', command=self.uploadSubmission, state=DISABLED)        
         self.uploadButton.pack(**button_opt)
-        self.exitButton = Tkinter.Button(self.uploadSubmissionFrame, text='Exit', command=self.saveAndExit)
+        self.exitButton = Button(self.uploadSubmissionFrame, text='Exit', command=self.saveAndExit)
         self.exitButton.pack(**button_opt)
         self.uploadSubmissionFrame.pack()
         
         self.pack(expand=True, fill='both')
 
     def chooseSubmissionOptions(self):
-        print ('Opening the IMGT/HLA Submission Options Dialog')
+        logEvent ('Opening the IMGT/HLA Submission Options Dialog')
         
         self.disableGUI()
         
-        imgtOptionsRoot = Tkinter.Toplevel()
+        imgtOptionsRoot = Toplevel()
         imgtOptionsRoot.bind("<Destroy>", self.enableGUI)
         ImgtSubOptionsForm(imgtOptionsRoot).pack()
 
@@ -198,14 +197,41 @@ class ImgtSubGui(Tkinter.Frame):
         assignConfigurationValue('sex', 'Unknown')
         assignConfigurationValue('consanguineous', 'Unknown')
         assignConfigurationValue('homozygous', 'Unknown')
-
         
+        assignConfigurationValue('lab_of_origin', 'ACME Laboratories')
+        assignConfigurationValue('lab_contact', 'Prof. Laura L. Labcontact')
+        
+        assignConfigurationValue('material_availability', 'No Material Available')
+        assignConfigurationValue('cell_bank', 'Not Available')
+        
+        # A, B, DRB1 are mandatory, the rest are optional.
+        # Allele calls are stored in a dictionary. 
+        assignConfigurationValue('source_hla', {
+            'HLA-A*':'01:01:01:01,02:02:02:02'
+            ,'HLA-B*':'03:03:03:03,04:04:04:04'
+            ,'HLA-C*':''
+            ,'HLA-DRA*':''
+            ,'HLA-DRB1*':'05:05:05:05,06:06:06:06'
+            ,'HLA-DRB3*':''
+            ,'HLA-DRB4*':''
+            ,'HLA-DRB5*':''
+            ,'HLA-DRB6*':''
+            ,'HLA-DRB7*':''
+            ,'HLA-DRB8*':''
+            ,'HLA-DRB9*':''
+            ,'HLA-DQA1*':''
+            ,'HLA-DQB1*':''
+            ,'HLA-DPA1*':''
+            ,'HLA-DPB1*':''        
+        })
+      
         self.constructSubmission()
         
     # This method should popup some instruction text in a wee window.
     # This should be explicit on how to use the tool.    
+    # TODO: Double check the button text. Did I change these buttons?
     def howToUse(self):
-        tkMessageBox.showinfo('How to use this tool',
+        messagebox.showinfo('How to use this tool',
             'This software is to be used to create an\n'
             + 'IPD-IMGT/HLA-formatted submission document,\n'
             + 'which specifies a (novel) HLA allele.\n\n'       
@@ -258,7 +284,7 @@ class ImgtSubGui(Tkinter.Frame):
         options['parent'] = self
         options['title'] = 'Specify your output file.'
         options['initialfile'] = 'IMGT.HLA.Submission.txt'
-        outputFileObject = tkFileDialog.asksaveasfile(**self.dir_opt)
+        outputFileObject = filedialog.asksaveasfile(**self.dir_opt)
         submissionText = self.submOutputGuiObject.get('1.0', 'end')
         outputFileObject.write(submissionText)
         # TODO: Did I detect any exceptions? Maybe I don't have permission to write that file        
@@ -270,7 +296,7 @@ class ImgtSubGui(Tkinter.Frame):
             self.update()   
             
             # Popup.  This uses NMDP BTM ACT tool to annotate sequences.
-            if (tkMessageBox.askyesno('Annotate Exons?'
+            if (messagebox.askyesno('Annotate Exons?'
                 , 'This will annotate your exons using the\n'
                 + 'NMDP: BeTheMatch Gene Feature\n'
                 + 'Enumeration / Allele Calling Tool.\n\n'
@@ -288,51 +314,38 @@ class ImgtSubGui(Tkinter.Frame):
                 self.featureInputGuiObject.insert('1.0', annotatedSequence) 
                 
                 # TODO: I have not implemented this yet.    
-                alleleDescription = getAlleleDescription()
-                fdfsgdf                
-    
+                alleleDescription = getAlleleDescription(alleleCallWithGFE)
+                closestKnownAllele = getClosestAllele(alleleCallWithGFE)
+                
+                # Popup.  I can auto-generate an allele description.
+                if (messagebox.askyesno('Use this generated allele description?'
+                    , 'IPD-IMGT/HLA requires a detailed allele\n'
+                    + 'description with listed polymorphisms\n'
+                    + 'from a related allele.\n'
+                    + 'The NMDP: BeTheMatch Gene Feature\n'
+                    + 'Enumeration / Allele Calling Tool\n'  
+                    + 'found this allele description:\n\n'
+                    + alleleDescription + '\n\n'
+                    + 'Would you like to use this allele description\n'
+                    + 'in your submission?'
+                    
+                    )):
+                    
+                    assignConfigurationValue('closest_allele_written_description', alleleDescription)
+                    assignConfigurationValue('closest_known_allele', closestKnownAllele)
+
             self.update()
             self.enableGUI()
             
-        except Exception, e:
-            tkMessageBox.showerror('Error Annotating Input Sequence.'
-                , str(e))
+        except Exception:
+            messagebox.showerror('Error Annotating Input Sequence.'
+                , str(exc_info()))
             raise
         
     def uploadSubmission(self):
         # TODO: Implement this method.
-        print ('This functionality is disabled until it works better.')
-
-
-    # Gather sequence information from the input elements, and generate a text IMGT submission.
-    #def constructSubmission(self):
-    #    try:
-    #        allGen = ImgtSubGenerator()
-    #        roughFeatureSequence = self.featureInputGuiObject.get('1.0', 'end')
-
-    #        allGen.sequenceAnnotation = identifyGenomicFeatures(roughFeatureSequence)
-    #        imgtSubmission = allGen.buildIMGTSubmission()
-            
-    #        if (imgtSubmission is None or len(imgtSubmission) < 1):
-    #            tkMessageBox.showerror('Empty submission text'
-    #                ,'You are missing some required information.\n'
-    #                + 'Try the \'Submission Options\' button.\n')
-                
-    #            self.submOutputGuiObject.delete('1.0','end')    
-    #            self.submOutputGuiObject.insert('1.0', '') 
-    #        else:
-    #            self.submOutputGuiObject.delete('1.0','end')    
-    #            self.submOutputGuiObject.insert('1.0', imgtSubmission) 
-            
-            
-    #    except KeyError, e:
-    #        tkMessageBox.showerror('Missing Submission Options'
-    #            ,'You are missing some required information.\n'
-    #            + 'Use the \'Submission Options\' button.\n'
-    #            + 'Missing Data: ' + str(e))
-                
-
-            
+        logEvent ('This functionality is disabled until it works better.')
+                      
     # Gather sequence information from the input elements, and generate a text EMBL submission.
     def constructSubmission(self):
         try:
@@ -343,7 +356,7 @@ class ImgtSubGui(Tkinter.Frame):
                 annotatedSequence = roughNucleotideSequence
                 
             else:
-                if (tkMessageBox.askyesno('Auto - Annotate Exons?'
+                if (messagebox.askyesno('Auto - Annotate Exons?'
                     , 'It looks like your sequence features have not been identified.\n' +
                     'Would you like to annotate using NMDP: BeTheMatch\n' +
                     'Gene Feature Enumeration Tool?')):
@@ -360,7 +373,7 @@ class ImgtSubGui(Tkinter.Frame):
             imgtSubmission = allGen.buildIMGTSubmission()
                         
             if (imgtSubmission is None or len(imgtSubmission) < 1):
-                tkMessageBox.showerror('Empty submission text'
+                messagebox.showerror('Empty submission text'
                     ,'You are missing some required information.\n'
                     + 'Try the \'Submission Options\' button.\n')
                 
@@ -370,19 +383,19 @@ class ImgtSubGui(Tkinter.Frame):
                 self.submOutputGuiObject.delete('1.0','end')    
                 self.submOutputGuiObject.insert('1.0', imgtSubmission) 
             
-        except KeyError, e:
-            tkMessageBox.showerror('Missing Submission Options'
+        except KeyError:
+            messagebox.showerror('Missing Submission Options'
                 ,'You are missing some required information.\n'
                 + 'Use the \'Submission Options\' button.\n'
-                + 'Missing Data: ' + str(e))
+                + 'Missing Data: ' + str(exc_info()))
            
-        except HlaSequenceException, e:
-            tkMessageBox.showerror('I see a problem with Sequence Format.'
-                , str(e))
+        except HlaSequenceException:
+            messagebox.showerror('I see a problem with Sequence Format.'
+                , str(exc_info()))
            
-        except Exception, e:
-            tkMessageBox.showerror('Error Constructing Submission.'
-                , str(e))
+        except Exception:
+            messagebox.showerror('Error Constructing Submission.'
+                , str(exc_info()))
             raise       
             
             
@@ -399,7 +412,7 @@ class ImgtSubGui(Tkinter.Frame):
         self.toggleGUI(False)   
         
     def toggleGUI(self, isEnabled): 
-        #print ('Toggling GUI Widgets:' + str(isEnabled))
+        #logEvent ('Toggling GUI Widgets:' + str(isEnabled))
          
         newState = (NORMAL if (isEnabled) else DISABLED)
         

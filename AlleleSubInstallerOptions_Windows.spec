@@ -22,27 +22,26 @@
 
 block_cipher = None
 
-
-a = Analysis(['saddlebags\AlleleSubMain.py'],
-             binaries=None,
-             datas=[('images\horse_image_icon.ico', 'images')] ,
-             hiddenimports=['six', 'packaging', 'packaging.requirements', 'packaging.version', 'packaging.specifiers', 'Tkinter', 'tkFileDialog', 'Tkconstants', 'saddlebags.AlleleSubMainGui'],
-             hookspath=[],
-             runtime_hooks=[],
-             excludes=['tkinter'],
-             win_no_prefer_redirects=False,
-             win_private_assemblies=False,
-             cipher=block_cipher)
+a = Analysis(['AlleleSubMain.py'],
+    binaries=None,
+    datas=[('images\horse_image_icon.ico', 'images')] ,
+    hiddenimports=[],
+    hookspath=[],
+    runtime_hooks=[],
+    excludes=[],
+    win_no_prefer_redirects=False,
+    win_private_assemblies=False,
+    cipher=block_cipher)
 pyz = PYZ(a.pure, a.zipped_data,
-             cipher=block_cipher)
+    cipher=block_cipher)
 exe = EXE(pyz,
-          a.scripts,
-          a.binaries,
-          a.zipfiles,
-          a.datas,
-          name='SaddlebagsWindows',
-          debug=False,
-          strip=False,
-          upx=True,
-          console=False,
-          icon='images\horse_image_icon.ico' )
+    a.scripts,
+    a.binaries,
+    a.zipfiles,
+    a.datas,
+    name='SaddlebagsWindows',
+    debug=False,
+    strip=False,
+    upx=True,
+    console=False,
+    icon='images\horse_image_icon.ico' )

@@ -6,30 +6,48 @@ Download an executable for Windows from the Release page.
 [Download Saddlebags for Windows Here](https://github.com/transplantation-immunology-maastricht/saddle-bags/releases)
 
 ## Run using Python
-Alternatively, you can run this program using Python 2.7. This works for Mac and Linux users (or Windows). There are prerequesites, I recommend you install them inside an Anaconda environment. See Run_allele_submission.sh and Run_allele_submission.bat for an example of this in Linux and Windows environments, respectively.
+Alternatively, you can run this program using Python 3.6. The required packages can be installed within a python virtual environment. This works for Mac and Linux users, or Windows. See Run_allele_submission.bat and Run_allele_submission.sh for an example of launching Saddlebags in Windows, or Linux/Mac, respectively..
+
+## To configure Virtual Environment.
+The general installation instructions are similar for Windows and Linux/Mac environments.
+
+Install the Git commandline. In Windows, there is an option to include the git bash console, I recommend doing this, as it is very useful.
+
+Install Python 3.6, 64 or 32 bit.
+[Download Python](https://www.python.org/downloads/release/python-363/)
+
+The python installer includes pip, which is necessary for the next steps.
+
+Install Virtual Environment. This requires a couple steps, because there is a windows wrapper to get virtual environment working with powershell. 
 
 ```
-python AlleleSubmissionMain.py
+pip install virtualenv
+pip install virtualenvwrapper-win
+```
+[More info](http://timmyreilly.azurewebsites.net/python-pip-virtualenv-installation-on-windows/)
+
+Create the virtual environment. I typically use an environment called "minionvenv":
+```
+mkvirtualenv minionvenv
+```
+The mkvirtualenv command should automatically activate the new environment. If not, activate the environment.
+```
+C:\Users\ben\Envs\minionvenv\Scripts\activate
 ```
 
-## To configure Anaconda
-Anaconda uses separate environments to run your programs in.  
-Install Anaconda for python 2.7.  
-https://www.continuum.io/downloads  
-To set up the environment in anaconda:  
+Is your environment activated? Then use pip to install the packages that saddlebags needs:
+```
+pip install biopython six pycurl pyinstaller packaging 
+```
 
-Linux/Mac:  
-```
-conda create --name minionvironment biopython six pycurl
-source activate minionvironment  
-pip install pyinstaller packaging  
-source deactivate  
-```  
-Windows:  
-```  
-conda create --name minionvironment biopython six pywin32 pycurl
-call activate minionvironment && pip install pyinstaller packaging && call deactivate  
-```
+In Ubuntu, Installing pycurl was a bit difficult inside of virtualenv.
+
+https://stackoverflow.com/questions/37669428/error-in-installation-pycurl-7-19-0
+sudo apt-get install libgnutls-dev
+
+In linux, i needed Needed the "dev" verson of python 3.6
+sudo apt-get install python3.6-dev
+
 
 ## Run using a bash or .bat script using anaconda
 You can execute the following scripts to run the tool inside of Anaconda:  

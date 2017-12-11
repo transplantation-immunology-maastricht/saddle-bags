@@ -15,6 +15,10 @@
 
 # The GeneLocus class specifies a locus on a Gene, 
 # Either an Exon, intron, or UTR.
+
+# TODO: I can't use the logEvent here because it's making a circular dependancy.
+#from saddlebags.AlleleSubCommon import logEvent
+
 class GeneLocus():
     
     def __init__(self):

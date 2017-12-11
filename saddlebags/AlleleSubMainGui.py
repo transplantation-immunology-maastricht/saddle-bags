@@ -13,22 +13,18 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with saddle-bags. If not, see <http://www.gnu.org/licenses/>.
 
-import os
+from tkinter import messagebox, Frame, StringVar, Label, Button, Toplevel
+from tkinter.constants import BOTH, DISABLED
 
-import Tkinter, Tkconstants, tkFileDialog, tkMessageBox
-from Tkinter import DISABLED
-import Tkinter as Tk
+from saddlebags.EmblSubGui import EmblSubGui
+from saddlebags.ImgtSubGui import ImgtSubGui
+from saddlebags.AlleleSubCommon import loadConfigurationFile, writeConfigurationFile, assignIcon, logEvent
 
-from EmblSubGui import EmblSubGui
-from ImgtSubGui import ImgtSubGui
-
-from AlleleSubCommon import loadConfigurationFile, writeConfigurationFile, assignIcon
-
-class AlleleSubMainGui(Tkinter.Frame):
+class AlleleSubMainGui(Frame):
 
     # Initialize the GUI
     def __init__(self, root):
-        Tkinter.Frame.__init__(self, root)
+        Frame.__init__(self, root)
         root.title("An HLA Allele Submission Generator")
         self.parent = root
 
@@ -39,7 +35,7 @@ class AlleleSubMainGui(Tkinter.Frame):
         
         assignIcon(self.parent)
         
-        button_opt = {'fill': Tkconstants.BOTH, 'padx': 35, 'pady': 5}
+        button_opt = {'fill': BOTH, 'padx': 35, 'pady': 5}
         
         # Load configuration
         loadConfigurationFile()
@@ -53,29 +49,29 @@ class AlleleSubMainGui(Tkinter.Frame):
         # TODO: Enable the IMGT feature
 
         # Instruction Frame
-        self.instructionFrame = Tkinter.Frame(self)
-        self.instructionText = Tkinter.StringVar()       
+        self.instructionFrame = Frame(self)
+        self.instructionText = StringVar()       
         self.instructionText.set('\nSaddlebags is an HLA Allele Submission Generator.\n'
             + 'You can generate an allele submission text file for\n'
             + 'the EMBL-ENA nucleotide database. You must choose:\n\n'
             #+ '(IMGT Submission is under development, and has been disabled for the Workshop.\n'
             #+ 'Please use the standard IMGT web interface for HLA submission.)\n'
             )
-        Tkinter.Label(self.instructionFrame, width=85, height=5, textvariable=self.instructionText).pack()
+        Label(self.instructionFrame, width=85, height=5, textvariable=self.instructionText).pack()
         self.instructionFrame.pack()
            
         # Make a frame for the more-info buttons
-        self.moreInfoFrame = Tkinter.Frame(self)
-        Tkinter.Button(self.moreInfoFrame, text='Begin an EMBL-ENA submission', command=lambda: self.openAlleleSubGUI('EMBL')).grid(row=0, column=0)
-        #TODO Enable IMGT
-        Tkinter.Button(self.moreInfoFrame, text='Begin an IPD-IMGT/HLA submission', command=lambda: self.openAlleleSubGUI('IMGT'), state=DISABLED).grid(row=0, column=1)
-        Tkinter.Button(self.moreInfoFrame, text='    How to use this tool     ', command=self.howToUse).grid(row=1, column=0)
-        Tkinter.Button(self.moreInfoFrame, text='Contacting and Citing MUMC', command=self.contactInformation).grid(row=1, column=1)
+        self.moreInfoFrame = Frame(self)
+        Button(self.moreInfoFrame, text='Begin an EMBL-ENA submission', command=lambda: self.openAlleleSubGUI('EMBL')).grid(row=0, column=0)
+        #Button(self.moreInfoFrame, text='Begin an IPD-IMGT/HLA submission', command=lambda: self.openAlleleSubGUI('IMGT')).grid(row=0, column=1)
+        Button(self.moreInfoFrame, text='Begin an IPD-IMGT/HLA submission', command=lambda: self.openAlleleSubGUI('IMGT'), state=DISABLED).grid(row=0, column=1)
+        Button(self.moreInfoFrame, text='    How to use this tool     ', command=self.howToUse).grid(row=1, column=0)
+        Button(self.moreInfoFrame, text='Contacting and Citing MUMC', command=self.contactInformation).grid(row=1, column=1)
         self.moreInfoFrame.pack()
         
         # Frame for the exit button
-        self.exitFrame = Tkinter.Frame(self)
-        Tkinter.Button(self.exitFrame, text='Exit', command=self.closeWindow).pack(**button_opt)
+        self.exitFrame = Frame(self)
+        Button(self.exitFrame, text='Exit', command=self.closeWindow).pack(**button_opt)
         self.exitFrame.pack()
         
         self.pack()
@@ -96,8 +92,9 @@ class AlleleSubMainGui(Tkinter.Frame):
 
     # This method should popup some instruction text in a wee window.
     # This should be explicit on how to use the tool.    
+    # TODO: I should actually say EMBL-ENA here. The phrasing is not quite right. Fix the button text as well.
     def howToUse(self):
-        tkMessageBox.showinfo('How to use this tool',
+        messagebox.showinfo('How to use this tool',
             'This software is to be used to create an\n'
             + 'EMBL-formatted submission document,\n'
             + 'which specifies a (novel) HLA allele.\n\n'       
@@ -128,7 +125,7 @@ class AlleleSubMainGui(Tkinter.Frame):
         
     def contactInformation(self):
         # This method should list contact information for MUMC, and a link to the github page.  
-        tkMessageBox.showinfo('Contact Information',
+        messagebox.showinfo('Contact Information',
             'This software was created at\n'
             + 'Maastricht University Medical Center\n'
             + 'Transplantation Immunology\n'
@@ -183,14 +180,14 @@ class AlleleSubMainGui(Tkinter.Frame):
         self.rememberWindowPosition()
         
         self.parent.withdraw()
-        self.alleleSubRoot = Tkinter.Toplevel()
+        self.alleleSubRoot = Toplevel()
         self.alleleSubRoot.bind("<Destroy>", self.onCloseOtherFrame)
         
         if(submissionType=='IMGT'):
-            print ('Opening the IPD-IMGT/HLA Submission GUI')
+            logEvent ('Opening the IPD-IMGT/HLA Submission GUI')
             ImgtSubGui(self.alleleSubRoot).pack()
         elif(submissionType=='EMBL'):
-            print ('Opening the EMBL Submission GUI')
+            logEvent ('Opening the EMBL Submission GUI')
             EmblSubGui(self.alleleSubRoot).pack()
         else:
             raise Exception('Unknown Submission Type.  I expected IMGT or EMBL:' + str(submissionType))

@@ -13,13 +13,13 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with saddle-bags. If not, see <http://www.gnu.org/licenses/>.
 
-import datetime
+from datetime import datetime
 # TODO: Get rid of the GUI / tk code from this file.  It belongs elsewhere.
 # Instead, raise an HlaSequenceException and catch it somewhere upstream.
-import tkMessageBox
+from tkinter import messagebox
 
-from AlleleSubCommon import getConfigurationValue
-from HlaGene import HlaGene
+from saddlebags.AlleleSubCommon import getConfigurationValue, logEvent
+from saddlebags.HlaGene import HlaGene
 
 
 # TODO: I believe we can use biopython's SeqIO class to generate this submission.
@@ -38,11 +38,11 @@ class ImgtSubGenerator():
         documentBuffer = ''
 
         totalLength = self.sequenceAnnotation.totalLength()
-        print('total calculated length = ' + str(totalLength))
+        logEvent('total calculated length = ' + str(totalLength))
         
         if(totalLength > 0):
             
-            print ('im gonna add the header in here:')
+            logEvent ('im gonna add the header in here:')
 
             # These are the main sections of the ENA submission.
             documentBuffer += self.printHeader()
@@ -56,7 +56,7 @@ class ImgtSubGenerator():
             documentBuffer += ('//\n')
             
         else: 
-            tkMessageBox.showinfo('No HLA Sequence Found', 
+            messagebox.showinfo('No HLA Sequence Found', 
                 'The HLA sequence is empty.\nPlease fill in an annotated HLA sequence\nbefore generating the submission.' )
             
             pass
@@ -73,7 +73,7 @@ class ImgtSubGenerator():
         # Maybe it should be an unknown identifier with 
         imgtIdentifier = 'HWS10012345'
         imgtIdentifierWithVersion = 'HWS10012345.1'        
-        currentSubmissionDate = '{:%d/%m/%Y}'.format(datetime.datetime.now())
+        currentSubmissionDate = '{:%d/%m/%Y}'.format(datetime.now())
 
         headerText += 'ID   ' + str(imgtIdentifier) + '; Sequence Submission; Confidential; ' + str(self.sequenceAnnotation.totalLength()) + ' BP.\n'
         headerText += 'XX\n'
@@ -146,20 +146,20 @@ class ImgtSubGenerator():
         sourceText += 'FT                  /ethnic_origin="' + str(getConfigurationValue('ethnic_origin')) + '"\n'
         sourceText += 'FT                  /sex="' + str(getConfigurationValue('sex')) + '"\n'
         sourceText += 'FT                  /consanguineous="' + str(getConfigurationValue('consanguineous')) + '"\n'
-        sourceText += 'FT                  /homozygous="Yes"\n'
-        sourceText += 'FT                  /lab_of_origin="**IMGT_SUBMITTING_LAB_NAME**"\n'
-        sourceText += 'FT                  /lab_contact="**IMGT_SUBMITTER_NAME**"\n'
+        sourceText += 'FT                  /homozygous="' + str(getConfigurationValue('homozygous')) + '"\n'
+        sourceText += 'FT                  /lab_of_origin="' + str(getConfigurationValue('lab_of_origin')) + '"\n'
+        sourceText += 'FT                  /lab_contact="' + str(getConfigurationValue('lab_contact')) + '"\n'
         
         # TODO: No Material Available.  What if Material is available?
         # I think I need to add this to the form still.
         # Same story with "cell_bank"
         
-        sourceText += 'FT                  /material_available="No Material Available"\n'
-        sourceText += 'FT                  /cell_bank="Not Available"\n'
+        sourceText += 'FT                  /material_available="' + str(getConfigurationValue('material_availability')) + '"\n'
+        sourceText += 'FT                  /cell_bank="' + str(getConfigurationValue('cell_bank')) + '"\n'
         
         # TODO: James suggested that I only allow valid fully-sequenced alleles.
         # Should I validate this, or should I leave that work to IMGT?
-        
+        # Yeah he's better at validating that than I am, I can't maintain a list of alleles, James can.        
         sourceText += 'FT                  /HLA-A*="01"\n'
         sourceText += 'FT                  /HLA-C*="07"\n'
         sourceText += 'FT                  /HLA-B*="07"\n'
@@ -177,10 +177,10 @@ class ImgtSubGenerator():
         # TODO: What are the options for sequencing methodology?
         # I can provide an open-text field.        
         
-        methodsText += 'FT                  /primary_sequencing="Direct sequencing of PCR product from DNA (SBT)"\n'
-        methodsText += 'FT                  /secondary_sequencing="Direct sequencing of PCR product from DNA (SBT)"\n'
-        methodsText += 'FT                  /type_of_primer="Both allele and locus specific"\n'
-        methodsText += 'FT                  /sequenced_in_isolation="Yes"\n'
+        methodsText += 'FT                  /primary_sequencing="**PRIMARY_SEQUENCING_METHODOLOGY**"\n'
+        methodsText += 'FT                  /secondary_sequencing="**SECONDARY_SEQUENCING_METHODOLOGY**"\n'
+        methodsText += 'FT                  /type_of_primer=""**PRIMER_TYPE**"\n'
+        methodsText += 'FT                  /sequenced_in_isolation="**SEQUENCED_IN_ISOLATION**"\n'
         
         # TODO Add these primers dynamically
         # A primer has these pieces of information
@@ -190,6 +190,8 @@ class ImgtSubGenerator():
         # I should store a dictionary of primers in the configuration. 
         # Errr, nodes underneath the Primer nodes.
         # They put a "tab" character between some of this data.  Why? Because Tabs, sigh.
+        
+        # Loop: For each line in Primer text. I'll need to split it by newline character. That is fine.
                 
         methodsText += 'FT                  /primer_1=""\n'
         methodsText += 'FT                  /primer_2=""\n'
@@ -205,12 +207,12 @@ class ImgtSubGenerator():
         # TODO: There's something up with these primers.
         # Why are they in the comments? Did we run out of space?
         
-        methodsText += 'FT                  /method_comments=""\n'
-        methodsText += 'FT                  HLA genes  present in\n'
-        methodsText += 'FT                  Exon 2."\n'
-        
+        # Don't put primers in comments. Make this a loop. Multiline.
+        methodsText += 'FT                  /method_comments="**METHOD_COMMENTS**"\n'
+
+        # TODO        
         # This is the "closest allele, right?"
-        
+        # I can set this when the GFE/ACT was performed.        
         methodsText += 'FT                  /alignment="' + str(getConfigurationValue('closest_known_allele')) + '"\n'
         
         return methodsText
@@ -273,25 +275,25 @@ class ImgtSubGenerator():
         # Do a quick sanity check.  If we are missing either UTR I should warn the user.
         # But move on with your life, this is not worth getting upset over.
         if (not geneHas3UTR and not geneHas5UTR):
-            tkMessageBox.showinfo('Missing UTRs', 
+            messagebox.showinfo('Missing UTRs', 
                 'This sequence has no 5\' or 3\' UTR.\n\n' + 
                 'Use lowercase nucleotides at the\n' + 
                 'beginning and end of your DNA\n' +
                 'sequence to specify the 5\' and 3\' UTRs.' )
         elif (not geneHas5UTR):
-            tkMessageBox.showinfo('Missing 5\' UTR', 
+            messagebox.showinfo('Missing 5\' UTR', 
                 'This sequence has no 5\' UTR.\n\n' + 
                 'Use lowercase nucleotides at the\n' + 
                 'beginning and end of your DNA\n' +
                 'sequence to specify the 5\' and 3\' UTRs.' )            
         elif (not geneHas3UTR):
-            tkMessageBox.showinfo('Missing 3\' UTR', 
+            messagebox.showinfo('Missing 3\' UTR', 
                 'This sequence has no 3\' UTR.\n\n' + 
                 'Use lowercase nucleotides at the\n' + 
                 'beginning and end of your DNA\n' +
                 'sequence to specify the 5\' and 3\' UTRs.' )    
         else:
-            print('The UTRs look fine.')
+            logEvent('The UTRs look fine.')
             pass
 
 
