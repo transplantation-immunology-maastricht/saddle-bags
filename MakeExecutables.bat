@@ -27,4 +27,4 @@ SET VirtualEnvironmentLocation=C:\Users\ben\Envs\minionvenv\Scripts
 
 :: Run Pyinstaller to create executables
 :: cd %CodePath%
-activate %VirtualEnvironmentLocation%\activate && pyinstaller %SpecFile% --distpath %BinPath% --clean && deactivate
+%VirtualEnvironmentLocation%\activate && pyinstaller %SpecFile% --distpath %BinPath% --clean && deactivate

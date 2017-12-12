@@ -30,7 +30,7 @@ from saddlebags.AlleleSubMainGui import AlleleSubMainGui
 #    from saddlebags.AlleleSubMainGui import AlleleSubMainGui
 #    from saddlebags.AlleleSubCommon import loadConfigurationFile
     
-SoftwareVersion = 'saddlebags Version 1.2'
+SoftwareVersion = 'saddlebags Version 1.4'
     
 if __name__=='__main__':
     try:
