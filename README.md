@@ -60,6 +60,35 @@ Windows:
 Run_allele_submission.bat
 ```
 
+## Logging
+Logging is disabled by default, but it is possible to turn on the verbose logging feature by changing a configuration value.
+
+Find the file "Saddlebags.Config.xml". When you exit Saddlebags, it creates this configuration file to store commonly used values. It should be placed in your home directory, in a subfolder called "saddlebags_temp".
+
+For example, you might find it in one of these locations in Windows or Ubuntu, respetively:
+```
+C:\Users\ben\saddlebags_temp
+/home/ben/saddlebags_temp
+```
+Early verions of saddlebags created configs in slightly different locations. If there is any confusion, it is safe to delete Saddlebags.Config.xml and allow Saddlebags to recreate it.
+
+Edit Saddlebags.Config.xml, using Notepad or your favorite text editor. Turn logging on by changing the 0 to a 1, like this
+
+from
+```
+<logging>0</logging>
+```
+to
+```
+<logging>1</logging>
+```
+Save Saddlebags.Config.xml, and restart Saddlebags. It will now create a log file in the same directory, like this:
+```
+C:\Users\ben\saddlebags_temp\Saddlebags.Log.txt
+/home/ben/saddlebags_temp/Saddlebags.Log.txt
+```
+The text of this log file may help with identifying problems.
+
 ## Annotating your exons
 This service uses the [NMDP BeTheMatch Allele Calling Tool](https://github.com/nmdp-bioinformatics/service-act) to automatically annotate the genomic features of a full length HLA sequence. 
 
