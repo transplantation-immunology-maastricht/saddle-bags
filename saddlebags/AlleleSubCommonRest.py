@@ -39,6 +39,7 @@ def fetchSequenceAlleleCallWithGFE(rawSequence, locus):
     
     #print ('request URL:' + requestURL)
     
+    
     #curlResponseBuffer = StringIO()
     curlResponseBuffer = BytesIO()    
     

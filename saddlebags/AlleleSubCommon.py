@@ -40,24 +40,25 @@ from json import loads
 
 from saddlebags.HlaGene import HlaGene, GeneLocus
 
-def getClosestAllele(alleleCallWithGFE):
-    logEvent ('I am determining the closest known allele here. This is the ACT/GFE that was passed in:\n\n')
-    #print (str(alleleCallWithGFE))
-    
-    # TODO: Obviously I need to be smart about this, not return a hard-coded value.
-    return ('HLA-B*07:96:01')
-
-def getAlleleDescription(alleleCallWithGFE):
-    # TODO: When I fetch a GFE, it will include the next closest allele. 
-    # Should I write an allele description for it?  I can generate a description like:
-    # "The closest allele found is A*01:01 but with a polymorphism blah blah."
-    # "IMGT/HLA requires a description of the next closest allele, Should I use this one?"
-    
-    logEvent ('I am generating an Allele Description here. This is the ACT/GFE that was passed in:\n\n')
-    #print (str(alleleCallWithGFE))
-        
-    return ('The next closest allele is A*01, blah blah, with a polymorphism\n'
-    + 'at an important locus.')
+# TODO: I'm scrapping thses methods here, I think they are not necessary. This code is in parseExons()
+# def getClosestAllele(alleleCallWithGFE):
+#     logEvent ('I am determining the closest known allele here. This is the ACT/GFE that was passed in:\n\n')
+#     #print (str(alleleCallWithGFE))
+#
+#     # TODO: Obviously I need to be smart about this, not return a hard-coded value.
+#     return ('HLA-B*07:96:01')
+#
+# def getAlleleDescription(alleleCallWithGFE):
+#     # TODO: When I fetch a GFE, it will include the next closest allele.
+#     # Should I write an allele description for it?  I can generate a description like:
+#     # "The closest allele found is A*01:01 but with a polymorphism blah blah."
+#     # "IMGT/HLA requires a description of the next closest allele, Should I use this one?"
+#
+#     logEvent ('I am generating an Allele Description here. This is the ACT/GFE that was passed in:\n\n')
+#     #print (str(alleleCallWithGFE))
+#
+#     return ('The next closest allele is A*01, blah blah, with a polymorphism\n'
+#     + 'at an important locus.')
     
     
 
@@ -306,7 +307,7 @@ def isSequenceAlreadyAnnotated(inputSequenceText):
         return True
     
     # TODO: This isn't perfect. It must have all 8 nucleotides to return true.
-    # Circle back on this one later.
+    # Circle back on this one later, should I store a variable somewhere if the sequence has been annotated?
     return False
 
 def parseExons(roughFeatureSequence, alleleCallWithGFEJson):
@@ -342,14 +343,37 @@ def parseExons(roughFeatureSequence, alleleCallWithGFEJson):
                 logEvent ('JSON results have no "status" element. This is not a problem.')
                
             # Is sequence novel?
-            if 'typing_status' in parsedJson.keys():
-                logEvent ('typing_status element was found.')
+            #if 'typing_status' in parsedJson.keys():
+            #    logEvent ('typing_status element was found.')
+            #else:
+            #    logEvent ('JSON Results:' + str(parsedJson))
+            #    raise Exception ('No typing_status element was found in Json results. Cannot continue.')
+            # TODO We no longer have a typing_status element in the returned JSON. I will find the typing status here...
+
+            # Is sequence novel?
+            if 'status' in parsedJson.keys():
+                logEvent ('status element was found.')
             else:
                 logEvent ('JSON Results:' + str(parsedJson))
-                raise Exception ('No typing_status element was found in Json results. Cannot continue.')
-            
-            typingStatusDictionary = parsedJson['typing_status']
-            
+                raise Exception ('No status element was found in Json results. Cannot continue.')
+
+            typingStatusNode = parsedJson['status']
+
+            print('I will try to loop through the keys of the typing status dictionary.')
+            print('the typing status dictionary looks like this:')
+            print(typingStatusNode)
+
+            if(typingStatusNode == 'documented'):
+                logEvent ('This is a known/documented allele.')
+            elif(typingStatusNode == 'novel'):
+                logEvent ('This is a novel allele.')
+            else:
+                print ('I do not understand the status of this allele. Expected either "documented" or "novel":')
+                print(typingStatusNode)
+                raise Exception('Unknown Typing status, expected documented or novel:' + typingStatusNode)
+
+            # TODO: This format is different. Re-work this logic until it is better.
+
             # Loop through the recognized Features
             if 'features' in parsedJson.keys():
                 # We found features.
@@ -386,44 +410,84 @@ def parseExons(roughFeatureSequence, alleleCallWithGFEJson):
                 raise Exception ('Unable to identify any HLA exon features, unable to annotate sequence.')
                 # no features found
                 #return roughFeatureSequence
-                
-            # Loop through the Novel Features
-            if 'novel_features' in typingStatusDictionary.keys():
-                logEvent ('Novel Features were found.')
-                # We found features.
-                featureList = typingStatusDictionary['novel_features']
-                #print 'This many Novel Features:' + str(len(featureList))
-                
-                for featureDictionary in featureList:
 
-                    term=str(featureDictionary['term'])
-                    rank=str(featureDictionary['rank'])
-                    sequence= str(featureDictionary['sequence'])
-                    
-                    #print ('Novel Feature' 
-                    #    + ':' + term
-                    #    + ':' + rank
-                    #    + ':' + sequence)
-                    
-                    if(term == 'five_prime_UTR'):
-                        fivePrimeSequence = sequence.lower()
-                        logEvent ('Novel 5Prime Sequence:' + fivePrimeSequence)
-                    elif(term == 'three_prime_UTR'):
-                        threePrimeSequence = sequence.lower()
-                        logEvent ('Novel 3Prime Sequence:' + threePrimeSequence)
-                    elif(term == 'exon'):    
-                        exonDictionary[rank] = sequence.upper()
-                        logEvent ('Novel Exon ' + str(rank) + ' Sequence:' + exonDictionary[rank])
-                    elif(term == 'intron'):    
-                        intronDictionary[rank] = sequence.lower()
-                        logEvent ('Novel Intron ' + str(rank) + ' Sequence:' + intronDictionary[rank])
-                    else:
-                        raise Exception('Unknown Feature Term, expected exon or intron:' + term)
-                
+            # TODO: Once we know the genomic features, I can add this next-closest allele description.
+
+            alleleDescription = ''
+            if 'hla' in parsedJson.keys():
+                closestAllele = parsedJson['hla']
+                alleleDescription += (closestAllele)
+
+                # if seqdiff is available, parse that list and specify the allele differences.
+                # This has the most info but its missing from old versions of ACT.
+                # else if novel_features are available, at least I can tell what feature the modification is in.
+                # else, assume the sequence is known, not novel.
+                if 'seqdiff' in parsedJson.keys():
+                    seqDiffList = parsedJson['seqdiff']
+                    for seqDiffDictionary in seqDiffList:
+
+                        alleleDescription += ('\nFT                  Position '
+                            + str(seqDiffDictionary['location']) + ' in '
+                            + str(seqDiffDictionary['term']) + ' : '
+                            + str(seqDiffDictionary['ref']) + '->' + str(seqDiffDictionary['inseq'])
+                            )
+
+
+                # Loop Novel Features
+                elif 'novel_features' in parsedJson.keys():
+                    novelFeatureList = parsedJson['novel_features']
+
+                    # In this case I only have info about the feature it is in. Darn.
+                    for featureDictionary in novelFeatureList:
+                        alleleDescription += ('\nFT                  Polymorphism In '
+                            + str(featureDictionary['term']) + ' ' + str(featureDictionary['rank']))
+
+
+                else:
+                    # Add the Sequence Differences.
+                    alleleDescription += ('No novel features identified. This sequence is not novel?')
+
             else:
-                logEvent ('No novel features were found. Presumably this is a known HLA allele. No problem.')
-                #raise Exception ('Unable to identify any HLA exon features, unable to annotate sequence.')
-            
+                alleleDescption += 'Could not determine closest HLA allele, please provide a detailed description of the novel sequence.'
+
+
+
+
+
+            assignConfigurationValue('closest_allele_written_description', alleleDescription)
+
+            # # Loop through the Novel Features
+            # if 'novel_features' in novelFeatureDictionary.keys():
+            #     logEvent ('Novel Features were found.')
+            #     # We found features.
+            #     featureList = novelFeatureDictionary['novel_features']
+            #     #print 'This many Novel Features:' + str(len(featureList))
+            #
+            #     for featureDictionary in featureList:
+            #
+            #         term=str(featureDictionary['term'])
+            #         rank=str(featureDictionary['rank'])
+            #         sequence= str(featureDictionary['sequence'])
+            #
+            #         if(term == 'five_prime_UTR'):
+            #             fivePrimeSequence = sequence.lower()
+            #             logEvent ('Novel 5Prime Sequence:' + fivePrimeSequence)
+            #         elif(term == 'three_prime_UTR'):
+            #             threePrimeSequence = sequence.lower()
+            #             logEvent ('Novel 3Prime Sequence:' + threePrimeSequence)
+            #         elif(term == 'exon'):
+            #             exonDictionary[rank] = sequence.upper()
+            #             logEvent ('Novel Exon ' + str(rank) + ' Sequence:' + exonDictionary[rank])
+            #         elif(term == 'intron'):
+            #             intronDictionary[rank] = sequence.lower()
+            #             logEvent ('Novel Intron ' + str(rank) + ' Sequence:' + intronDictionary[rank])
+            #         else:
+            #             raise Exception('Unknown Feature Term, expected exon or intron:' + term)
+            #
+            # else:
+            #     logEvent ('No novel features were found. Presumably this is a known HLA allele. No problem.')
+            #     #raise Exception ('Unable to identify any HLA exon features, unable to annotate sequence.')
+
             if (len(fivePrimeSequence) < 1):
                 logEvent ('I cannot find a five prime UTR.')
                 logEvent ('Rough Sequence:\n' + cleanSequence(roughFeatureSequence).upper())
@@ -445,7 +509,7 @@ def parseExons(roughFeatureSequence, alleleCallWithGFEJson):
             #print ('FOUND THIS ANNOTATED SEQUENCE:\n' + str(annotatedSequence))
 
             
-            logEvent ('Annotating 5\' UTR:' + str(fivePrimeSequence))
+            #logEvent ('Annotating 5\' UTR:' + str(fivePrimeSequence))
             annotatedSequence = fivePrimeSequence + '\n'
 
             # arbitrarily choose 50.
@@ -454,14 +518,14 @@ def parseExons(roughFeatureSequence, alleleCallWithGFEJson):
             for i in range(1,50):
                 indexString = str(i)
                 if indexString in exonDictionary.keys():
-                    logEvent ('Annotating exon#' + indexString + ':' + str(exonDictionary[indexString]))
+                    #logEvent ('Annotating exon#' + indexString + ':' + str(exonDictionary[indexString]))
                     annotatedSequence += (str(exonDictionary[indexString]) + '\n')
                     
                 if indexString in intronDictionary.keys():
-                    logEvent ('Annotating intron#' + indexString + ':' + str(intronDictionary[indexString]))
+                    #logEvent ('Annotating intron#' + indexString + ':' + str(intronDictionary[indexString]))
                     annotatedSequence += (str(intronDictionary[indexString]) + '\n')
                 
-            logEvent ('Annotating 3\' UTR:' + str(threePrimeSequence))
+            #logEvent ('Annotating 3\' UTR:' + str(threePrimeSequence))
             
             if (len(threePrimeSequence) < 1):
                 #print ('Rough Sequence:\n' + cleanSequence(roughFeatureSequence).upper())
@@ -609,7 +673,7 @@ def identifyGenomicFeatures(inputSequenceText):
 
         # Annotate the loci (name them) and print the results of the read file.
         resultGeneLoci.annotateLoci()
-        resultGeneLoci.printGeneSummary()
+        #resultGeneLoci.printGeneSummary()
     
     # If the sequence is empty
     else:
@@ -637,6 +701,20 @@ def initializeGlobalVariables():
 def assignConfigurationValue(configurationKey, configurationValue):
     # Overwrite config value without question.
     initializeGlobalVariables()
+
+    # Deal with semicolons. I just decided that semicolons are a special character.
+    # Lists will be separated by semicolon in the config.
+    # TODO: I guess I could just ALWAYS treat these as lists of things. that would save an if/else, but decrease understandability
+    if (';' in configurationValue):
+        globalVariables[configurationKey] = configurationValue.split(';')
+
+        #debug
+        #print('The child text was:' + configurationValue)
+        #print('after split it looks like:' + str(configurationValue.split(';')))
+
+    else:
+        globalVariables[configurationKey] = configurationValue
+
     globalVariables[configurationKey] = configurationValue
     
 def assignIfNotExists(configurationKey, configurationValue):
@@ -646,16 +724,19 @@ def assignIfNotExists(configurationKey, configurationValue):
     initializeGlobalVariables()
     if configurationKey not in globalVariables.keys():
         assignConfigurationValue(configurationKey, configurationValue)
-    
-    
+
 def getConfigurationValue(configurationKey):
     if configurationKey in globalVariables.keys():
-        return globalVariables[configurationKey]
+        configurationValue = globalVariables[configurationKey]
+
+        if (';' in configurationValue):
+            return configurationValue.split(';')
+        else:
+            return configurationValue
     else:
         logEvent ('Configuration Key Not Found:' + configurationKey)
         #raise KeyError('Key Not Found:' + configurationKey)
         return None
-
 
 def logEvent(eventText):
     fullLogMessage = str(datetime.now()) + ' : ' + str(eventText)
@@ -689,7 +770,7 @@ def writeConfigurationFile():
     # TODO: Potential problem: I want to store primer descriptions.
     # This is a list of primers. Can i save or load a list of strings in here?
     for key in globalVariables.keys():
-        # Some config values I don't want to store.
+        # Some config values I don't want to store. I can add more to this list if i want.
 
         if(key not in [
             'embl_password'
@@ -697,7 +778,14 @@ def writeConfigurationFile():
             , 'sequence'
             , 'source_hla'
             ]):
-            ET.SubElement(root, key).text = globalVariables[key]
+
+            # If the variable is a list, we should store the text representation. Separate it by semicolons.
+            # Potential problem: Where will semicolons show up? Should I escape them somehow?
+            # “;”.join(list)
+            if type(globalVariables[key]) is list:
+                ET.SubElement(root, key).text = ';'.join(globalVariables[key])
+            else:
+                ET.SubElement(root, key).text = globalVariables[key]
 
     xmlText = ET.tostring(root, encoding='utf8', method='xml')
     prettyXmlText = MD.parseString(xmlText).toprettyxml()
@@ -735,8 +823,5 @@ def loadConfigurationFile():
     assignIfNotExists('embl_ftp_upload_site_prod', 'webin.ebi.ac.uk')
     assignIfNotExists('embl_rest_address_test', 'https://www-test.ebi.ac.uk/ena/submit/drop-box/submit/')
     assignIfNotExists('embl_rest_address_prod', 'https://www.ebi.ac.uk/ena/submit/drop-box/submit/')
-    assignIfNotExists('nmdp_act_rest_address', 'http://act.b12x.org/act' )
+    assignIfNotExists('nmdp_act_rest_address', 'http://act.b12x.org/type_align' )
     
-            
-    
-       
