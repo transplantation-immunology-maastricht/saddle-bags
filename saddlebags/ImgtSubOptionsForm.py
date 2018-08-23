@@ -18,8 +18,7 @@ from tkinter import Frame, Label, StringVar, IntVar, Entry, Radiobutton, message
 from saddlebags.AlleleSubCommon import getConfigurationValue, assignConfigurationValue, logEvent
 from saddlebags.ScrolledWindow import VerticalScrolledFrame
 
-# I am using this ScrolledWindow class instead of a Frame.
-# This interface is too big for one screen, need a scrollbar.
+
 
 class ImgtSubOptionsForm(VerticalScrolledFrame):
         
@@ -30,14 +29,14 @@ class ImgtSubOptionsForm(VerticalScrolledFrame):
         VerticalScrolledFrame.__init__(self, root)
         #Frame.__init__(self, root)
         #super(500, 500)
-        root.title("Choose IMGT Submission Options")
+        root.title("Choose IMGT/HLA Submission Options")
         self.parent = root
 
         #button_opt = {'fill': Tkconstants.BOTH, 'padx': 35, 'pady': 5}
                         
         # This window should not be resizeable. I guess.
-        # Maybe height should be resizeable, i don't know.
         self.parent.resizable(width=False, height=False)
+        #self.parent.resizable(width=True, height=True)
         
         # To define the exit behavior.  Save and exit.
         self.parent.protocol('WM_DELETE_WINDOW', self.saveOptions)
@@ -358,10 +357,16 @@ class ImgtSubOptionsForm(VerticalScrolledFrame):
         if getConfigurationValue('embl_release_date') is not None:
             self.inputReleaseDate.set(getConfigurationValue('embl_release_date')) 
    
-        # 0=unpublished, 1=published  
-        if getConfigurationValue('is_published') is not None:
+        # 0=unpublished, 1=published
+        #print('1Setting is_published value to:' + getConfigurationValue('is_published'))
+        if (getConfigurationValue('is_published') is None or getConfigurationValue('is_published') == 'None'):
+            self.publishedReferenceIntVar.set(0)
+            #print('2Setting is_published value to:' + getConfigurationValue('is_published'))
+
+        else:
             self.publishedReferenceIntVar.set(getConfigurationValue('is_published'))
-            
+
+
         if getConfigurationValue('reference_title') is not None:
             self.inputReferenceTitle.set(getConfigurationValue('reference_title'))            
         if getConfigurationValue('reference_authors') is not None:
@@ -400,12 +405,6 @@ class ImgtSubOptionsForm(VerticalScrolledFrame):
         # Load options for HLA allele calls.
         # Clear the combo-box, and fill it with the keys of my hla allele call dictionary.  
             
-         
-            
-
-            
-
-
     def saveOptions(self):
         # Close the window
         # TODO: If i force the user to fill in all the options, this form is really obnoxious.
@@ -433,7 +432,8 @@ class ImgtSubOptionsForm(VerticalScrolledFrame):
             assignConfigurationValue('embl_sequence_accession', self.inputEmblAcc.get())
             assignConfigurationValue('embl_release_date', self.inputReleaseDate.get())
             
-            assignConfigurationValue('is_published', self.publishedReferenceIntVar.get())
+            assignConfigurationValue('is_published', str(self.publishedReferenceIntVar.get()))
+            #print('Saving is_published configuration as :' + str(self.publishedReferenceIntVar.get()))
             
             assignConfigurationValue('reference_title',self.inputReferenceTitle.get())    
             assignConfigurationValue('reference_authors',self.inputReferenceAuthors.get())    
@@ -493,7 +493,8 @@ class ImgtSubOptionsForm(VerticalScrolledFrame):
             messagebox.showwarning('Missing Form Value',
                 'You are missing an IMGT Submission Release Date. Please try again.')
             return False
-        
+
+        # This is NOne if nothing is selected.
         if (self.publishedReferenceIntVar.get() == 0):
         # unpublished, nothing to check
             pass

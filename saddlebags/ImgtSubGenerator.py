@@ -19,12 +19,9 @@ from datetime import datetime
 from tkinter import messagebox
 
 from saddlebags.AlleleSubCommon import getConfigurationValue, logEvent
-from saddlebags.HlaGene import HlaGene
+from saddlebags.AlleleSubmission import HlaGene
+from saddlebags.AcademicCitation import AcademicCitation
 
-
-# TODO: I believe we can use biopython's SeqIO class to generate this submission.
-# TODO: Actually I think we can not do that. The IMGT output is not updated regularly and it is a PITA.
-# James says we should not.
 
 # The ImgtSubGenerator class contains logic to generate an IPD-IMGT/HLA allele submission flatfile
 class ImgtSubGenerator():   
@@ -46,6 +43,8 @@ class ImgtSubGenerator():
 
             # These are the main sections of the IPD-IMGT/HLA submission.
             documentBuffer += self.printHeader()
+            documentBuffer += self.printCitations()
+            documentBuffer += self.printKeyHeader()
             documentBuffer += self.printSubmitter()
             documentBuffer += self.printSource()
             documentBuffer += self.printMethods()
@@ -114,22 +113,59 @@ class ImgtSubGenerator():
         headerText += 'XX\n'
         # TODO: Our submission says GENBANK, but we're using EMBL Numbers.  Also what does that [1] mean?
         headerText += 'DR   GENBANK; ' + str(getConfigurationValue('embl_sequence_accession')) + '.\n'
-        headerText += 'XX\n'
-        headerText += 'RN   [1]\n'
-        # TODO: This submission is Unpublished.  What if it is published?
-        # There are examples of the published papers in the manual on IMGT
-        headerText += 'RC   Unpublished.\n'
-        headerText += 'XX\n'
-        headerText += 'FH   Key            Location/Qualifier\n'
-        headerText += 'FH\n'
-
-        errorherethisisintentional.dfafsdads
-        #TODO: here is where i want to add the citations. Can i separate
-        # citations with semicolons or will that not work? Perhaps I must explicitly escape them.
-        # I ccan escape the semicolons in the primers and allele calls too, but they shouldn't be there.
-
 
         return headerText
+
+    def printCitations(self):
+        citationText = ''
+        citationText += 'XX\n'
+
+        citationTextList = getConfigurationValue('citations')
+        #
+        #str(getConfigurationValue('imgt_submission_identifier'))
+
+        if (citationTextList is None or len(citationTextList) < 1):
+            citationText += 'RN   [1]\n'
+            citationText += 'RC   Unpublished.\n'
+            citationText += 'XX\n'
+        else:
+
+            #citationTextList = citationText.split(';')
+            #citationTextEnumeration = enumerate(citationText)
+
+            # Each citation is 5 tokens, separated by semicolons.
+            # Is this a multiple of 5?
+            if(len(citationTextList) % 5 == 0):
+
+                # A weird for loop to parse the info.
+                citationCount = int(len(citationTextList) / 5)
+
+                for x in range(0, citationCount):
+                    citationObject = AcademicCitation()
+
+                    # I don't like how i'm indexing here. Moduluses are confusing.
+                    # Also, super-cheap way of escaping my semicolons here
+                    citationObject.referencePosition = citationTextList[0 + 5 * x].replace('@@@', ';')
+                    citationObject.referenceCrossReference = citationTextList[1 + 5 * x].replace('@@@', ';')
+                    citationObject.referenceAuthors = citationTextList[2 + 5 * x].replace('@@@', ';')
+                    citationObject.referenceTitle = citationTextList[3 + 5 * x].replace('@@@', ';')
+                    citationObject.referenceLocation = citationTextList[4 + 5 * x].replace('@@@', ';')
+
+                    citationText += citationObject.printCitation(x + 1)
+
+
+            else:
+                raise Exception('Invalid Citation. The Citation information is malformed in the configuration file. Please double check your citation information.')
+
+        return citationText
+
+    def printKeyHeader(self):
+        keyHeaderText = ''
+        keyHeaderText += 'FH   Key            Location/Qualifier\n'
+        keyHeaderText += 'FH\n'
+
+        return keyHeaderText
+
 
     def printSubmitter(self):
         submitterText = ''
@@ -247,10 +283,9 @@ class ImgtSubGenerator():
         # Don't put primers in comments. Make this a loop. Multiline.
         methodsText += 'FT                  /method_comments="' + str(getConfigurationValue('method_comments')) + '"\n'
 
-        # TODO        
-        # This is the "closest allele, right?"
-        # I can set this when the GFE/ACT was performed.        
-        methodsText += 'FT                  /alignment="' + str(getConfigurationValue('closest_allele_written_description')) + '"\n'
+        # TODO the alignment seems to be rejected by the IMGT/HLA Validator. For now I will not include this, because this information is included in the header.
+        # I can set this when the GFE/ACT was performed.
+        #methodsText += 'FT                  /alignment="' + str(getConfigurationValue('closest_allele_written_description')) + '"\n'
         
         return methodsText
 
@@ -259,7 +294,7 @@ class ImgtSubGenerator():
     def printFeatures(self):
         featureText = ''
         
-        # TODO: I might double check with James Robinson about the backslashes before "number". 
+        # TODO: I might double check with James about the backslashes before "number".
         # Seems inconsistent.
         
         
@@ -268,11 +303,11 @@ class ImgtSubGenerator():
         # Coding sequence is just the exons.  Print out each exon.
         # Ignoring line-breaks for now, this might create a really wide line. Ok?
         featureText += ('FT   CDS            join(') 
-        for x in range(0,len(self.sequenceAnnotation.loci)):
-            geneLocus = self.sequenceAnnotation.loci[x]
+        for x in range(0, len(self.sequenceAnnotation.features)):
+            geneLocus = self.sequenceAnnotation.features[x]
             if (geneLocus.exon):
                 featureText += str(geneLocus.beginIndex) + '..' + str(geneLocus.endIndex)
-                if not x==len(self.sequenceAnnotation.loci)-2:
+                if not x == len(self.sequenceAnnotation.features) - 2:
                     featureText += ','
                 else:
                     featureText += ')\n'
@@ -284,8 +319,8 @@ class ImgtSubGenerator():
         geneHas3UTR = False
         geneHas5UTR = False
             
-        for x in range(0,len(self.sequenceAnnotation.loci)):
-            currentFeature = self.sequenceAnnotation.loci[x]
+        for x in range(0, len(self.sequenceAnnotation.features)):
+            currentFeature = self.sequenceAnnotation.features[x]
 
             # test, temp
             #print('this feature is named:' + currentFeature.name + '\n')

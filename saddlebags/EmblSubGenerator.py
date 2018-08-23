@@ -16,7 +16,7 @@
 #from Bio.Seq import Seq
 #from Bio.Alphabet import generic_dna
 
-from saddlebags.HlaGene import HlaGene
+from saddlebags.AlleleSubmission import HlaGene
 from saddlebags.AlleleSubCommon import getConfigurationValue, translateSequence, logEvent
 from saddlebags.HlaSequenceException import HlaSequenceException
 
@@ -69,8 +69,8 @@ class EmblSubGenerator():
         
         # Iterate through the indices of the UTRs and exons.
         # The 3' and 5' UTR are included in the mRNA
-        for x in range(0,len(self.sequenceAnnotation.loci)):
-            geneLocus = self.sequenceAnnotation.loci[x]
+        for x in range(0, len(self.sequenceAnnotation.features)):
+            geneLocus = self.sequenceAnnotation.features[x]
             # If it is an exon or UTR
             if (geneLocus.exon or 'UT' in geneLocus.name):
                 mRNAText += str(geneLocus.beginIndex) + '..' + str(geneLocus.endIndex) + ','
@@ -95,11 +95,11 @@ class EmblSubGenerator():
         # CDS is the coding sequence.  It should include the exons, but not the UTRs/Introns
         # The range 1:featureCount-1 will exclude the UTRs.
         cdsText += ('FT   CDS             join(') 
-        for x in range(0,len(self.sequenceAnnotation.loci)):
-            geneLocus = self.sequenceAnnotation.loci[x]
+        for x in range(0, len(self.sequenceAnnotation.features)):
+            geneLocus = self.sequenceAnnotation.features[x]
             if (geneLocus.exon):
                 cdsText += str(geneLocus.beginIndex) + '..' + str(geneLocus.endIndex)
-                if not x==len(self.sequenceAnnotation.loci)-2:
+                if not x == len(self.sequenceAnnotation.features) - 2:
                     cdsText += ','
                 else:
                     cdsText += ')\n'
@@ -155,8 +155,8 @@ class EmblSubGenerator():
         geneHas3UTR = False
         geneHas5UTR = False
             
-        for x in range(0,len(self.sequenceAnnotation.loci)):
-            currentFeature = self.sequenceAnnotation.loci[x]
+        for x in range(0, len(self.sequenceAnnotation.features)):
+            currentFeature = self.sequenceAnnotation.features[x]
 
             # 3' UTR
             if(currentFeature.name == '3UT'):
