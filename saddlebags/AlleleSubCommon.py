@@ -36,30 +36,35 @@ from Bio.Seq import Seq
 from Bio.Alphabet import generic_dna
 
 from io import StringIO
-from json import loads
+from json import loads, dumps # what dumb method names.
 
-from saddlebags.HlaGene import HlaGene, GeneLocus
+from saddlebags.AlleleSubmission import HlaGene, GeneFeature, SubmissionBatch, AlleleSubmission
 
-def getClosestAllele(alleleCallWithGFE):
-    logEvent ('I am determining the closest known allele here. This is the ACT/GFE that was passed in:\n\n')
-    #print (str(alleleCallWithGFE))
-    
-    # TODO: Obviously I need to be smart about this, not return a hard-coded value.
-    return ('HLA-B*07:96:01')
+#from gfe_client import TypeSeqAPI, typeseq_get
+# TODO: I don't like to use global imports like this, can i change it to only import a function or something, Yes.
+import gfe_client
 
-def getAlleleDescription(alleleCallWithGFE):
-    # TODO: When I fetch a GFE, it will include the next closest allele. 
-    # Should I write an allele description for it?  I can generate a description like:
-    # "The closest allele found is A*01:01 but with a polymorphism blah blah."
-    # "IMGT/HLA requires a description of the next closest allele, Should I use this one?"
-    
-    logEvent ('I am generating an Allele Description here. This is the ACT/GFE that was passed in:\n\n')
-    #print (str(alleleCallWithGFE))
-        
-    return ('The next closest allele is A*01, blah blah, with a polymorphism\n'
-    + 'at an important locus.')
-    
-    
+
+# TODO I dont think I'm using this locus, it is not necessary anymore.
+def fetchSequenceAlleleCallWithGFE(rawSequence, locus):
+
+    cleanedSequence = cleanSequence(rawSequence.upper())
+
+    # TODO: get the act address into a configuration file. I want to be able to use a local service. Which i already have?
+    config = gfe_client.Configuration()
+    config.host = 'http://act.b12x.org'
+    api = gfe_client.ApiClient(configuration=config)
+
+    ann_api = gfe_client.TypeSeqApi(api_client=api)
+
+    responseText = ann_api.typeseq_get(sequence=cleanedSequence, imgthla_version="3.31.0")
+
+    annotation = responseText.to_dict()
+    jsonResponse = dumps(annotation, indent=4)
+
+    return jsonResponse
+
+
 
 def assignIcon(tkRootWindow):
     logEvent ('Assigning Icon for the GUI.')
@@ -288,10 +293,8 @@ def collectRoughSequence(guiSequenceInputObject):
         messagebox.showerror('Error Reading Input Sequence.'
             , str(exc_info()))
         raise
-                
 
-
-# 
+#
 def isSequenceAlreadyAnnotated(inputSequenceText):
     # The easy case.
     if ('a' in inputSequenceText and
@@ -306,7 +309,7 @@ def isSequenceAlreadyAnnotated(inputSequenceText):
         return True
     
     # TODO: This isn't perfect. It must have all 8 nucleotides to return true.
-    # Circle back on this one later.
+    # Circle back on this one later, should I store a variable somewhere if the sequence has been annotated?
     return False
 
 def parseExons(roughFeatureSequence, alleleCallWithGFEJson):
@@ -322,8 +325,11 @@ def parseExons(roughFeatureSequence, alleleCallWithGFEJson):
         threePrimeSequence = ''
         exonDictionary = {}
         intronDictionary = {}
-        
-        parsedJson = loads(alleleCallWithGFEJson)
+
+        # The json should be a String, but it is returned from the NMDP ACT API as a "Typing" object. I convert it to a String to make everyone happy.
+        jsonString = str(alleleCallWithGFEJson)
+        print('THIS IS THE JSON STRING\n:' + jsonString)
+        parsedJson = loads(jsonString)
 
         if (len(parsedJson.keys()) > 1):
                         
@@ -342,14 +348,37 @@ def parseExons(roughFeatureSequence, alleleCallWithGFEJson):
                 logEvent ('JSON results have no "status" element. This is not a problem.')
                
             # Is sequence novel?
-            if 'typing_status' in parsedJson.keys():
-                logEvent ('typing_status element was found.')
+            #if 'typing_status' in parsedJson.keys():
+            #    logEvent ('typing_status element was found.')
+            #else:
+            #    logEvent ('JSON Results:' + str(parsedJson))
+            #    raise Exception ('No typing_status element was found in Json results. Cannot continue.')
+            # TODO We no longer have a typing_status element in the returned JSON. I will find the typing status here...
+
+            # Is sequence novel?
+            if 'status' in parsedJson.keys():
+                logEvent ('status element was found.')
             else:
                 logEvent ('JSON Results:' + str(parsedJson))
-                raise Exception ('No typing_status element was found in Json results. Cannot continue.')
-            
-            typingStatusDictionary = parsedJson['typing_status']
-            
+                raise Exception ('No status element was found in Json results. Cannot continue.')
+
+            typingStatusNode = parsedJson['status']
+
+            print('I will try to loop through the keys of the typing status dictionary.')
+            print('the typing status dictionary looks like this:')
+            print(typingStatusNode)
+
+            if(typingStatusNode == 'documented'):
+                logEvent ('This is a known/documented allele.')
+            elif(typingStatusNode == 'novel'):
+                logEvent ('This is a novel allele.')
+            else:
+                print ('I do not understand the status of this allele. Expected either "documented" or "novel":')
+                print(typingStatusNode)
+                raise Exception('Unknown Typing status, expected documented or novel:' + typingStatusNode)
+
+            # TODO: This format is different. Re-work this logic until it is better.
+
             # Loop through the recognized Features
             if 'features' in parsedJson.keys():
                 # We found features.
@@ -386,44 +415,55 @@ def parseExons(roughFeatureSequence, alleleCallWithGFEJson):
                 raise Exception ('Unable to identify any HLA exon features, unable to annotate sequence.')
                 # no features found
                 #return roughFeatureSequence
-                
-            # Loop through the Novel Features
-            if 'novel_features' in typingStatusDictionary.keys():
-                logEvent ('Novel Features were found.')
-                # We found features.
-                featureList = typingStatusDictionary['novel_features']
-                #print 'This many Novel Features:' + str(len(featureList))
-                
-                for featureDictionary in featureList:
 
-                    term=str(featureDictionary['term'])
-                    rank=str(featureDictionary['rank'])
-                    sequence= str(featureDictionary['sequence'])
-                    
-                    #print ('Novel Feature' 
-                    #    + ':' + term
-                    #    + ':' + rank
-                    #    + ':' + sequence)
-                    
-                    if(term == 'five_prime_UTR'):
-                        fivePrimeSequence = sequence.lower()
-                        logEvent ('Novel 5Prime Sequence:' + fivePrimeSequence)
-                    elif(term == 'three_prime_UTR'):
-                        threePrimeSequence = sequence.lower()
-                        logEvent ('Novel 3Prime Sequence:' + threePrimeSequence)
-                    elif(term == 'exon'):    
-                        exonDictionary[rank] = sequence.upper()
-                        logEvent ('Novel Exon ' + str(rank) + ' Sequence:' + exonDictionary[rank])
-                    elif(term == 'intron'):    
-                        intronDictionary[rank] = sequence.lower()
-                        logEvent ('Novel Intron ' + str(rank) + ' Sequence:' + intronDictionary[rank])
+            # TODO: Once we know the genomic features, I can add this next-closest allele description.
+
+            alleleDescription = ''
+            if 'hla' in parsedJson.keys():
+                closestAllele = parsedJson['hla']
+                alleleDescription += (closestAllele)
+
+                # if seqdiff is available, parse that list and specify the allele differences.
+                # This has the most info but its missing from old versions of ACT.
+                # else if novel_features are available, at least I can tell what feature the modification is in.
+                # else, assume the sequence is known, not novel.
+                if 'seqdiff' in parsedJson.keys():
+                    seqDiffList = parsedJson['seqdiff']
+
+                    # seqDiffList can be None, if there are no known sequence differences.
+                    if(seqDiffList is not None):
+                        for seqDiffDictionary in seqDiffList:
+
+                            alleleDescription += ('\nFT                  Position '
+                                + str(seqDiffDictionary['location']) + ' in '
+                                + str(seqDiffDictionary['term']) + ' : '
+                                + str(seqDiffDictionary['ref']) + '->' + str(seqDiffDictionary['inseq'])
+                                )
                     else:
-                        raise Exception('Unknown Feature Term, expected exon or intron:' + term)
-                
+                        logEvent('No unknown features. This allele is documented. Cool.')
+
+
+
+                # Loop Novel Features
+                elif 'novel_features' in parsedJson.keys():
+                    novelFeatureList = parsedJson['novel_features']
+
+                    # In this case I only have info about the feature it is in. Darn.
+                    # TODO Make this a bit more descriptive
+                    for featureDictionary in novelFeatureList:
+                        alleleDescription += ('\nNovel '
+                            + str(featureDictionary['term']) + ' ' + str(featureDictionary['rank']))
+
+
+                else:
+                    # Add the Sequence Differences.
+                    alleleDescription += ('No novel features identified. This sequence is not novel?')
+
             else:
-                logEvent ('No novel features were found. Presumably this is a known HLA allele. No problem.')
-                #raise Exception ('Unable to identify any HLA exon features, unable to annotate sequence.')
-            
+                alleleDescption += 'Could not determine closest HLA allele, please provide a detailed description of the novel sequence.'
+
+            assignConfigurationValue('closest_allele_written_description', alleleDescription)
+
             if (len(fivePrimeSequence) < 1):
                 logEvent ('I cannot find a five prime UTR.')
                 logEvent ('Rough Sequence:\n' + cleanSequence(roughFeatureSequence).upper())
@@ -445,23 +485,23 @@ def parseExons(roughFeatureSequence, alleleCallWithGFEJson):
             #print ('FOUND THIS ANNOTATED SEQUENCE:\n' + str(annotatedSequence))
 
             
-            logEvent ('Annotating 5\' UTR:' + str(fivePrimeSequence))
+            #logEvent ('Annotating 5\' UTR:' + str(fivePrimeSequence))
             annotatedSequence = fivePrimeSequence + '\n'
 
             # arbitrarily choose 50.
-            # TODO: this loop range is arbitrary. 
+            # TODO: this loop range is arbitrary, i'm using a for loop so i can access the index. Someone could calculate a max index.
             # Maybe indexString should just loop through the exon and intron dictionarys
             for i in range(1,50):
                 indexString = str(i)
                 if indexString in exonDictionary.keys():
-                    logEvent ('Annotating exon#' + indexString + ':' + str(exonDictionary[indexString]))
+                    #logEvent ('Annotating exon#' + indexString + ':' + str(exonDictionary[indexString]))
                     annotatedSequence += (str(exonDictionary[indexString]) + '\n')
                     
                 if indexString in intronDictionary.keys():
-                    logEvent ('Annotating intron#' + indexString + ':' + str(intronDictionary[indexString]))
+                    #logEvent ('Annotating intron#' + indexString + ':' + str(intronDictionary[indexString]))
                     annotatedSequence += (str(intronDictionary[indexString]) + '\n')
                 
-            logEvent ('Annotating 3\' UTR:' + str(threePrimeSequence))
+            #logEvent ('Annotating 3\' UTR:' + str(threePrimeSequence))
             
             if (len(threePrimeSequence) < 1):
                 #print ('Rough Sequence:\n' + cleanSequence(roughFeatureSequence).upper())
@@ -574,10 +614,10 @@ def identifyGenomicFeatures(inputSequenceText):
                     else:
                         #In this case, we're just starting an EXON.
                         #Store the last Intron in the list.
-                        currentIntron = GeneLocus()
+                        currentIntron = GeneFeature()
                         currentIntron.sequence = cleanedGene[locusBeginPosition:x].upper()
                         currentIntron.exon = False
-                        resultGeneLoci.loci.append(currentIntron)                    
+                        resultGeneLoci.features.append(currentIntron)
                         insideAnExon=True
                         locusBeginPosition = x
                         pass
@@ -589,10 +629,10 @@ def identifyGenomicFeatures(inputSequenceText):
                     else:
                         #Starting a new Intron.
                         # Store an Exon in the list.
-                        currentExon = GeneLocus()
+                        currentExon = GeneFeature()
                         currentExon.sequence = cleanedGene[locusBeginPosition:x].upper()
                         currentExon.exon = True
-                        resultGeneLoci.loci.append(currentExon)     
+                        resultGeneLoci.features.append(currentExon)
                         insideAnExon = False
                         locusBeginPosition=x
                         pass
@@ -602,14 +642,14 @@ def identifyGenomicFeatures(inputSequenceText):
 
         # We've reached the end of the loop and we still need to store the last feature.
         # Should be a 3' UTR, but I can't be sure, people like to put in weird sequences.
-        currentIntron = GeneLocus()
+        currentIntron = GeneFeature()
         currentIntron.sequence = cleanedGene[locusBeginPosition:len(cleanedGene)].upper()
         currentIntron.exon = insideAnExon
-        resultGeneLoci.loci.append(currentIntron)    
+        resultGeneLoci.features.append(currentIntron)
 
-        # Annotate the loci (name them) and print the results of the read file.
-        resultGeneLoci.annotateLoci()
-        resultGeneLoci.printGeneSummary()
+        # Annotate the features (name them) and print the results of the read file.
+        resultGeneLoci.annotateFeatures()
+        #resultGeneLoci.printGeneSummary()
     
     # If the sequence is empty
     else:
@@ -627,6 +667,11 @@ def createOutputFile(outputfileName):
     resultsOutput = open(outputfileName, 'w')
     return resultsOutput
 
+# Clear my configuration, fearlessly and without hesitation.
+def clearGlobalVariables():
+    global globalVariables
+    globalVariables = {}
+
 # I'm storing global variables in a dictionary for now. 
 def initializeGlobalVariables():    
     global globalVariables 
@@ -637,8 +682,16 @@ def initializeGlobalVariables():
 def assignConfigurationValue(configurationKey, configurationValue):
     # Overwrite config value without question.
     initializeGlobalVariables()
+
+    # Lists or Strings are handled well by the configuration serializer.
+    if(type(configurationValue) is list or type(configurationValue) is str ):
+        globalVariables[configurationKey] = serializeConfigValue(configurationValue)
+    else:
+        globalVariables[configurationKey] = configurationValue
+
     globalVariables[configurationKey] = configurationValue
-    
+    #logEvent ('Just stored configuration key ' + configurationKey + ' which is ' + str(configurationValue) + ' of type ' + str(type(configurationValue)))
+
 def assignIfNotExists(configurationKey, configurationValue):
     # Use this assigner if we want to declare important, new configuration values.
     # Using this method, we will not overwrite custom values
@@ -646,18 +699,25 @@ def assignIfNotExists(configurationKey, configurationValue):
     initializeGlobalVariables()
     if configurationKey not in globalVariables.keys():
         assignConfigurationValue(configurationKey, configurationValue)
-    
-    
+
 def getConfigurationValue(configurationKey):
     if configurationKey in globalVariables.keys():
-        return globalVariables[configurationKey]
+
+        configurationValue = globalVariables[configurationKey]
+
+        #logEvent ('Retrieving configuration key ' + configurationKey + ' which is ' + str(configurationValue) + ' of type ' + str(type(configurationValue)))
+
+        if (type(configurationValue) is str):
+            return deserializeConfigValue(configurationValue)
+        else:
+            return configurationValue
     else:
         logEvent ('Configuration Key Not Found:' + configurationKey)
         #raise KeyError('Key Not Found:' + configurationKey)
         return None
 
-
 def logEvent(eventText):
+    initializeGlobalVariables()
     fullLogMessage = str(datetime.now()) + ' : ' + str(eventText)
     print(fullLogMessage)
         
@@ -679,25 +739,107 @@ def assignConfigName():
     # Join together the working directory, a subfolder called "saddlebags_temp", and the config name.
     assignConfigurationValue('config_file_location',join(join(
         expanduser("~"),'saddlebags_temp'),'Saddlebags.Config.xml'))
-    
+
+# Encode semicolons within a config value.
+# Store lists as a string separated by a semicolon.
+def serializeConfigValue(configListObject):
+    #print('serializing a config value')
+    if (type(configListObject) == str):
+        return configListObject.replace(';','@@@')
+    elif(type(configListObject) == list):
+        serializedString = ''
+        # TODO: what if the list elements are not strings? Just don't do that. Lol.
+        # TODO: shouldn't there be built in methods for serializing? probably.
+        # Encode semicolons in the list elements.
+        for configString in configListObject:
+            serializedString = serializedString + str(configString).replace(';','@@@') + ';'
+        serializedString = serializedString[:-1]
+        return serializedString
+    else:
+        raise(TypeException('Unknown configuration type, can not serialize:' + str(type(configListObject))))
+
+
+# Split strings containing semicolon into a list.
+# Decode @@@ back into a semicolon.
+def deserializeConfigValue(serializedConfigString):
+    #print('deserializing a config value')
+    if (';' in serializedConfigString):
+        configList = serializedConfigString.split(';')
+        # Maybe a for loop is not necessary but I want to make sure i can change the string in the list.
+        for i in range (0,len(configList)):
+            configList[i] = configList[i].replace('@@@',';')
+        return configList
+    else:
+        # TODO What if it's not actually a string? Could be an arbitrary object...
+        return serializedConfigString.replace('@@@',';')
+
 def writeConfigurationFile():
     assignConfigName()
-    logEvent ('Writing a config file to:\n' + globalVariables['config_file_location'])
+    logEvent ('Writing a config file to:\n' + getConfigurationValue('config_file_location'))
     
     root = ET.Element("config")
-    
-    # TODO: Potential problem: I want to store primer descriptions.
-    # This is a list of primers. Can i save or load a list of strings in here?
-    for key in globalVariables.keys():
-        # Some config values I don't want to store.
 
+    # Root node stores "normal" configuration keys, stuff related to software
+    # and not necessarily HLA or sequence submission.
+    configElement = ET.SubElement(root, 'config_file_location').text = getConfigurationValue('config_file_location')
+
+
+    # The purpose of this loop is to make sure I don't miss any keys but I can just do that myself.
+    for key in globalVariables.keys():
+
+        # "normal" configuration keys, stuff related to software and not necessarily HLA or sequence submission.
+        # Some config values I don't want to store. I can add more to this list if i want.
+        # Don't store passwords.
+        # I handle the submission batch manually.
         if(key not in [
             'embl_password'
-            ,'imgt_password'
-            , 'sequence'
-            , 'source_hla'
+            , 'imgt_password'
+            , 'submission_batch'
             ]):
-            ET.SubElement(root, key).text = globalVariables[key]
+
+            # getConfigurationValue will handle serializing and encoding semicolons.
+            ET.SubElement(root, key).text = getConfigurationValue(key)
+
+    # Add keys for "each" batch of submissions.
+    # TODO: i may add functionality for multiple batches later. Put this in a loop.
+    submissionBatch = getConfigurationValue('submission_batch')
+    # Create a node object, most of this stuff can be parameters on the node.
+    submissionBatchElement = ET.SubElement(root, 'submission_batch')
+    submissionBatchElement.set('imgtsubmitterid', serializeConfigValue(submissionBatch.imgtSubmitterId))
+    submissionBatchElement.set('imgtsubmittername', serializeConfigValue(submissionBatch.imgtSubmitterName))
+    submissionBatchElement.set('imgtaltcontact', serializeConfigValue(submissionBatch.imgtAltContact))
+    submissionBatchElement.set('imgtsubmitteremail', serializeConfigValue(submissionBatch.imgtSubmitterEmail))
+    submissionBatchElement.set('laboforigin', serializeConfigValue(submissionBatch.labOfOrigin))
+    submissionBatchElement.set('labcontact', serializeConfigValue(submissionBatch.labContact))
+
+    # Keys for each submission.
+    for hlaAllele in submissionBatch.submissionBatch:
+        print ('I found an HLA allele.')
+        submissionElement = ET.SubElement(submissionBatchElement, 'submission')
+
+        # Most of this stuff is attrbutes. Store the Sequence as the text of this element.
+        submissionElement.text = hlaAllele.submittedGene.fullSequence
+        submissionElement.set('genelocus',                       serializeConfigValue(hlaAllele.submittedGene.geneLocus))
+        submissionElement.set('localallelename'                , serializeConfigValue(hlaAllele.localAlleleName))
+        submissionElement.set('closestallelewrittendescription', serializeConfigValue(hlaAllele.closestAlleleWrittenDescription))
+        submissionElement.set('imgtsubmissionidentifier'       , serializeConfigValue(hlaAllele.imgtSubmissionIdentifier))
+        submissionElement.set('imgtsubmissionversion', serializeConfigValue(hlaAllele.imgtSubmissionVersion))
+        submissionElement.set('cellid', serializeConfigValue(hlaAllele.cellId))
+        submissionElement.set('ethnicorigin', serializeConfigValue(hlaAllele.ethnicOrigin))
+        submissionElement.set('sex', serializeConfigValue(hlaAllele.sex))
+        submissionElement.set('consanguineous', serializeConfigValue(hlaAllele.consanguineous))
+        submissionElement.set('homozygous', serializeConfigValue(hlaAllele.homozygous))
+        submissionElement.set('typedalleles', serializeConfigValue(hlaAllele.typedAlleles))
+        submissionElement.set('materialavailability', serializeConfigValue(hlaAllele.materialAvailability))
+        submissionElement.set('cellbank', serializeConfigValue(hlaAllele.cellBank))
+        submissionElement.set('primarysequencingmethodology', serializeConfigValue(hlaAllele.primarySequencingMethodology))
+        submissionElement.set('secondarysequencingmethodology', serializeConfigValue(hlaAllele.secondarySequencingMethodology))
+        submissionElement.set('primertype', serializeConfigValue(hlaAllele.primerType))
+        submissionElement.set('primers', serializeConfigValue(hlaAllele.primers))
+        submissionElement.set('sequencedinisolation', serializeConfigValue(hlaAllele.sequencedInIsolation))
+        submissionElement.set('numofreactions', serializeConfigValue(hlaAllele.noOfReactions))
+        submissionElement.set('methodcomments', serializeConfigValue(hlaAllele.methodComments))
+        submissionElement.set('citations', serializeConfigValue(hlaAllele.citations))
 
     xmlText = ET.tostring(root, encoding='utf8', method='xml')
     prettyXmlText = MD.parseString(xmlText).toprettyxml()
@@ -707,36 +849,87 @@ def writeConfigurationFile():
     xmlOutput.close()
 
 def loadConfigurationFile():
+    # TODO: should I clear my configuration first? I have a method to purge my globals. I don't know right now, but probably not.
     assignConfigName()
-    
+
     if not isfile(globalVariables['config_file_location']):
         logEvent ('The config file does not exist yet. I will not load it:\n' + globalVariables['config_file_location'])
-        
     else:
         logEvent ('The config file already exists, I will load it:\n' + globalVariables['config_file_location'])
-        
+
         tree = ET.parse(globalVariables['config_file_location'])
         root = tree.getroot()
         
         for child in root:
-            assignConfigurationValue(child.tag, child.text)
-            
-    # Here is where I assign the common/critical configuration values
-    # test_submission indicates if we should use the "test" values.
-    # I think I'll use this value for both EMBL and IMGT submissions, if it applies.
-    assignIfNotExists('test_submission', '1')
-    
-    # Logging is turned off by default. Users can change this to 1 to turn on a logfile.
-    assignIfNotExists('logging','0')
-    
-    # I'm storing FTP without the ftp:// identifier, because it is not necessary.
-    # The test and prod ftp sites have the same address. This is intentional, embl doesn't have a test ftp
-    assignIfNotExists('embl_ftp_upload_site_test', 'webin.ebi.ac.uk')
-    assignIfNotExists('embl_ftp_upload_site_prod', 'webin.ebi.ac.uk')
-    assignIfNotExists('embl_rest_address_test', 'https://www-test.ebi.ac.uk/ena/submit/drop-box/submit/')
-    assignIfNotExists('embl_rest_address_prod', 'https://www.ebi.ac.uk/ena/submit/drop-box/submit/')
-    assignIfNotExists('nmdp_act_rest_address', 'http://act.b12x.org/act' )
-    
-            
-    
-       
+            #print ('The child tag is:' + child.tag)
+
+            # If the child node is a submission batch
+            # TODO: Think about how I can handle multiple submission batches.
+            if(child.tag == 'submission_batch'):
+                submissionBatch = SubmissionBatch()
+
+                # Assign some information about this batch of submissions.
+                submissionBatch.imgtSubmitterId = deserializeConfigValue(child.attrib['imgtsubmitterid'])
+                submissionBatch.imgtSubmitterName = deserializeConfigValue(child.attrib['imgtsubmittername'])
+                submissionBatch.imgtAltContact = deserializeConfigValue(child.attrib['imgtaltcontact'])
+                submissionBatch.imgtSubmitterEmail = deserializeConfigValue(child.attrib['imgtsubmitteremail'])
+                submissionBatch.labOfOrigin = deserializeConfigValue(child.attrib['laboforigin'])
+                submissionBatch.labContact = deserializeConfigValue(child.attrib['labcontact'])
+
+                # Loop the children, they are submission objects. Load up their information.
+                for submissionChild in child:
+                    print ('The submission child tag is:' + submissionChild.tag)
+                    #print ('This submission has the text:' + submissionChild.text)
+                    # Add a few submissions to this batch.
+                    # Submission # 1
+                    submission = AlleleSubmission()
+                    submission.submittedGene.fullSequence = submissionChild.text
+                    submission.submittedGene.geneLocus = deserializeConfigValue(submissionChild.attrib['genelocus'])
+                    submission.localAlleleName = deserializeConfigValue(submissionChild.attrib['localallelename'])
+                    submission.closestAlleleWrittenDescription = deserializeConfigValue(submissionChild.attrib['closestallelewrittendescription'])
+                    submission.imgtSubmissionIdentifier = deserializeConfigValue(submissionChild.attrib['imgtsubmissionidentifier'])
+                    submission.imgtSubmissionVersion = deserializeConfigValue(submissionChild.attrib['imgtsubmissionversion'])
+                    submission.cellId = deserializeConfigValue(submissionChild.attrib['cellid'])
+                    submission.ethnicOrigin = deserializeConfigValue(submissionChild.attrib['ethnicorigin'])
+                    submission.sex = deserializeConfigValue(submissionChild.attrib['sex'])
+                    submission.consanguineous = deserializeConfigValue(submissionChild.attrib['consanguineous'])
+                    submission.homozygous = deserializeConfigValue(submissionChild.attrib['homozygous'])
+                    submission.typedAlleles = deserializeConfigValue(submissionChild.attrib['typedalleles'])
+                    submission.materialAvailability = deserializeConfigValue(submissionChild.attrib['materialavailability'])
+                    submission.cellBank = deserializeConfigValue(submissionChild.attrib['cellbank'])
+                    submission.primarySequencingMethodology = deserializeConfigValue(submissionChild.attrib['primarysequencingmethodology'])
+                    submission.secondarySequencingMethodology = deserializeConfigValue(submissionChild.attrib['secondarysequencingmethodology'])
+                    submission.primerType = deserializeConfigValue(submissionChild.attrib['primertype'])
+                    submission.primers = deserializeConfigValue(submissionChild.attrib['primers'])
+                    submission.sequencedInIsolation = deserializeConfigValue(submissionChild.attrib['sequencedinisolation'])
+                    submission.numOfReactions = deserializeConfigValue(submissionChild.attrib['numofreactions'])
+                    submission.methodComments = deserializeConfigValue(submissionChild.attrib['methodcomments'])
+                    submission.citations = deserializeConfigValue(submissionChild.attrib['citations'])
+                    submissionBatch.submissionBatch.append(submission)
+
+                # Store my submission batch in the global variables.
+                assignConfigurationValue('submission_batch', submissionBatch)
+
+            else:
+                # Any arbitrary configuration value, just store it.
+                assignConfigurationValue(child.tag, child.text)
+
+
+        # Here is where I assign the common/critical configuration values
+        # test_submission indicates if we should use the "test" values.
+        # I think I'll use this value for both EMBL and IMGT submissions, if it applies.
+        assignIfNotExists('test_submission', '1')
+
+        # Logging is turned off by default. Users can change this to 1 to turn on a logfile.
+        assignIfNotExists('logging','0')
+
+        # I'm storing FTP without the ftp:// identifier, because it is not necessary.
+        # The test and prod ftp sites have the same address. This is intentional, embl doesn't have a test ftp
+        # TODO : I still need this stuff? Probably. I think the act service does not need the method name anymore though.
+        assignIfNotExists('embl_ftp_upload_site_test', 'webin.ebi.ac.uk')
+        assignIfNotExists('embl_ftp_upload_site_prod', 'webin.ebi.ac.uk')
+        assignIfNotExists('embl_rest_address_test', 'https://www-test.ebi.ac.uk/ena/submit/drop-box/submit/')
+        assignIfNotExists('embl_rest_address_prod', 'https://www.ebi.ac.uk/ena/submit/drop-box/submit/')
+        #assignIfNotExists('nmdp_act_rest_address', 'http://act.b12x.org/type_align')
+        assignIfNotExists('nmdp_act_rest_address', 'http://act.b12x.org')
+        # TODO: i should use the nmdp configuration value when I call the GFE/ACT services. It is currently hardcoded AFAIK

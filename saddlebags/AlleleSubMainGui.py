@@ -63,8 +63,9 @@ class AlleleSubMainGui(Frame):
         # Make a frame for the more-info buttons
         self.moreInfoFrame = Frame(self)
         Button(self.moreInfoFrame, text='Begin an EMBL-ENA submission', command=lambda: self.openAlleleSubGUI('EMBL')).grid(row=0, column=0)
-        #Button(self.moreInfoFrame, text='Begin an IPD-IMGT/HLA submission', command=lambda: self.openAlleleSubGUI('IMGT')).grid(row=0, column=1)
-        Button(self.moreInfoFrame, text='Begin an IPD-IMGT/HLA submission', command=lambda: self.openAlleleSubGUI('IMGT'), state=DISABLED).grid(row=0, column=1)
+        Button(self.moreInfoFrame, text='Begin an IPD-IMGT/HLA submission', command=lambda: self.openAlleleSubGUI('IMGT')).grid(row=0, column=1)
+        #Button(self.moreInfoFrame, text='Begin an IPD-IMGT/HLA submission',
+        #   command=lambda: self.openAlleleSubGUI('IMGT'), state=DISABLED).grid(row=0, column=1)
         Button(self.moreInfoFrame, text='    How to use this tool     ', command=self.howToUse).grid(row=1, column=0)
         Button(self.moreInfoFrame, text='Contacting and Citing MUMC', command=self.contactInformation).grid(row=1, column=1)
         self.moreInfoFrame.pack()

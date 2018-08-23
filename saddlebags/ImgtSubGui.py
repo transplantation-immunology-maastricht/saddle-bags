@@ -24,7 +24,7 @@ from tkinter.constants import BOTH, NORMAL, DISABLED, X, Y, BOTTOM, RIGHT, NONE,
 
 from saddlebags.ImgtSubGenerator import ImgtSubGenerator
 from saddlebags.ImgtSubOptionsForm import ImgtSubOptionsForm
-from saddlebags.AlleleSubCommon import collectAndValidateRoughSequence, assignIcon, assignConfigurationValue, parseExons, getConfigurationValue, identifyGenomicFeatures, isSequenceAlreadyAnnotated, collectRoughSequence, getAlleleDescription, getClosestAllele, logEvent
+from saddlebags.AlleleSubCommon import collectAndValidateRoughSequence, assignIcon, assignConfigurationValue, parseExons, getConfigurationValue, identifyGenomicFeatures, isSequenceAlreadyAnnotated, collectRoughSequence, logEvent
 from saddlebags.AlleleSubCommonRest import fetchSequenceAlleleCallWithGFE
 from saddlebags.HlaSequenceException import HlaSequenceException
 #from HLAGene import HLAGene
@@ -160,13 +160,19 @@ class ImgtSubGui(Frame):
         imgtOptionsRoot.update()        
         windowXpos = str(self.parent.winfo_geometry().split('+')[1])
         windowYpos = str(self.parent.winfo_geometry().split('+')[2])
-        newGeometry = (str(imgtOptionsRoot.winfo_width()) + 'x' 
-            + str(imgtOptionsRoot.winfo_height()) + '+' 
+        newGeometry = (str(imgtOptionsRoot.winfo_width()) + 'x'
+            + str(imgtOptionsRoot.winfo_height()) + '+'
             + str(windowXpos) + '+' 
             + str(windowYpos))
         imgtOptionsRoot.geometry(newGeometry)
-        
+
+        #imgtOptionsRoot.interior.update()
+
+
+        #imgtOptionsRoot.update()
+
         imgtOptionsRoot.mainloop()
+        #imgtOptionsRoot.update()
 
         
     def sampleSequence(self):
@@ -313,27 +319,23 @@ class ImgtSubGui(Frame):
                 self.featureInputGuiObject.delete('1.0','end')    
                 self.featureInputGuiObject.insert('1.0', annotatedSequence) 
                 
-                # TODO: I have not implemented this yet.    
-                alleleDescription = getAlleleDescription(alleleCallWithGFE)
-                closestKnownAllele = getClosestAllele(alleleCallWithGFE)
-                
+                # TODO: I have not implemented this yet.   I want the generated allele description to be optional
+                #alleleDescription = getAlleleDescription(alleleCallWithGFE)
+                #closestKnownAllele = getClosestAllele(alleleCallWithGFE)
                 # Popup.  I can auto-generate an allele description.
-                if (messagebox.askyesno('Use this generated allele description?'
-                    , 'IPD-IMGT/HLA requires a detailed allele\n'
-                    + 'description with listed polymorphisms\n'
-                    + 'from a related allele.\n'
-                    + 'The NMDP: BeTheMatch Gene Feature\n'
-                    + 'Enumeration / Allele Calling Tool\n'  
-                    + 'found this allele description:\n\n'
-                    + alleleDescription + '\n\n'
-                    + 'Would you like to use this allele description\n'
-                    + 'in your submission?'
-                    
-                    )):
-                    
-                    assignConfigurationValue('closest_allele_written_description', alleleDescription)
-                    assignConfigurationValue('closest_known_allele', closestKnownAllele)
-
+                #if (messagebox.askyesno('Use this generated allele description?'
+                #    , 'IPD-IMGT/HLA requires a detailed allele\n'
+                #    + 'description with listed polymorphisms\n'
+                #    + 'from a related allele.\n'
+                #    + 'The NMDP: BeTheMatch Gene Feature\n'
+                #    + 'Enumeration / Allele Calling Tool\n'
+                #    + 'found this allele description:\n\n'
+                #    + str(getConfigurationValue('closest_allele_written_description')) + '\n\n'
+                #    + 'Would you like to use this allele description\n'
+                #    + 'in your submission?'
+                #    )):
+                        #assignConfigurationValue('closest_allele_written_description', alleleDescription)
+                        #assignConfigurationValue('closest_known_allele', closestKnownAllele)
             self.update()
             self.enableGUI()
             
