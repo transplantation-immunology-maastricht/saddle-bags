@@ -57,7 +57,7 @@ def fetchSequenceAlleleCallWithGFE(rawSequence, locus):
 
     ann_api = gfe_client.TypeSeqApi(api_client=api)
 
-    responseText = ann_api.typeseq_get(sequence=cleanedSequence, imgthla_version="3.31.0")
+    responseText = ann_api.typeseq_get(sequence=cleanedSequence, imgthla_version="3.31.0", locus='HLA-A')
 
     annotation = responseText.to_dict()
     jsonResponse = dumps(annotation, indent=4)
@@ -368,12 +368,16 @@ def parseExons(roughFeatureSequence, alleleCallWithGFEJson):
             print('the typing status dictionary looks like this:')
             print(typingStatusNode)
 
+            
+            
             if(typingStatusNode == 'documented'):
                 logEvent ('This is a known/documented allele.')
             elif(typingStatusNode == 'novel'):
-                logEvent ('This is a novel allele.')
+                logEvent ('This is a novel allele.')                
+            elif(typingStatusNode == 'novel_combination'):
+                logEvent ('This is a novel combination of gene features.')
             else:
-                print ('I do not understand the status of this allele. Expected either "documented" or "novel":')
+                print ('I do not understand the status of this allele. Expected either "documented" or "novel" or "novel_combination":')
                 print(typingStatusNode)
                 raise Exception('Unknown Typing status, expected documented or novel:' + typingStatusNode)
 
