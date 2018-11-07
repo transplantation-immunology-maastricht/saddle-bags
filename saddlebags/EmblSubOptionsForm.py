@@ -101,7 +101,11 @@ class EmblSubOptionsForm(VerticalScrolledFrame):
  
         # 1 = Test.  0 = Production/live server
         self.chooseTestServersIntVar = IntVar()
-        self.chooseTestServersIntVar.set(int(getConfigurationValue('test_submission')))
+        # a short check in case the config value has not been implemented yet.
+        if(getConfigurationValue('test_submission') is not None):        
+            self.chooseTestServersIntVar.set(int(getConfigurationValue('test_submission')))
+        else:
+            self.chooseTestServersIntVar.set(1)
  
         Radiobutton(self.testProductionFrame, text="Submit to EMBL-ENA TEST / DEMO environment.", variable=self.chooseTestServersIntVar, value=1).pack()
         Radiobutton(self.testProductionFrame, text="Submit to EMBL-ENA LIVE / PROD environment.", variable=self.chooseTestServersIntVar, value=0).pack()

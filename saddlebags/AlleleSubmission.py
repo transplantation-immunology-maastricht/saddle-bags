@@ -31,7 +31,7 @@ class SubmissionBatch():
         self.imgtAltContact = ''
         self.imgtSubmitterEmail = ''
         self.labOfOrigin = ''
-        self.lab_contact = ''
+        self.labContact = ''
 
 
 class AlleleSubmission():
