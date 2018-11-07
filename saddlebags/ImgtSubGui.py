@@ -25,7 +25,7 @@ from tkinter.constants import BOTH, NORMAL, DISABLED, X, Y, BOTTOM, RIGHT, NONE,
 from saddlebags.ImgtSubGenerator import ImgtSubGenerator
 from saddlebags.ImgtSubOptionsForm import ImgtSubOptionsForm
 from saddlebags.AlleleSubCommon import collectAndValidateRoughSequence, assignIcon, assignConfigurationValue, parseExons, getConfigurationValue, identifyGenomicFeatures, isSequenceAlreadyAnnotated, collectRoughSequence, logEvent
-from saddlebags.AlleleSubCommonRest import fetchSequenceAlleleCallWithGFE
+#from saddlebags.AlleleSubCommonRest import fetchSequenceAlleleCallWithGFE
 from saddlebags.HlaSequenceException import HlaSequenceException
 #from HLAGene import HLAGene
 
