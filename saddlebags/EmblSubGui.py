@@ -27,7 +27,8 @@ from saddlebags.EmblSubGenerator import EmblSubGenerator
 from saddlebags.EmblSubOptionsForm import EmblSubOptionsForm
 from saddlebags.EmblSubRest import performFullSubmission
 from saddlebags.AlleleSubCommon import getConfigurationValue, assignConfigurationValue, parseExons, isSequenceAlreadyAnnotated, identifyGenomicFeatures, assignIcon, collectAndValidateRoughSequence, collectRoughSequence, logEvent
-from saddlebags.AlleleSubCommonRest import fetchSequenceAlleleCallWithGFE
+#from saddlebags.AlleleSubCommonRest import fetchSequenceAlleleCallWithGFE
+from saddlebags.AlleleSubCommon import fetchSequenceAlleleCallWithGFE
 from saddlebags.HlaSequenceException import HlaSequenceException
 
 # The AlleleGui class is an extension of Tkinter.  The GUI elements and interactions are specified in this class.

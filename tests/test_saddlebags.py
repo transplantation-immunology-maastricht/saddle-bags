@@ -162,6 +162,7 @@ def testCreateIMGTSubmissionFlatfileA():
     submissionText = imgtSubmission
     outputFileObject.write(submissionText)
   
+# Last time i checked, the DRB1 submission was not working, because the request is too big.
 """  
 
 def testCreateIMGTSubmissionFlatfileDRB1():
