@@ -807,6 +807,12 @@ def writeConfigurationFile():
     # Add keys for "each" batch of submissions.
     # TODO: i may add functionality for multiple batches later. Put this in a loop.
     submissionBatch = getConfigurationValue('submission_batch')
+    
+    # If the config is not already initiated, this can be None. Make a new one.
+    if (submissionBatch is None):
+        submissionBatch = SubmissionBatch()
+    
+    
     # Create a node object, most of this stuff can be parameters on the node.
     submissionBatchElement = ET.SubElement(root, 'submission_batch')
     submissionBatchElement.set('imgtsubmitterid', serializeConfigValue(submissionBatch.imgtSubmitterId))
