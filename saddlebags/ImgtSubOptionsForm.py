@@ -15,8 +15,10 @@
 
 from tkinter import Frame, Label, StringVar, IntVar, Entry, Radiobutton, messagebox, Button
 
-from saddlebags.AlleleSubCommon import getConfigurationValue, assignConfigurationValue, logEvent
+from saddlebags.AlleleSubCommon import getConfigurationValue, assignConfigurationValue
 from saddlebags.ScrolledWindow import VerticalScrolledFrame
+
+import logging
 
 
 
@@ -418,7 +420,7 @@ class ImgtSubOptionsForm(VerticalScrolledFrame):
         if(True):
             
             
-            logEvent ('Saving Options....')
+            logging.info ('Saving Options....')
             
             assignConfigurationValue('imgt_username', self.inputUsername.get())
             # I store this password so I can use it in the submission
@@ -462,12 +464,12 @@ class ImgtSubOptionsForm(VerticalScrolledFrame):
             
             
         else:
-            #logEvent('Not ready to save, you are missing options.')
+            #logging.info('Not ready to save, you are missing options.')
             pass
         
     def checkOptions(self):
         # TODO this method
-        logEvent ('Checking options.')
+        logging.info ('Checking options.')
 
         # Don't check the IMGT Username
         # Don't check the IMGT Password

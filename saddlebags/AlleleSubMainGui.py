@@ -18,7 +18,9 @@ from tkinter.constants import BOTH, DISABLED
 
 from saddlebags.EmblSubGui import EmblSubGui
 from saddlebags.ImgtSubGui import ImgtSubGui
-from saddlebags.AlleleSubCommon import loadConfigurationFile, writeConfigurationFile, assignIcon, logEvent
+from saddlebags.AlleleSubCommon import loadConfigurationFile, writeConfigurationFile, assignIcon, initializeLog
+
+import logging
 
 class AlleleSubMainGui(Frame):
 
@@ -32,7 +34,8 @@ class AlleleSubMainGui(Frame):
 
     # Initialize GUI elements
     def initialize(self):
-        
+
+        initializeLog()
         assignIcon(self.parent)
         
         button_opt = {'fill': BOTH, 'padx': 35, 'pady': 5}
@@ -63,8 +66,8 @@ class AlleleSubMainGui(Frame):
         # Make a frame for the more-info buttons
         self.moreInfoFrame = Frame(self)
         Button(self.moreInfoFrame, text='Begin an EMBL-ENA submission', command=lambda: self.openAlleleSubGUI('EMBL')).grid(row=0, column=0)
-        #Button(self.moreInfoFrame, text='Begin an IPD-IMGT/HLA submission', command=lambda: self.openAlleleSubGUI('IMGT')).grid(row=0, column=1)
-        Button(self.moreInfoFrame, text='Begin an IPD-IMGT/HLA submission', command=lambda: self.openAlleleSubGUI('IMGT'), state=DISABLED).grid(row=0, column=1)
+        Button(self.moreInfoFrame, text='Begin an IPD-IMGT/HLA submission', command=lambda: self.openAlleleSubGUI('IMGT')).grid(row=0, column=1)
+        #Button(self.moreInfoFrame, text='Begin an IPD-IMGT/HLA submission', command=lambda: self.openAlleleSubGUI('IMGT'), state=DISABLED).grid(row=0, column=1)
         Button(self.moreInfoFrame, text='    How to use this tool     ', command=self.howToUse).grid(row=1, column=0)
         Button(self.moreInfoFrame, text='Contacting and Citing MUMC', command=self.contactInformation).grid(row=1, column=1)
         self.moreInfoFrame.pack()
@@ -184,10 +187,10 @@ class AlleleSubMainGui(Frame):
         self.alleleSubRoot.bind("<Destroy>", self.onCloseOtherFrame)
         
         if(submissionType=='IMGT'):
-            logEvent ('Opening the IPD-IMGT/HLA Submission GUI')
+            logging.info ('Opening the IPD-IMGT/HLA Submission GUI', 'INFO')
             ImgtSubGui(self.alleleSubRoot).pack()
         elif(submissionType=='EMBL'):
-            logEvent ('Opening the EMBL Submission GUI')
+            logging.info ('Opening the EMBL Submission GUI', 'INFO')
             EmblSubGui(self.alleleSubRoot).pack()
         else:
             raise Exception('Unknown Submission Type.  I expected IMGT or EMBL:' + str(submissionType))

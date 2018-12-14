@@ -33,7 +33,9 @@ from ftplib import FTP
 
 from tkinter import messagebox
 
-from saddlebags.AlleleSubCommon import getConfigurationValue, createOutputFile, assignConfigurationValue, logEvent
+import logging
+
+from saddlebags.AlleleSubCommon import getConfigurationValue, createOutputFile, assignConfigurationValue
 from saddlebags.EmblSubXml import createProjectXML, createProjectSubmissionXML, createAnalysisSubmissionXML , createAnalysisXML
 
 
@@ -57,15 +59,15 @@ def performAnalysisSubmission(submissionFileName, analysisFileName):
     
 def performSubmission(submissionFileName, POST_DATA):
     
-    logEvent('Performing submission of ' + submissionFileName + '\n')
-    logEvent('POST Data:\n' + str(POST_DATA) + '\n')
+    logging.info('Performing submission of ' + submissionFileName + '\n')
+    logging.info('POST Data:\n' + str(POST_DATA) + '\n')
     
     
     if (str(getConfigurationValue('test_submission')) == '0'):
-        logEvent ('THIS IS A LIVE SUBMISSION AT EMBL.')
+        logging.info ('THIS IS A LIVE SUBMISSION AT EMBL.')
         requestURL = str(getConfigurationValue('embl_rest_address_prod')) + '?auth=ENA%20' + str(getConfigurationValue('embl_username')) + '%20' + str(getConfigurationValue('embl_password'))
     else:
-        logEvent ('THIS IS A TEST SUBMISSION AT EMBL.')
+        logging.info ('THIS IS A TEST SUBMISSION AT EMBL.')
         requestURL = str(getConfigurationValue('embl_rest_address_test')) + '?auth=ENA%20' + str(getConfigurationValue('embl_username')) + '%20' + str(getConfigurationValue('embl_password'))
     
     # Problem: StringIO Doesn't work with pycurl in python 3.6. Must replace this with a BytesIO.
@@ -89,17 +91,17 @@ def performSubmission(submissionFileName, POST_DATA):
         curlObject.perform()
         curlObject.close()
     except Exception:
-        logEvent ('Exception when performing CURL:\n')
-        #logEvent (str(exc_info()))
-        logEvent('Exception when performing CURL.\n')
-        logEvent('URL:' + str(requestURL))        
+        logging.error ('Exception when performing CURL:\n')
+        #logging.error (str(exc_info()))
+        logging.error('Exception when performing CURL.\n')
+        logging.error('URL:' + str(requestURL))
         
         raise
     
     responseText = curlResponseBuffer.getvalue()
     
-    #logEvent ('the type of the responseText is:' + str(type(responseText)))
-    #logEvent ('after it becomes a string:' + str(type(str(responseText))))
+    #logging.info ('the type of the responseText is:' + str(type(responseText)))
+    #logging.info ('after it becomes a string:' + str(type(str(responseText))))
     
     # write XML to file. 
     projectSubResultsFileName = submissionFileName.replace('.xml','_results.xml')
@@ -111,7 +113,7 @@ def performSubmission(submissionFileName, POST_DATA):
         
 def interpretProjectSubmissionResults(responseText):
     
-    logEvent('Parsing Project Submission Results:\n' + str(responseText) + '\n')
+    logging.info('Parsing Project Submission Results:\n' + str(responseText) + '\n')
      
        
     # Open XML to report results:
@@ -127,11 +129,11 @@ def interpretProjectSubmissionResults(responseText):
                 projectAccession = child.attrib['accession']
             else:
                 projectAccession = None
-            #logEvent('I found a project node.')
+            #logging.info('I found a project node.')
         elif(child.tag == 'MESSAGES'):
-            logEvent('I found some messages.')
+            logging.debug('I found some messages.')
             for messageNode in child:
-                #logEvent (messageNode.tag + ':' + messageNode.text)
+                #logging.debug (messageNode.tag + ':' + messageNode.text)
                 messages.append(messageNode.tag + ':' + messageNode.text)
         else:
             # Don't care about the other nodes
@@ -143,7 +145,7 @@ def interpretProjectSubmissionResults(responseText):
 
 def interpretAnalysisSubmissionResults(responseText):
     
-    logEvent('Parsing Analysis Submission Results:\n' + str(responseText) + '\n')
+    logging.info('Parsing Analysis Submission Results:\n' + str(responseText) + '\n')
     
         
     root = fromstring(responseText)  
@@ -158,11 +160,11 @@ def interpretAnalysisSubmissionResults(responseText):
                 analysisAccession = child.attrib['accession']
             else:
                 analysisAccession = None
-            #logEvent('I found a project node.')
+            #logging.info('I found a project node.')
         elif(child.tag == 'MESSAGES'):
-            logEvent('I found some messages.')
+            logging.info('I found some messages.')
             for messageNode in child:
-                #logEvent (messageNode.tag + ':' + messageNode.text)
+                #logging.info (messageNode.tag + ':' + messageNode.text)
                 messages.append(messageNode.tag + ':' + messageNode.text)
         else:
             # Don't care about the other nodes
@@ -193,19 +195,19 @@ def writeMd5(inputFileName, outputFileName):
 # TODO: This method is long, can i clean it up at all?
 
 def performFullSubmission(submissionText):
-    logEvent('Uploading Submission to EMBL')
+    logging.info('Uploading Submission to EMBL')
     
     # Determine a working directory. Folder underneath executable called temp.
     try:
         workingDirectory = join(expanduser("~"), 'temp_saddlebags')
-        logEvent('I can work in this directory:' + workingDirectory)
+        logging.info('I can work in this directory:' + workingDirectory)
         
         if not isdir(workingDirectory):
-            logEvent('Making Directory:' + workingDirectory)
+            logging.info('Making Directory:' + workingDirectory)
             makedirs(workingDirectory)
     except Exception:
-        logEvent ('Cannot Initialize Working Directory')
-        logEvent (exc_info())
+        logging.error ('Cannot Initialize Working Directory')
+        logging.error (exc_info())
         messagebox.showinfo('Working Directory Error', 
             'Sorry, I failed to create this working directory:\n'
             + str(workingDirectory)
@@ -213,11 +215,6 @@ def performFullSubmission(submissionText):
             + 'permissions issue, are these folders read only?\n' 
             +  str(exc_info()[1]))
         return
-    
-    # I'm deprecating this log file. 
-    # Use the logging i put into AlleleSubCommon instead.
-    # logEvent.
-    #restLog = createOutputFile(join(workingDirectory, 'Submission_Log.txt'))
 
     emblUsername = getConfigurationValue('embl_username')
     emblPassword = getConfigurationValue('embl_password')
@@ -228,19 +225,19 @@ def performFullSubmission(submissionText):
         messagebox.showinfo('Missing Login Credentials', 
             'You must provide EMBL username and password.\n'
             'Please use the "Submission Options" button.')
-        logEvent('Missing EMBL Username or Password.' + '\n')
+        logging.error('Missing EMBL Username or Password.' + '\n')
         return
     else:
-        logEvent('EMBL Username and Password exist.' + '\n')
+        logging.info('EMBL Username and Password exist.' + '\n')
        
 
     useTestServers = (int(getConfigurationValue('test_submission')) == 1)
     # Are you sure?
     if useTestServers:
-        logEvent('Using Test EMBL Server.' + '\n')
+        logging.info('Using Test EMBL Server.' + '\n')
         result = messagebox.askquestion("Submit to TEST / DEMO environment", "You are about to submit a sequence to the\n\nTEST / DEMO EMBL environment.\n\nAre You Sure?", icon='warning')
     else:
-        logEvent('Using Production EMBL Server.' + '\n')
+        logging.info('Using Production EMBL Server.' + '\n')
         result = messagebox.askquestion("Submit to LIVE / PROD environment", "You are about to submit a sequence to the\n\nLIVE / PROD EMBL environment.\n\nAre You Sure?", icon='warning')
 
     if result == 'yes':
@@ -265,22 +262,22 @@ def performFullSubmission(submissionText):
         
         outputFileObject = open(submissionFileName, 'w') 
         outputFileObject.write(submissionText) 
-        logEvent('Submission Text:\n' + submissionText)
+        logging.info('Submission Text:\n' + submissionText)
         outputFileObject.close()        
     
     except Exception:
-        logEvent ('Cannot Write Submission Flatfile')
-        logEvent (exc_info())
+        logging.error ('Cannot Write Submission Flatfile')
+        logging.error (exc_info())
         messagebox.showinfo('Cannot Write Submission Flatfile', 
             'Sorry, I failed to create the submission file:\n'
             + str(submissionText)
             + '\n and I cannot continue.\nMaybe this is a '
             + 'permissions issue, are these folders read only?\n' 
             +  str(exc_info()[1]))
-        logEvent('Failure to create submission file:' + str(exc_info()[1]) + '\n')
+        logging.error('Failure to create submission file:' + str(exc_info()[1]) + '\n')
         return
     
-    logEvent('Submission file was created:\n' + str(submissionFileName) + '\n')
+    logging.info('Submission file was created:\n' + str(submissionFileName) + '\n')
     
     # gzip the submission file.  Make a gz file.
     try:
@@ -290,17 +287,17 @@ def performFullSubmission(submissionText):
             copyfileobj(fileIn, fileOut)
     
     except Exception:
-        logEvent ('Cannot Compress Submission File')
-        logEvent (exc_info())
+        logging.error ('Cannot Compress Submission File')
+        logging.error (exc_info())
         messagebox.showinfo('Cannot Compress Submission File', 
             'Sorry, I failed to compress the submission file:\n'
             + str(zippedFileName)
             + '\n and I cannot continue.\n' 
             +  str(exc_info()[1]))
-        logEvent('Failure to create zip file:' + str(exc_info()[1]) + '\n')
+        logging.error('Failure to create zip file:' + str(exc_info()[1]) + '\n')
         return
     
-    logEvent('Zip file was created:\n' + str(zippedFileName) + '\n')
+    logging.info('Zip file was created:\n' + str(zippedFileName) + '\n')
     
     # Calculate an MD5SUM
     try:
@@ -308,15 +305,15 @@ def performFullSubmission(submissionText):
         md5HashValue = writeMd5(zippedFileName,md5FileName)
         
     except Exception:
-        logEvent ('Cannot Calculate MD5')
-        logEvent (exc_info())
+        logging.error ('Cannot Calculate MD5')
+        logging.error (exc_info())
         messagebox.showinfo('Cannot Calculate an Md5 checksum', 
             'Sorry, I failed to calculate an md5 checksum\nand I cannot continue.\n' 
             +  str(exc_info()[1]))
-        logEvent('Failure to create zip file:' + str(exc_info()[1]) + '\n')
+        logging.error('Failure to create zip file:' + str(exc_info()[1]) + '\n')
         return
     
-    logEvent('md5 file was created:\n' + str(md5FileName) + '\n')
+    logging.info('md5 file was created:\n' + str(md5FileName) + '\n')
 
     # Use FTP  to send the file to EMBL
     try:
@@ -325,7 +322,7 @@ def performFullSubmission(submissionText):
         else:
             ftpServerAddress = getConfigurationValue('embl_ftp_upload_site_prod')   
         
-        #logEvent ('attempting to open ftp connection')
+        #logging.info ('attempting to open ftp connection')
         ftp = FTP(ftpServerAddress)
         ftp.login(getConfigurationValue('embl_username'), getConfigurationValue('embl_password'))
         ftp.storbinary('STOR ' + '/' + split(zippedFileName)[1], open(zippedFileName, 'rb'), 1024)
@@ -334,15 +331,15 @@ def performFullSubmission(submissionText):
         # is that it?  Easy.
 
     except Exception:
-        logEvent ('Cannot Upload to FTP site')
-        logEvent (exc_info())
+        logging.error ('Cannot Upload to FTP site')
+        logging.error (exc_info())
         messagebox.showinfo('Cannot Upload to FTP site', 
             'Sorry, I failed to upload your submission files to the EMBL FTP site\nand I cannot continue.\n' 
             +  str(exc_info()[1]))
-        logEvent('Failure to upload to FTP site:' + str(exc_info()[1]) + '\n')
+        logging.error('Failure to upload to FTP site:' + str(exc_info()[1]) + '\n')
         return
     
-    logEvent('Submission and MD5 successfully uploaded.\n')
+    logging.info('Submission and MD5 successfully uploaded.\n')
     
     # Handle the new project
     # effectively, study = project 
@@ -355,28 +352,28 @@ def performFullSubmission(submissionText):
             projectFileName = join(workingDirectory, 'project.xml')
             projectText = createProjectXML(projectFileName)
             
-            #logEvent ('My project text looks like this:\n' + projectText)
+            #logging.info ('My project text looks like this:\n' + projectText)
             
             projectSubmissionFileName = join(workingDirectory, 'project_submission.xml')
             projectSubmissionText = createProjectSubmissionXML(projectSubmissionFileName
                 ,'proj_sub_' + dateTimeNow
                 ,'project.xml')
             
-            #logEvent('I made this project text:\n' + projectText)
-            #logEvent('I made this project submission text:\n' + projectSubmissionText)
+            #logging.info('I made this project text:\n' + projectText)
+            #logging.info('I made this project submission text:\n' + projectSubmissionText)
             
         except Exception:
-            logEvent ('Cannot Create Project Submission XML')
-            logEvent (exc_info())
+            logging.error ('Cannot Create Project Submission XML')
+            logging.error (exc_info())
             messagebox.showinfo('Cannot Create Project Submission XML', 
                 'Sorry, I failed to create a project XML file\nand I cannot continue.\n' 
                 +  str(exc_info()[1]))
-            logEvent('Failure to create project submission file:' + str(exc_info()[1]) + '\n')
+            logging.error('Failure to create project submission file:' + str(exc_info()[1]) + '\n')
             return
         
-        logEvent('Project Submission XML files were created.\n')
-        logEvent('Project Text:\n' + projectText)
-        logEvent('Project Submission Text:\n' + projectText)
+        logging.info('Project Submission XML files were created.\n')
+        logging.info('Project Text:\n' + projectText)
+        logging.info('Project Submission Text:\n' + projectText)
         
                     
         # Use REST to submit this project
@@ -398,23 +395,23 @@ def performFullSubmission(submissionText):
                 for errorMessage in projectErrorMessages:
                     messageText += ('\n' + errorMessage + '\n')                    
                 messagebox.showinfo('Cannot Submit Project XML via REST', messageText)
-                logEvent('Failure to submit project submission file:' + str(exc_info()[1]) + '\n' + messageText + '\n')
+                logging.error('Failure to submit project submission file:' + str(exc_info()[1]) + '\n' + messageText + '\n')
                 return
             
         except Exception:
-            logEvent ('Cannot Submit Project XML')
-            logEvent (exc_info())
+            logging.error ('Cannot Submit Project XML')
+            logging.error (exc_info())
             messagebox.showinfo('Cannot Submit Project XML', 
                 'Sorry, I failed to submit the project XML file\nand I cannot continue.\n' 
                 +  str(exc_info()[1]))
-            logEvent('Failure to upload project submission file:' + str(exc_info()[1]) + '\n')
+            logging.error('Failure to upload project submission file:' + str(exc_info()[1]) + '\n')
             return
         
-        logEvent('New study has been uploaded, accession:' + str(getConfigurationValue('study_accession')) + '\n')
+        logging.info('New study has been uploaded, accession:' + str(getConfigurationValue('study_accession')) + '\n')
            
     # existing project, we will use the supplied accession #    
     else: 
-        logEvent('Using existing study accession:' + str(getConfigurationValue('study_accession')) + '\n')
+        logging.info('Using existing study accession:' + str(getConfigurationValue('study_accession')) + '\n')
         # projectAccessionNumber = getConfigurationValue('study_accession')
         pass
     
@@ -429,15 +426,15 @@ def performFullSubmission(submissionText):
             ,'analysis.xml')
         
     except Exception:
-        logEvent('Cannot Create Analysis Submission XML')
-        logEvent (exc_info())
+        logging.error('Cannot Create Analysis Submission XML')
+        logging.error (exc_info())
         messagebox.showinfo('Cannot Create Analysis Submission XML', 
             'Sorry, I failed to create a Analysis XML file\nand I cannot continue.\n' 
             +  str(exc_info()[1]))
-        logEvent('Failure to create analysis submission file:' + str(exc_info()[1]) + '\n')
+        logging.error('Failure to create analysis submission file:' + str(exc_info()[1]) + '\n')
         return
     
-    logEvent('Analysis Submission XML files were created.\n')
+    logging.info('Analysis Submission XML files were created.\n')
                 
     # Use REST to submit this analysis
     try:
@@ -455,18 +452,18 @@ def performFullSubmission(submissionText):
             for errorMessage in analysisErrorMessages:
                 messageText += ('\n' + errorMessage + '\n')                    
             messagebox.showinfo('Cannot Submit Analysis XML via REST', messageText)
-            logEvent('Failure to submit analysis submission file:' + str(exc_info()[1]) + '\n')
+            logging.error('Failure to submit analysis submission file:' + str(exc_info()[1]) + '\n')
             return
         
     except Exception:
-        logEvent ('Cannot Submit Analysis XML')
-        logEvent (exc_info())
+        logging.error ('Cannot Submit Analysis XML')
+        logging.error (exc_info())
         messagebox.showinfo('Cannot Submit Analysis XML via REST', 
             'Sorry, I failed to submit the analysis XML file\nand I cannot continue.\n' 
             +  str(exc_info()[1]))
         return
 
-    logEvent('New analysis has been Uploaded, accession:' + str(analysisAccessionNumber) + '\n')
+    logging.info('New analysis has been Uploaded, accession:' + str(analysisAccessionNumber) + '\n')
 
 
     # Popup message with Results

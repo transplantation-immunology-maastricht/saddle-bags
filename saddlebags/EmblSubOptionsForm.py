@@ -18,8 +18,10 @@
 
 from tkinter import Frame, StringVar, IntVar, Label, Entry, Radiobutton, Button, messagebox
 
-from saddlebags.AlleleSubCommon import getConfigurationValue, assignConfigurationValue, assignIcon, logEvent
+from saddlebags.AlleleSubCommon import getConfigurationValue, assignConfigurationValue, assignIcon
 from saddlebags.ScrolledWindow import VerticalScrolledFrame
+
+import logging
 
 class EmblSubOptionsForm(VerticalScrolledFrame):
         
@@ -302,7 +304,7 @@ class EmblSubOptionsForm(VerticalScrolledFrame):
     def saveOptions(self):
         # Close the window
         if (self.checkOptions()):
-            logEvent ('Saving Options....')
+            logging.info ('Saving Options....')
             
             assignConfigurationValue('embl_username', self.inputUsername.get())
             # I store this password so I can use it in the submission
@@ -325,7 +327,7 @@ class EmblSubOptionsForm(VerticalScrolledFrame):
             self.parent.destroy() 
             
         else:
-            #logEvent('Not ready to save, you are missing options.')
+            #logging.info('Not ready to save, you are missing options.')
             pass
         
     def checkOptions(self):
@@ -333,7 +335,7 @@ class EmblSubOptionsForm(VerticalScrolledFrame):
         # TODO: THis is really annoying. I should allow them to close this screen without providing all the information
         # Im sure a user will complain about this.
         
-        #logEvent ('Checking options.')
+        #logging.info ('Checking options.')
        
         # Don't check the EMBL Username
         # Don't check the EMBL Password

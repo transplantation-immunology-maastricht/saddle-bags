@@ -24,9 +24,11 @@ from tkinter.constants import BOTH, NORMAL, DISABLED, X, Y, BOTTOM, RIGHT, NONE,
 
 from saddlebags.ImgtSubGenerator import ImgtSubGenerator
 from saddlebags.ImgtSubOptionsForm import ImgtSubOptionsForm
-from saddlebags.AlleleSubCommon import collectAndValidateRoughSequence, assignIcon, assignConfigurationValue, parseExons, getConfigurationValue, identifyGenomicFeatures, isSequenceAlreadyAnnotated, collectRoughSequence, logEvent
+from saddlebags.AlleleSubCommon import collectAndValidateRoughSequence, assignIcon, assignConfigurationValue, parseExons, getConfigurationValue, identifyGenomicFeatures, isSequenceAlreadyAnnotated, collectRoughSequence
 #from saddlebags.AlleleSubCommonRest import fetchSequenceAlleleCallWithGFE
 from saddlebags.HlaSequenceException import HlaSequenceException
+
+import logging
 #from HLAGene import HLAGene
 
 # The AlleleGui class is an extension of Tkinter.  The GUI elements and interactions are specified in this class.
@@ -148,7 +150,7 @@ class ImgtSubGui(Frame):
         self.pack(expand=True, fill='both')
 
     def chooseSubmissionOptions(self):
-        logEvent ('Opening the IMGT/HLA Submission Options Dialog')
+        logging.info ('Opening the IMGT/HLA Submission Options Dialog')
         
         self.disableGUI()
         
@@ -346,7 +348,7 @@ class ImgtSubGui(Frame):
         
     def uploadSubmission(self):
         # TODO: Implement this method.
-        logEvent ('This functionality is disabled until it works better.')
+        logging.info ('This functionality is disabled until it works better.')
                       
     # Gather sequence information from the input elements, and generate a text EMBL submission.
     def constructSubmission(self):
@@ -414,7 +416,7 @@ class ImgtSubGui(Frame):
         self.toggleGUI(False)   
         
     def toggleGUI(self, isEnabled): 
-        #logEvent ('Toggling GUI Widgets:' + str(isEnabled))
+        #logging.info ('Toggling GUI Widgets:' + str(isEnabled))
          
         newState = (NORMAL if (isEnabled) else DISABLED)
         
