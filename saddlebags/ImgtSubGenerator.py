@@ -18,10 +18,11 @@ from datetime import datetime
 # Instead, raise an HlaSequenceException and catch it somewhere upstream.
 from tkinter import messagebox
 
-from saddlebags.AlleleSubCommon import getConfigurationValue, logEvent
+from saddlebags.AlleleSubCommon import getConfigurationValue
 from saddlebags.AlleleSubmission import HlaGene
 from saddlebags.AcademicCitation import AcademicCitation
 
+import logging
 
 # The ImgtSubGenerator class contains logic to generate an IPD-IMGT/HLA allele submission flatfile
 class ImgtSubGenerator():   
@@ -35,11 +36,9 @@ class ImgtSubGenerator():
         documentBuffer = ''
 
         totalLength = self.sequenceAnnotation.totalLength()
-        logEvent('total calculated length = ' + str(totalLength))
+        logging.info('total calculated length = ' + str(totalLength))
         
         if(totalLength > 0):
-            
-            #logEvent ('im gonna add the header in here:')
 
             # These are the main sections of the IPD-IMGT/HLA submission.
             documentBuffer += self.printHeader()
@@ -371,7 +370,7 @@ class ImgtSubGenerator():
                 'beginning and end of your DNA\n' +
                 'sequence to specify the 5\' and 3\' UTRs.' )    
         else:
-            logEvent('The UTRs look fine.')
+            logging.info('The UTRs look fine.')
             pass
 
 
