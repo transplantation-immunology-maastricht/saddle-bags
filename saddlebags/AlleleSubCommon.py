@@ -18,6 +18,8 @@ from sys import exc_info
 
 from datetime import datetime
 
+import csv
+
 try:
     from sys import _MEIPASS
 except Exception:
@@ -38,13 +40,16 @@ from Bio.Alphabet import generic_dna
 from io import StringIO
 from json import loads, dumps # these method names are terrible IMO.
 
+from zipfile import ZipFile
+
 from saddlebags.AlleleSubmission import HlaGene, GeneFeature, SubmissionBatch, AlleleSubmission
+from saddlebags.ImgtSubGenerator import ImgtSubGenerator
 
 import logging
 
 
 def fetchSequenceAlleleCallWithGFE(rawSequence, locus):
-    # Just importing here because this is the only place it's used.
+    # Just importing here because this is the only place it's used. Sloppy.
     from gfe_client import Configuration, ApiClient, TypeSeqApi
 
     logging.debug('Attempting to fetch an allele call using GFE.')
@@ -360,19 +365,19 @@ def parseExons(roughFeatureSequence, alleleCallWithGFEJson):
                     # That's a 504 response code.
 
                     """
-<html>
-<head><title>502 Bad Gateway</title></head>
-<body bgcolor="white">
-<center><h1>502 Bad Gateway</h1></center>
-<hr><center>nginx/1.15.2</center>
-</body>
-</html>
-<!-- a padding to disable MSIE and Chrome friendly error page -->
-<!-- a padding to disable MSIE and Chrome friendly error page -->
-<!-- a padding to disable MSIE and Chrome friendly error page -->
-<!-- a padding to disable MSIE and Chrome friendly error page -->
-<!-- a padding to disable MSIE and Chrome friendly error page -->
-<!-- a padding to disable MSIE and Chrome friendly error page -->
+                        <html>
+                        <head><title>502 Bad Gateway</title></head>
+                        <body bgcolor="white">
+                        <center><h1>502 Bad Gateway</h1></center>
+                        <hr><center>nginx/1.15.2</center>
+                        </body>
+                        </html>
+                        <!-- a padding to disable MSIE and Chrome friendly error page -->
+                        <!-- a padding to disable MSIE and Chrome friendly error page -->
+                        <!-- a padding to disable MSIE and Chrome friendly error page -->
+                        <!-- a padding to disable MSIE and Chrome friendly error page -->
+                        <!-- a padding to disable MSIE and Chrome friendly error page -->
+                        <!-- a padding to disable MSIE and Chrome friendly error page -->
                    
                     """
 
@@ -491,7 +496,7 @@ def parseExons(roughFeatureSequence, alleleCallWithGFEJson):
                     alleleDescription += ('No novel features identified. This sequence is not novel?')
 
             else:
-                alleleDescption += 'Could not determine closest HLA allele, please provide a detailed description of the novel sequence.'
+                alleleDescription += 'Could not determine closest HLA allele, please provide a detailed description of the novel sequence.'
 
             assignConfigurationValue('closest_allele_written_description', alleleDescription)
 
@@ -596,7 +601,8 @@ def cleanSequence(inputSequenceText):
 # All spaces, line feeds, and tabs are removed and ignored.  
 def identifyGenomicFeatures(inputSequenceText):
 
-    # TODO: I should accept a Fasta Input. 
+    logging.info('Identifying Genomic Features....')
+    # TODO: I should accept a Fasta Input.
     # Disregard the header line completely. Is there still sequence?
     resultGeneLoci = HlaGene()
     
@@ -849,32 +855,42 @@ def writeConfigurationFile():
     submissionBatchElement.set('labcontact', serializeConfigValue(submissionBatch.labContact))
 
     # Keys for each submission.
-    for hlaAllele in submissionBatch.submissionBatch:
+    for hlaSubmission in submissionBatch.submissionBatch:
         submissionElement = ET.SubElement(submissionBatchElement, 'submission')
 
         # Most of this stuff is attrbutes. Store the Sequence as the text of this element.
-        submissionElement.text = hlaAllele.submittedGene.fullSequence
-        submissionElement.set('genelocus',                       serializeConfigValue(hlaAllele.submittedGene.geneLocus))
-        submissionElement.set('localallelename'                , serializeConfigValue(hlaAllele.localAlleleName))
-        submissionElement.set('closestallelewrittendescription', serializeConfigValue(hlaAllele.closestAlleleWrittenDescription))
-        submissionElement.set('imgtsubmissionidentifier'       , serializeConfigValue(hlaAllele.imgtSubmissionIdentifier))
-        submissionElement.set('imgtsubmissionversion', serializeConfigValue(hlaAllele.imgtSubmissionVersion))
-        submissionElement.set('cellid', serializeConfigValue(hlaAllele.cellId))
-        submissionElement.set('ethnicorigin', serializeConfigValue(hlaAllele.ethnicOrigin))
-        submissionElement.set('sex', serializeConfigValue(hlaAllele.sex))
-        submissionElement.set('consanguineous', serializeConfigValue(hlaAllele.consanguineous))
-        submissionElement.set('homozygous', serializeConfigValue(hlaAllele.homozygous))
-        submissionElement.set('typedalleles', serializeConfigValue(hlaAllele.typedAlleles))
-        submissionElement.set('materialavailability', serializeConfigValue(hlaAllele.materialAvailability))
-        submissionElement.set('cellbank', serializeConfigValue(hlaAllele.cellBank))
-        submissionElement.set('primarysequencingmethodology', serializeConfigValue(hlaAllele.primarySequencingMethodology))
-        submissionElement.set('secondarysequencingmethodology', serializeConfigValue(hlaAllele.secondarySequencingMethodology))
-        submissionElement.set('primertype', serializeConfigValue(hlaAllele.primerType))
-        submissionElement.set('primers', serializeConfigValue(hlaAllele.primers))
-        submissionElement.set('sequencedinisolation', serializeConfigValue(hlaAllele.sequencedInIsolation))
-        submissionElement.set('numofreactions', serializeConfigValue(hlaAllele.noOfReactions))
-        submissionElement.set('methodcomments', serializeConfigValue(hlaAllele.methodComments))
-        submissionElement.set('citations', serializeConfigValue(hlaAllele.citations))
+        submissionElement.text = hlaSubmission.submittedGene.getCompleteSequence()
+        #print('I just assigned this fullSequence text to an XML Config element:' + submissionElement.text)
+        submissionElement.set('genelocus',                       serializeConfigValue(hlaSubmission.submittedGene.geneLocus))
+        submissionElement.set('localallelename'                , serializeConfigValue(hlaSubmission.localAlleleName))
+        submissionElement.set('closestallelewrittendescription', serializeConfigValue(hlaSubmission.closestAlleleWrittenDescription))
+        submissionElement.set('imgtsubmissionidentifier'       , serializeConfigValue(hlaSubmission.imgtSubmissionIdentifier))
+        submissionElement.set('imgtsubmissionversion'          , serializeConfigValue(hlaSubmission.imgtSubmissionVersion))
+        submissionElement.set('emblaccessionidentifier'       , serializeConfigValue(hlaSubmission.emblAccessionIdentifier))
+        submissionElement.set('cellid', serializeConfigValue(hlaSubmission.cellId))
+        submissionElement.set('ethnicorigin', serializeConfigValue(hlaSubmission.ethnicOrigin))
+        submissionElement.set('sex', serializeConfigValue(hlaSubmission.sex))
+        submissionElement.set('consanguineous', serializeConfigValue(hlaSubmission.consanguineous))
+        submissionElement.set('homozygous', serializeConfigValue(hlaSubmission.homozygous))
+
+        # TypedAlleles is special. It's a dictionary, where the keys are an HLA locus.
+        typedAlleleText = ""
+        if hlaSubmission.typedAlleles is not None:
+            for loci in sorted(hlaSubmission.typedAlleles.keys()):
+                typedAlleleText += str(loci) + '*' + hlaSubmission.typedAlleles[loci] + ';'
+        submissionElement.set('typedalleles', serializeConfigValue(typedAlleleText))
+
+        submissionElement.set('materialavailability', serializeConfigValue(hlaSubmission.materialAvailability))
+        submissionElement.set('cellbank', serializeConfigValue(hlaSubmission.cellBank))
+        submissionElement.set('primarysequencingmethodology', serializeConfigValue(hlaSubmission.primarySequencingMethodology))
+        submissionElement.set('secondarysequencingmethodology', serializeConfigValue(hlaSubmission.secondarySequencingMethodology))
+        submissionElement.set('primertype', serializeConfigValue(hlaSubmission.primerType))
+        submissionElement.set('primers', serializeConfigValue(hlaSubmission.primers))
+        submissionElement.set('sequencedinisolation', serializeConfigValue(hlaSubmission.sequencedInIsolation))
+        submissionElement.set('sequencingdirection', serializeConfigValue(hlaSubmission.sequencingDirection))
+        submissionElement.set('numofreactions', serializeConfigValue(hlaSubmission.numOfReactions))
+        submissionElement.set('methodcomments', serializeConfigValue(hlaSubmission.methodComments))
+        submissionElement.set('citations', serializeConfigValue(hlaSubmission.citations))
 
     xmlText = ET.tostring(root, encoding='utf8', method='xml')
     prettyXmlText = MD.parseString(xmlText).toprettyxml()
@@ -882,6 +898,177 @@ def writeConfigurationFile():
     xmlOutput = createOutputFile(globalVariables['config_file_location'])
     xmlOutput.write(prettyXmlText)
     xmlOutput.close()
+
+def loadFromCSV(csvFileName):
+    # Read submission data from a .csv file.
+    logging.debug ('loading data from this csv file:' + csvFileName)
+
+    # Load our submission batch. Does it already exist? It should.
+    submissionBatch = getConfigurationValue('submission_batch')
+    if(submissionBatch == None):
+        logging.warning('Loading from CSV file. There was no batch of submissions, so I had to create an empty batch')
+
+        submissionBatch = SubmissionBatch()
+
+        # Assign some default information about this batch of submissions
+        submissionBatch.imgtSubmitterId = ''
+        submissionBatch.imgtSubmitterName = ''
+        submissionBatch.imgtAltContact = ''
+        submissionBatch.imgtSubmitterEmail = ''
+        submissionBatch.labOfOrigin = ''
+        submissionBatch.labContact = ''
+
+    # Open the CSV and read the header.
+    csvFile = open(csvFileName, 'r')
+    csvInputReader = csv.reader(csvFile)
+
+    header = next(csvInputReader)
+    #logging.debug("This is the header row:" + str(header))
+
+    # Convert the header names to uppercase to allow the input of upper or lowercase header names.
+    header = [item.upper() for item in header]
+
+    # Check for the existence of each required field in the header.
+    # Store the indices of the column headers in a dictionary. So I can lookup the fields in any order, input file is more flexible.
+    requiredFields = ['CELLBANK','CELLID','CITATIONS','CLOSESTALLELEWRITTENDESCRIPTION','CONSANGUINEOUS','ETHNICORIGIN','GENELOCUS','HOMOZYGOUS','IMGTSUBMISSIONIDENTIFIER','IMGTSUBMISSIONVERSION','EMBLSEQUENCEACCESSION','LOCALALLELENAME','MATERIALAVAILABILITY','METHODCOMMENTS','NUMOFREACTIONS','PRIMARYSEQUENCINGMETHODOLOGY','PRIMERS','PRIMERTYPE','SECONDARYSEQUENCINGMETHODOLOGY','SEQUENCEDINISOLATION','SEQUENCINGDIRECTION','SEX','TYPEDALLELES','SEQUENCE']
+    requiredFieldIndices = {}
+    try:
+        for requiredField in requiredFields:
+            #print('assigning index of ' + str(requiredField) + '=' + str(header.index(requiredField)))
+            requiredFieldIndices[requiredField] = header.index(requiredField)
+
+    except:
+        logging.error('Error when reading from the CSV file (' + str(csvFileName) + '). Perhaps you are missing a required field:' + str(requiredField))
+
+    for submissionCSVRow in csvInputReader:
+        #logging.debug("loading this row from csv:" + str(submissionCSVRow))
+
+
+        #print ('Im creating a submission, the required field indices look like this:' + str(requiredFieldIndices))
+
+        # Create a submission Object
+        # Get each column of data and store it in the submission.
+        submission = AlleleSubmission()
+        submission.submittedGene = identifyGenomicFeatures( submissionCSVRow[requiredFieldIndices['SEQUENCE']])
+        #submission.submittedGene.fullSequence = submissionCSVRow[requiredFieldIndices['SEQUENCE']]
+        submission.submittedGene.geneLocus = submissionCSVRow[requiredFieldIndices['GENELOCUS']]
+        submission.localAlleleName = submissionCSVRow[requiredFieldIndices['LOCALALLELENAME']]
+        submission.closestAlleleWrittenDescription = submissionCSVRow[requiredFieldIndices['CLOSESTALLELEWRITTENDESCRIPTION']]
+        submission.imgtSubmissionIdentifier = submissionCSVRow[requiredFieldIndices['IMGTSUBMISSIONIDENTIFIER']]
+        submission.imgtSubmissionVersion = submissionCSVRow[requiredFieldIndices['IMGTSUBMISSIONVERSION']]
+        submission.emblAccessionIdentifier = submissionCSVRow[requiredFieldIndices['EMBLSEQUENCEACCESSION']]
+        submission.cellId = submissionCSVRow[requiredFieldIndices['CELLID']]
+        submission.ethnicOrigin = submissionCSVRow[requiredFieldIndices['ETHNICORIGIN']]
+        submission.sex = submissionCSVRow[requiredFieldIndices['SEX']]
+        submission.consanguineous = submissionCSVRow[requiredFieldIndices['CONSANGUINEOUS']]
+        submission.homozygous = submissionCSVRow[requiredFieldIndices['HOMOZYGOUS']]
+        submission.typedAlleles = parseTypedAlleleInput(submissionCSVRow[requiredFieldIndices['TYPEDALLELES']])
+        submission.materialAvailability = submissionCSVRow[requiredFieldIndices['MATERIALAVAILABILITY']]
+        submission.cellBank = submissionCSVRow[requiredFieldIndices['CELLBANK']]
+        submission.primarySequencingMethodology = submissionCSVRow[requiredFieldIndices['PRIMARYSEQUENCINGMETHODOLOGY']]
+        submission.secondarySequencingMethodology = submissionCSVRow[requiredFieldIndices['SECONDARYSEQUENCINGMETHODOLOGY']]
+        submission.primerType = submissionCSVRow[requiredFieldIndices['PRIMERTYPE']]
+        submission.primers = submissionCSVRow[requiredFieldIndices['PRIMERS']]
+        submission.sequencedInIsolation = submissionCSVRow[requiredFieldIndices['SEQUENCEDINISOLATION']]
+        submission.sequencingDirection = submissionCSVRow[requiredFieldIndices['SEQUENCINGDIRECTION']]
+        submission.numOfReactions = submissionCSVRow[requiredFieldIndices['NUMOFREACTIONS']]
+        submission.methodComments = submissionCSVRow[requiredFieldIndices['METHODCOMMENTS']]
+        submission.citations = submissionCSVRow[requiredFieldIndices['CITATIONS']]
+
+        submissionBatch.submissionBatch.append(submission)
+
+
+
+    csvFile.close()
+
+def parseTypedAlleleInput(alleleInputString):
+    # Typed alleles are special. It's a dictionary, where the key is the Locus (HLA-A) and the value is a String, with a list of typings separated by a comma.
+    # The input is string of standard nomenclature HLA alleles, separated by a semicolon. (HLA-A*02:01;HLA-A*03:02:14)
+    # submission.typedAlleles = submissionCSVRow[requiredFieldIndices['TYPEDALLELES']]
+    typedAlleleDictionary = {}
+
+    try:
+        #Semicolon separates the different typing
+        typedAlleleTokens = alleleInputString.split(';')
+        for typedAlleleToken in typedAlleleTokens:
+            # * separates the locus and allele.
+            if('*' in typedAlleleToken ):
+                loci, allele = typedAlleleToken.split('*')
+                if loci in typedAlleleDictionary.keys():
+                    typedAlleleDictionary[loci] = str(typedAlleleDictionary[loci]) + ',' + allele
+                else:
+                    typedAlleleDictionary[loci] = allele
+
+        return typedAlleleDictionary
+    except:
+        logging.error('Error when parsing HLA typing string: ' + str(alleleInputString))
+        return {}
+
+
+
+def createIMGTZipFile(zipFileName):
+    logging.debug('Saving Zip File:' + str(zipFileName))
+
+    # create a temp working directory in the current folder.
+    homeDirectory = expanduser("~")
+
+    zipDirectory = join(homeDirectory, 'saddlebags_temp')
+    workingDirectory = join(zipDirectory, 'submission_temp')
+    #makedirs(workingDirectory)
+
+
+    # Loop through my submission batch.
+    submissionBatch = getConfigurationValue('submission_batch')
+    if (submissionBatch == None):
+        logging.warning ('There is no submission batch, I cannot create a .zip file.')
+
+    submissionFileList = []
+
+    submissioncount =0
+    for submissionObject in submissionBatch.submissionBatch:
+
+        print ('Generating Submission #' + str(submissioncount))
+        submissioncount += 1
+
+        # Create a submission for each entry in the batch.
+
+        allGen = ImgtSubGenerator()
+        allGen.submission = submissionObject
+        allGen.submissionBatch = submissionBatch
+        #allGen.sequenceAnnotation = identifyGenomicFeatures(annotatedSequence)
+        imgtSubmission = allGen.buildIMGTSubmission()
+
+        submissionLocalFileName = str(submissionObject.localAlleleName) + '_submission.txt'
+        submissionFileName = join(workingDirectory, submissionLocalFileName)
+        submissionFileList.append(submissionLocalFileName)
+
+        submissionFileObject = createOutputFile(submissionFileName)
+        submissionFileObject.write(imgtSubmission)
+        submissionFileObject.close()
+
+        print ('I just saved this file: ' + submissionFileName)
+
+
+
+    # create a zip file from the list of files.
+    zipFileName = join(zipDirectory,'IMGTHLASubmission.zip')
+
+    with ZipFile(zipFileName,'w') as zip:
+        # writing each file one by one
+        for fileName in submissionFileList:
+            fullPath = join(workingDirectory,fileName)
+            zip.write(fullPath,fileName)
+
+    # TODO: Delete the Evidence.
+    # Loop submission files,
+        # delete the submission files.
+
+    # delete the working directory
+
+
+
+
+
 
 def loadConfigurationFile():
     # TODO: should I clear my configuration first? I have a method to purge my globals.
@@ -899,7 +1086,7 @@ def loadConfigurationFile():
             root = tree.getroot()
 
             for child in root:
-                logging.debug('The child tag is:' + child.tag)
+                #logging.debug('The child tag is:' + child.tag)
 
                 # If the child node is a submission batch
                 # TODO: Think about how I can handle multiple submission batches.
@@ -916,23 +1103,33 @@ def loadConfigurationFile():
 
                     # Loop the children, they are submission objects. Load up their information.
                     for submissionChild in child:
-                        logging.debug('The submission child tag is:' + submissionChild.tag)
-                        logging.debug('This submission has the text:' + submissionChild.text)
+                        #logging.debug('The submission child tag is:' + submissionChild.tag)
+                        #logging.debug('This submission has the text:' + submissionChild.text)
                         # Add a few submissions to this batch.
                         # Submission # 1
                         submission = AlleleSubmission()
-                        submission.submittedGene.fullSequence = submissionChild.text
+                        #submission.submittedGene.fullSequence = submissionChild.text
+                        submission.submittedGene = identifyGenomicFeatures(submissionChild.text)
                         submission.submittedGene.geneLocus = deserializeConfigValue(submissionChild.attrib['genelocus'])
                         submission.localAlleleName = deserializeConfigValue(submissionChild.attrib['localallelename'])
                         submission.closestAlleleWrittenDescription = deserializeConfigValue(submissionChild.attrib['closestallelewrittendescription'])
                         submission.imgtSubmissionIdentifier = deserializeConfigValue(submissionChild.attrib['imgtsubmissionidentifier'])
                         submission.imgtSubmissionVersion = deserializeConfigValue(submissionChild.attrib['imgtsubmissionversion'])
+                        submission.emblAccessionIdentifier = deserializeConfigValue(submissionChild.attrib['emblaccessionidentifier'])
                         submission.cellId = deserializeConfigValue(submissionChild.attrib['cellid'])
                         submission.ethnicOrigin = deserializeConfigValue(submissionChild.attrib['ethnicorigin'])
                         submission.sex = deserializeConfigValue(submissionChild.attrib['sex'])
                         submission.consanguineous = deserializeConfigValue(submissionChild.attrib['consanguineous'])
                         submission.homozygous = deserializeConfigValue(submissionChild.attrib['homozygous'])
-                        submission.typedAlleles = deserializeConfigValue(submissionChild.attrib['typedalleles'])
+                        #print ('I am about to read and store my typed alleles.')
+                        childElementText = submissionChild.attrib['typedalleles']
+                        #print ('element text:' + childElementText)
+                        deserializedText = deserializeConfigValue(childElementText)
+                        #print ('deserialized text:' + deserializedText)
+                        parsedObject = parseTypedAlleleInput(deserializedText)
+                        #print('parsedObject:' + str(parsedObject))
+                        submission.typedAlleles = parsedObject
+                        #print ('Success.')
                         submission.materialAvailability = deserializeConfigValue(submissionChild.attrib['materialavailability'])
                         submission.cellBank = deserializeConfigValue(submissionChild.attrib['cellbank'])
                         submission.primarySequencingMethodology = deserializeConfigValue(submissionChild.attrib['primarysequencingmethodology'])
@@ -940,6 +1137,7 @@ def loadConfigurationFile():
                         submission.primerType = deserializeConfigValue(submissionChild.attrib['primertype'])
                         submission.primers = deserializeConfigValue(submissionChild.attrib['primers'])
                         submission.sequencedInIsolation = deserializeConfigValue(submissionChild.attrib['sequencedinisolation'])
+                        submission.sequencingDirection = deserializeConfigValue(submissionChild.attrib['sequencingdirection'])
                         submission.numOfReactions = deserializeConfigValue(submissionChild.attrib['numofreactions'])
                         submission.methodComments = deserializeConfigValue(submissionChild.attrib['methodcomments'])
                         submission.citations = deserializeConfigValue(submissionChild.attrib['citations'])

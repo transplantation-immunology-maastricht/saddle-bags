@@ -19,8 +19,11 @@
 # An AlleleSubmission has an HlaGene, which has multiple GeneLocus.
 # Multiple submissions are stored in a SubmissionBatch object.
 
-# TODO: I can't use the logEvent here because it's making a circular dependancy. Think about that, it would be nice to log this information.
-#from saddlebags.AlleleSubCommon import logEvent
+
+#import logging
+#from os.path import expanduser, join
+
+#from saddlebags.AlleleSubCommon import getConfigurationValue
 
 class SubmissionBatch():
     def __init__(self):
@@ -42,6 +45,7 @@ class AlleleSubmission():
         self.closestAlleleWrittenDescription = ''
         self.imgtSubmissionIdentifier = ''
         self.imgtSubmissionVersion = ''
+        self.emblAccessionIdentifier = ''
         # TODO: i think this column is intended for use identifying cell line names, if we are submitting the HLA types of cell lines.
         self.cellId = ''
         self.ethnicOrigin = ''
@@ -49,7 +53,8 @@ class AlleleSubmission():
         self.consanguineous = ''
         self.homozygous = ''
         # Necessary = A,B, DRB1. The rest are extra, and they help James trust the submitted sequence.
-        self.typedAlleles = ''
+        # I store the typed alleles as a dictionary. Key is the Locus (HLA-A) and the value is a String with the alleles, separated by a comma (02:01,03:01:14)
+        self.typedAlleles = {}
         self.materialAvailability = ''
         self.cellBank = ''
         self.primarySequencingMethodology = ''
@@ -57,7 +62,8 @@ class AlleleSubmission():
         self.primerType = ''
         self.primers = ''
         self.sequencedInIsolation = ''
-        self.noOfReactions = ''
+        self.sequencingDirection = ''
+        self.numOfReactions = ''
         self.methodComments = ''
         self.citations = ''
 
@@ -82,13 +88,19 @@ class HlaGene():
         self.geneLocus = ''
 
     def totalLength(self):
+        #print('Calculating the total length. It is:' + str(len(self.getCompleteSequence())))
+        #print('I have this many features: ' + str(len(self.features)))
         return len(self.getCompleteSequence())
 
     # Combine the UTRs, Exons, and Introns into a contiguous sequence.
     def getCompleteSequence(self):
         sequence=''
         for i in range(0, len(self.features)):
-            sequence += self.features[i].sequence
+            currentFeature = self.features[i]
+            if(currentFeature.exon):
+                sequence += currentFeature.sequence.upper()
+            else:
+                sequence += currentFeature.sequence.lower()
         return sequence
 
     # Combine the Exons into a contiguous sequence
@@ -106,7 +118,7 @@ class HlaGene():
     # TODO This may not be a safe assumption when we are dealing with Class II submissions.
     def annotateFeatures(self):
         
-        print('Annotating Gene Now')
+        #print('Annotating Gene Now')
 
         # An index for the nucleotide position
         lociBeginIndex = 1
@@ -150,7 +162,7 @@ class HlaGene():
     # Print a summary of the inputted sequence to console.
     # Todo: Log this info instead of printing it. I can't because of a circular dependency. Look into that.
     def printGeneSummary(self):
-        print('\nPrinting Gene Summary')
+        #print('\nPrinting Gene Summary')
         for x in range(0, len(self.features)):
             currentLocus = self.features[x]
             print(currentLocus.name + ":\t"
@@ -159,3 +171,5 @@ class HlaGene():
             )
         print('')
  
+
+

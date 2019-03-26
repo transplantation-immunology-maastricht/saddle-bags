@@ -373,6 +373,9 @@ class ImgtSubGui(Frame):
                 
             allGen = ImgtSubGenerator()
             allGen.sequenceAnnotation = identifyGenomicFeatures(annotatedSequence)
+
+            # Don't assign a sequenceAnnotation anymore. Give it an AlleleSubmission object, like i'm doing in AlleleSubCommon.createIMGTZipFile
+            FixThisBug
             
             imgtSubmission = allGen.buildIMGTSubmission()
                         
