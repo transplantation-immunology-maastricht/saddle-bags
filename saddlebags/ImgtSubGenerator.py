@@ -18,8 +18,8 @@ from datetime import datetime
 # Instead, raise an HlaSequenceException and catch it somewhere upstream.
 from tkinter import messagebox
 
-from saddlebags.AlleleSubCommon import getConfigurationValue
-from saddlebags.AlleleSubmission import HlaGene
+#from saddlebags.AlleleSubCommon import getConfigurationValue
+from saddlebags.AlleleSubmission import HlaGene, AlleleSubmission, SubmissionBatch
 from saddlebags.AcademicCitation import AcademicCitation
 
 import logging
@@ -28,14 +28,19 @@ import logging
 class ImgtSubGenerator():   
     
     def __init__(self):
-        self.sequenceAnnotation = HlaGene()
+        # Instead of storing an HlaGene, im now storing a ALleleSubmission object.
+        # A ALleleSubmission object has it's own HLA gene, so this is better.
+        # I think I need to also store the submission batch because it needs that info too. This is a bit redundant, but oh well.
+        #self.sequenceAnnotation = HlaGene()
+        self.submission = AlleleSubmission()
+        self.submissionBatch = SubmissionBatch()
     
     # Create the text submission based on the IMGT format.
     def buildIMGTSubmission(self):    
         
         documentBuffer = ''
 
-        totalLength = self.sequenceAnnotation.totalLength()
+        totalLength = self.submission.submittedGene.totalLength()
         logging.info('total calculated length = ' + str(totalLength))
         
         if(totalLength > 0):
@@ -53,9 +58,12 @@ class ImgtSubGenerator():
             # Print entry terminator.  The last line of an ENA entry.
             documentBuffer += ('//\n')
             
-        else: 
-            messagebox.showinfo('No HLA Sequence Found', 
-                'The HLA sequence is empty.\nPlease fill in an annotated HLA sequence\nbefore generating the submission.' )
+        else:
+            # TODO: Remove the messagebox stuff from this class. Put it in the GUI.
+
+            #messagebox.showinfo('No HLA Sequence Found',
+            #    'The HLA sequence is empty.\nPlease fill in an annotated HLA sequence\nbefore generating the submission.' )
+            raise Exception('The HLA sequence is empty. Please fill in an annotated HLA sequence before generating the submission.')
             
             pass
         
@@ -68,12 +76,15 @@ class ImgtSubGenerator():
         headerText = ''
         
         # TODO: Get these values from IMGT, they shouldn't be hardcoded.  
-        # Maybe it should be an unknown identifier with 
-        imgtIdentifier = str(getConfigurationValue('imgt_submission_identifier'))
-        imgtIdentifierWithVersion = str(getConfigurationValue('imgt_submission_identifier')) + '.' + str(getConfigurationValue('imgt_submission_version'))
+        # Maybe it should be an unknown identifier with
+        imgtIdentifier = self.submission.imgtSubmissionIdentifier
+        imgtIdentifierWithVersion = str(self.submission.imgtSubmissionIdentifier + '.' + self.submission.imgtSubmissionVersion)
         currentSubmissionDate = '{:%d/%m/%Y}'.format(datetime.now())
 
-        headerText += 'ID   ' + str(imgtIdentifier) + '; Sequence Submission; Confidential; ' + str(self.sequenceAnnotation.totalLength()) + ' BP.\n'
+
+        # TODO: I'm removing the IMGT/HLA identifier from the input file, because I think I don't need it.
+        # It's assigned by IMGT/HLA?
+        headerText += 'ID   ' + str(imgtIdentifier) + '; Sequence Submission; Confidential; ' + str(self.submission.submittedGene.totalLength()) + ' BP.\n'
         headerText += 'XX\n'
         headerText += 'AC   ' + str(imgtIdentifier) + ';\n'
         headerText += 'XX\n'
@@ -84,20 +95,19 @@ class ImgtSubGenerator():
         # The manual.md on github describes it better, but i think these are DB versions assigned by IMGT.
         # Check our previous submissions and check with James. But I think we can skip this section...Not sure.
         #headerText += 'DT   ' + str(currentSubmissionDate) + ' (Submitted)\n'
-        #headerText += 'DT   ' + str(getConfigurationValue('embl_release_date')) + ' (Release)\n'
+        #headerText += 'DT   ' + str(self.submission.embl_release_date')) + ' (Release)\n'
         #headerText += 'XX\n'
 
         # TODO: I'm using the local allele name that is assigned by the user.
         # Maybe this allele name should be based on the closest allele.
         # Do I want the allele name, or should I generate a new one based on the closest allele?
-                
-        headerText += 'DE   ' + str(getConfigurationValue('allele_name')) + '\n'
+        headerText += 'DE   ' + str(self.submission.localAlleleName) + '\n'
         headerText += 'XX\n'
         headerText += 'KW   HLA WEB SUBMISSION;\n'
         headerText += 'XX\n'
         
         # The new allele description is split into multiple lines. I should add a new 'CC' line for each part of the description.
-        rawDescription = str(getConfigurationValue('closest_allele_written_description'))
+        rawDescription = str(self.submission.closestAlleleWrittenDescription)
         rawDescriptionLineTokens = rawDescription.split('\n')
         for lineToken in rawDescriptionLineTokens:
             headerText += 'CC   ' + lineToken + '\n'
@@ -111,7 +121,7 @@ class ImgtSubGenerator():
         headerText += 'OC   Catarrhini; Hominidae; Homo.\n'
         headerText += 'XX\n'
         # TODO: Our submission says GENBANK, but we're using EMBL Numbers.  Also what does that [1] mean?
-        headerText += 'DR   GENBANK; ' + str(getConfigurationValue('embl_sequence_accession')) + '.\n'
+        headerText += 'DR   GENBANK; ' + str(self.submission.emblAccessionIdentifier) + '.\n'
 
         return headerText
 
@@ -119,10 +129,19 @@ class ImgtSubGenerator():
         citationText = ''
         citationText += 'XX\n'
 
-        citationTextList = getConfigurationValue('citations')
+        citationTextList = self.submission.citations
         #
-        #str(getConfigurationValue('imgt_submission_identifier'))
+        #str(self.submission.imgt_submission_identifier'))
 
+        citationText += 'RN   [1]\n'
+        citationText += 'RC   Unpublished.\n'
+        citationText += 'XX\n'
+
+        # TODO: Fix the citation input. The citation input is a free form input String
+        # Pretty sure I don't need to parse the @@@ characters. Those are in the configuration file.
+        # I planned to just split by newline character, but maybe James has a suggestion.
+
+        """
         if (citationTextList is None or len(citationTextList) < 1):
             citationText += 'RN   [1]\n'
             citationText += 'RC   Unpublished.\n'
@@ -156,6 +175,7 @@ class ImgtSubGenerator():
             else:
                 raise Exception('Invalid Citation. The Citation information is malformed in the configuration file. Please double check your citation information.')
 
+        """
         return citationText
 
     def printKeyHeader(self):
@@ -173,11 +193,11 @@ class ImgtSubGenerator():
         # Maybe I just need the submitter ID, and i can or can not get the rest?
         # I should be able to calculate the indices, at least.
 
-        submitterText += 'FT   submittor      1..' + str(self.sequenceAnnotation.totalLength()) + '\n'
-        submitterText += 'FT                  /ID="' + str(getConfigurationValue('imgt_submitter_id')) + '"\n'
-        submitterText += 'FT                  /name="' + str(getConfigurationValue('imgt_submitter_name')) + '"\n'
-        submitterText += 'FT                  /alt_contact="' + str(getConfigurationValue('imgt_alt_contact')) + '"\n'
-        submitterText += 'FT                  /email="' + str(getConfigurationValue('imgt_submitter_email')) + '"\n'
+        submitterText += 'FT   submittor      1..' + str(self.submission.submittedGene.totalLength()) + '\n'
+        submitterText += 'FT                  /ID="' + str(self.submissionBatch.imgtSubmitterId) + '"\n'
+        submitterText += 'FT                  /name="' + str(self.submissionBatch.imgtSubmitterName) + '"\n'
+        submitterText += 'FT                  /alt_contact="' + str(self.submissionBatch.imgtAltContact) + '"\n'
+        submitterText += 'FT                  /email="' + str(self.submissionBatch.imgtSubmitterEmail) + '"\n'
         
         return submitterText
 
@@ -186,21 +206,21 @@ class ImgtSubGenerator():
         
         # TODO: Submitting Laboratory Information. Can this be fetched from IMGT, or use some sort of lookup
 
-        sourceText += 'FT   source         1..' + str(self.sequenceAnnotation.totalLength()) + '\n'
-        sourceText += 'FT                  /cell_id="' + str(getConfigurationValue('cell_id')) + '"\n'
-        sourceText += 'FT                  /ethnic_origin="' + str(getConfigurationValue('ethnic_origin')) + '"\n'
-        sourceText += 'FT                  /sex="' + str(getConfigurationValue('sex')) + '"\n'
-        sourceText += 'FT                  /consanguineous="' + str(getConfigurationValue('consanguineous')) + '"\n'
-        sourceText += 'FT                  /homozygous="' + str(getConfigurationValue('homozygous')) + '"\n'
-        sourceText += 'FT                  /lab_of_origin="' + str(getConfigurationValue('lab_of_origin')) + '"\n'
-        sourceText += 'FT                  /lab_contact="' + str(getConfigurationValue('lab_contact')) + '"\n'
+        sourceText += 'FT   source         1..' + str(self.submission.submittedGene.totalLength()) + '\n'
+        sourceText += 'FT                  /cell_id="' + str(self.submission.cellId) + '"\n'
+        sourceText += 'FT                  /ethnic_origin="' + str(self.submission.ethnicOrigin) + '"\n'
+        sourceText += 'FT                  /sex="' + str(self.submission.sex) + '"\n'
+        sourceText += 'FT                  /consanguineous="' + str(self.submission.consanguineous) + '"\n'
+        sourceText += 'FT                  /homozygous="' + str(self.submission.homozygous) + '"\n'
+        sourceText += 'FT                  /lab_of_origin="' + str(self.submissionBatch.labOfOrigin) + '"\n'
+        sourceText += 'FT                  /lab_contact="' + str(self.submissionBatch.labContact) + '"\n'
         
         # TODO: No Material Available.  What if Material is available?
         # I think I need to add this to the form still.
         # Same story with "cell_bank"
         
-        sourceText += 'FT                  /material_available="' + str(getConfigurationValue('material_availability')) + '"\n'
-        sourceText += 'FT                  /cell_bank="' + str(getConfigurationValue('cell_bank')) + '"\n'
+        sourceText += 'FT                  /material_available="' + str(self.submission.materialAvailability) + '"\n'
+        sourceText += 'FT                  /cell_bank="' + str(self.submission.cellBank) + '"\n'
         
         # TODO: James suggested that I only allow valid fully-sequenced alleles.
         # Should I validate this, or should I leave that work to IMGT?
@@ -211,16 +231,17 @@ class ImgtSubGenerator():
         # That's dumb, since we could just include that in a single string. They want me to make other alleles.
         # I think I'll just store the proper allele name in saddlebags and split based on the * character.
 
-        hlaAlleleList = getConfigurationValue('alleles')
-        if hlaAlleleList is not None:
+        typedHlaAlleles = self.submission.typedAlleles
+        if typedHlaAlleles is not None:
             # I see a problem with this. If the hlaAlleleList only has one element, i think I'll try to split up that string.
             # That seems bad and will crash this.
-            for index, hlaAllele in enumerate(hlaAlleleList):
 
-                gene, nomenclatureFields = hlaAllele.split('*')
+            for loci in sorted(typedHlaAlleles.keys()):
+            #for index, hlaAllele in enumerate(typedHlaAlleles):
+
+                #gene, nomenclatureFields = hlaAllele.split('*')
                 #methodsText += 'FT                  /primer_' + str(index + 1) + '="' + hlaAllele + '"\n'
-                sourceText += 'FT                  /' + str(gene) + '*="' + nomenclatureFields + '"\n'
-
+                sourceText += 'FT                  /' + str(loci) + '*="' + typedHlaAlleles[loci] + '"\n'
 
         else:
             # TODO: What do if there are no other HLA alleles?
@@ -238,15 +259,15 @@ class ImgtSubGenerator():
         
         # TODO: Get primer info from the form.  Make sure this all is correct        
         
-        methodsText += 'FT   method         1..' + str(self.sequenceAnnotation.totalLength()) + '\n'
+        methodsText += 'FT   method         1..' + str(self.submission.submittedGene.totalLength()) + '\n'
         
         # TODO: What are the options for sequencing methodology?
         # I can provide an open-text field.        
         
-        methodsText += 'FT                  /primary_sequencing="' + str(getConfigurationValue('primary_sequencing_methodology')) + '"\n'
-        methodsText += 'FT                  /secondary_sequencing="' + str(getConfigurationValue('secondary_sequencing_methodology')) + '"\n'
-        methodsText += 'FT                  /type_of_primer="' + str(getConfigurationValue('primer_type')) + '"\n'
-        methodsText += 'FT                  /sequenced_in_isolation="' + str(getConfigurationValue('sequenced_in_isolation')) + '"\n'
+        methodsText += 'FT                  /primary_sequencing="' + str(self.submission.primarySequencingMethodology) + '"\n'
+        methodsText += 'FT                  /secondary_sequencing="' + str(self.submission.secondarySequencingMethodology) + '"\n'
+        methodsText += 'FT                  /type_of_primer="' + str(self.submission.primerType) + '"\n'
+        methodsText += 'FT                  /sequenced_in_isolation="' + str(self.submission.sequencedInIsolation) + '"\n'
         
         # TODO Add these primers dynamically
         # A primer has these pieces of information
@@ -260,7 +281,7 @@ class ImgtSubGenerator():
         # methodsText += 'FT                  /primer_1=""\n'
         # methodsText += 'FT                  /primer_2=""\n'
 
-        primerList = getConfigurationValue('primers')
+        primerList = self.submission.primers.split(';')
 
 
         #print('I will add the primers to the imgt submission:' + str(primerList))
@@ -273,18 +294,18 @@ class ImgtSubGenerator():
             pass
 
 
-        methodsText += 'FT                  /no_of_reactions="' + str(getConfigurationValue('no_of_reactions')) + '"\n'
-        methodsText += 'FT                  /sequencing_direction="' + str(getConfigurationValue('secondary_sequencing_methodology')) + '"\n'
+        methodsText += 'FT                  /no_of_reactions="' + str(self.submission.numOfReactions) + '"\n'
+        methodsText += 'FT                  /sequencing_direction="' + str(self.submission.sequencingDirection) + '"\n'
         
         # TODO: There's something up with these primers.
         # Why are they in the comments? Did we run out of space?
         
         # Don't put primers in comments. Make this a loop. Multiline.
-        methodsText += 'FT                  /method_comments="' + str(getConfigurationValue('method_comments')) + '"\n'
+        methodsText += 'FT                  /method_comments="' + str(self.submission.methodComments) + '"\n'
 
         # TODO the alignment seems to be rejected by the IMGT/HLA Validator. For now I will not include this, because this information is included in the header.
         # I can set this when the GFE/ACT was performed.
-        #methodsText += 'FT                  /alignment="' + str(getConfigurationValue('closest_allele_written_description')) + '"\n'
+        #methodsText += 'FT                  /alignment="' + str(self.submission.closest_allele_written_description')) + '"\n'
         
         return methodsText
 
@@ -302,11 +323,11 @@ class ImgtSubGenerator():
         # Coding sequence is just the exons.  Print out each exon.
         # Ignoring line-breaks for now, this might create a really wide line. Ok?
         featureText += ('FT   CDS            join(') 
-        for x in range(0, len(self.sequenceAnnotation.features)):
-            geneLocus = self.sequenceAnnotation.features[x]
+        for x in range(0, len(self.submission.submittedGene.features)):
+            geneLocus = self.submission.submittedGene.features[x]
             if (geneLocus.exon):
                 featureText += str(geneLocus.beginIndex) + '..' + str(geneLocus.endIndex)
-                if not x == len(self.sequenceAnnotation.features) - 2:
+                if not x == len(self.submission.submittedGene.features) - 2:
                     featureText += ','
                 else:
                     featureText += ')\n'
@@ -318,12 +339,12 @@ class ImgtSubGenerator():
         geneHas3UTR = False
         geneHas5UTR = False
             
-        for x in range(0, len(self.sequenceAnnotation.features)):
-            currentFeature = self.sequenceAnnotation.features[x]
+        for x in range(0, len(self.submission.submittedGene.features)):
+            currentFeature = self.submission.submittedGene.features[x]
 
             # test, temp
             #print('this feature is named:' + currentFeature.name + '\n')
-            #print('Total of ' + str(len(self.sequenceAnnotation.loci)) + ' features')
+            #print('Total of ' + str(len(self.submission.submittedGene.loci)) + ' features')
 
             # 3' UTR
             if(currentFeature.name == '3UT'):
@@ -380,15 +401,15 @@ class ImgtSubGenerator():
     def printSequence(self):
         sequenceText = ''
         
-        completeSequence = self.sequenceAnnotation.getCompleteSequence().upper()
+        completeSequence = self.submission.submittedGene.getCompleteSequence().upper()
                 
         cCount = completeSequence.count('C')
         gCount = completeSequence.count('G')
         tCount = completeSequence.count('T')
         aCount = completeSequence.count('A')
-        otherCount = self.sequenceAnnotation.totalLength() - (cCount + gCount + tCount + aCount)
+        otherCount = self.submission.submittedGene.totalLength() - (cCount + gCount + tCount + aCount)
 
-        sequenceText += ('SQ   Sequence ' + str(self.sequenceAnnotation.totalLength()) + ' BP; ' 
+        sequenceText += ('SQ   Sequence ' + str(self.submission.submittedGene.totalLength()) + ' BP; '
             + str(aCount) + ' A; ' + str(cCount) + ' C; ' 
             + str(gCount) + ' G; ' + str(tCount) + ' T; ' 
             + str(otherCount) + ' other;\n')
@@ -397,11 +418,11 @@ class ImgtSubGenerator():
         # This format is specified in the User manual specified by EMBL.
         currentSeqIndex = 0
 
-        while (currentSeqIndex < self.sequenceAnnotation.totalLength()):
+        while (currentSeqIndex < self.submission.submittedGene.totalLength()):
             # The character code for a sequence region is two blank spaces,
             # followed by three blank spaces, for a total of 5 blanks.
             sequenceText += '     '
-            sequenceRow = self.sequenceAnnotation.getCompleteSequence()[currentSeqIndex : currentSeqIndex + 60]
+            sequenceRow = self.submission.submittedGene.getCompleteSequence().upper()[currentSeqIndex : currentSeqIndex + 60]
 
             # A sequenceChunk is 10 nucleotides in this context.
             # Format specifies up to six "chunks" per line.
@@ -425,7 +446,8 @@ class ImgtSubGenerator():
 
         return sequenceText
 
-
+# TODO: This method is not being used?  Right, I should just delete this method
+"""
     # Return True if our input values are all present and accomodated for.
     # If something is missing, then throw a fit and give up.
     # TODO: I should probably not raise these exceptions actually.
@@ -434,7 +456,9 @@ class ImgtSubGenerator():
         
         # TODO: I'm using the self. values.  These should mostly be configuration values, load them from there instead.
         
-        # TODO: This method is not being used?  Right, I should just delete this method
+        
+        
+   
         # Instead of this method, maybe I should consider adding more robust error handling to the sequence generator.
         
         raise Exception ('Validate Inputs Method is being used, after all.')
@@ -443,23 +467,25 @@ class ImgtSubGenerator():
             raise Exception ('Invalid Sequence ID:' + str(self.inputSampleID))
             return False
         
-        elif (self.sequenceAnnotation is None):
-            raise Exception ('Invalid Sequence Annotation:' + str(self.sequenceAnnotation))
+        elif (self.submission.submittedGene is None):
+            raise Exception ('Invalid Sequence Annotation:' + str(self.submission.submittedGene))
             return False
         
-        elif (getConfigurationValue('gene') is None or len(getConfigurationValue('gene')) < 1):
-            raise Exception ('Invalid Input Gene:' + str(getConfigurationValue('gene')))
+        elif (self.submission.submittedGene.geneLocus is None or len(self.submission.submittedGene.geneLocus) < 1):
+            raise Exception ('Invalid Input Gene:' + str(self.submission.submittedGene.geneLocus))
             return False
         
-        elif (self.inputAllele is None or len(self.inputAllele) < 1):
-            raise Exception ('Invalid Input Allele:' + str(self.inputAllele))
-            return False
+        #elif (self.inputAllele is None or len(self.inputAllele) < 1):
+        #   raise Exception ('Invalid Input Allele:' + str(self.inputAllele))
+        #   return False
         
-        elif (self.inputClass is None or len(self.inputClass) < 1):
+        #elif (self.inputClass is None or len(self.inputClass) < 1):
             raise Exception ('Invalid Input Class:' + str(self.inputClass))
             return False
         
         else:
             return True
+            
+"""
 
 
