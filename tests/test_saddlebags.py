@@ -14,6 +14,9 @@ from saddlebags.AlleleSubCommon import assignConfigurationValue, writeConfigurat
 from saddlebags.EmblSubGenerator import EmblSubGenerator
 from saddlebags.ImgtSubGenerator import ImgtSubGenerator
 from saddlebags.AlleleSubmission import SubmissionBatch, AlleleSubmission
+from saddlebags.IpdGoogleDriveUpload import uploadZipToImgtHla
+
+from os.path import join, expanduser
 
 from json import dumps
 
@@ -255,6 +258,16 @@ def testCreateZipFile():
 
 
 
+def testGoogleUpload():
+    print('Uploading a zip file to the google drive:')
+
+    #homeDirectory = expanduser("~")
+
+    #zipDirectory = join(homeDirectory, 'saddlebags_temp')
+    #workingDirectory = join(zipDirectory, 'submission_temp')
+    zipFileName = 'TestSubmissionZipFile.zip'
+
+    uploadZipToImgtHla(zipFileName)
 
 
 """
