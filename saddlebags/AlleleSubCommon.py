@@ -1051,7 +1051,7 @@ def createIMGTZipFile(zipFileName):
 
 
     # create a zip file from the list of files.
-    zipFileName = join(zipDirectory,'IMGTHLASubmission.zip')
+    zipFileName = join(zipDirectory,zipFileName)
 
     with ZipFile(zipFileName,'w') as zip:
         # writing each file one by one
@@ -1059,9 +1059,12 @@ def createIMGTZipFile(zipFileName):
             fullPath = join(workingDirectory,fileName)
             zip.write(fullPath,fileName)
 
-    # TODO: Delete the Evidence.
+    # TODO: Delete the Evidence. Actually don't.
     # Loop submission files,
         # delete the submission files.
+
+    # Report results and submission identifiers. I should create a report, save our submitted sequences.
+    # Give a report of what was submitted.
 
     # delete the working directory
 
