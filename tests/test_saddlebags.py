@@ -9,12 +9,12 @@ from nose.tools import assert_equal, assert_true
 from saddlebags.AlleleSubCommon import assignConfigurationValue, writeConfigurationFile,\
     identifyGenomicFeatures, parseExons, fetchSequenceAlleleCallWithGFE, clearGlobalVariables,\
     initializeGlobalVariables, getConfigurationValue, loadConfigurationFile, assignIfNotExists,\
-    initializeLog,cleanSequence,loadFromCSV, createIMGTZipFile, parseTypedAlleleInput
+    initializeLog,cleanSequence,loadFromCSV, createIPDZipFile, parseTypedAlleleInput
 
-from saddlebags.EmblSubGenerator import EmblSubGenerator
-from saddlebags.ImgtSubGenerator import ImgtSubGenerator
+from saddlebags.EnaSubGenerator import EnaSubGenerator
+from saddlebags.IpdSubGenerator import IpdSubGenerator
 from saddlebags.AlleleSubmission import SubmissionBatch, AlleleSubmission
-from saddlebags.IpdGoogleDriveUpload import uploadZipToImgtHla
+from saddlebags.IpdGoogleDriveUpload import uploadZipToIpdHla
 
 from os.path import join, expanduser
 
@@ -42,19 +42,19 @@ def testWriteConfigFile():
     assignIfNotExists('test_submission', '1')
     assignIfNotExists('logging', 'DEBUG')
     assignIfNotExists('proxy', '')
-    assignIfNotExists('embl_ftp_upload_site_test', 'webin.ebi.ac.uk')
-    assignIfNotExists('embl_ftp_upload_site_prod', 'webin.ebi.ac.uk')
-    assignIfNotExists('embl_rest_address_test', 'https://www-test.ebi.ac.uk/ena/submit/drop-box/submit/')
-    assignIfNotExists('embl_rest_address_prod', 'https://www.ebi.ac.uk/ena/submit/drop-box/submit/')
+    assignIfNotExists('ena_ftp_upload_site_test', 'webin.ebi.ac.uk')
+    assignIfNotExists('ena_ftp_upload_site_prod', 'webin.ebi.ac.uk')
+    assignIfNotExists('ena_rest_address_test', 'https://www-test.ebi.ac.uk/ena/submit/drop-box/submit/')
+    assignIfNotExists('ena_rest_address_prod', 'https://www.ebi.ac.uk/ena/submit/drop-box/submit/')
     assignIfNotExists('nmdp_act_rest_address', 'http://act.b12x.org')
 
     submissionBatch = SubmissionBatch()
 
     # Assign some information about this batch of submissions.
-    submissionBatch.imgtSubmitterId = 'IMGTHLA_Submitter_ID'
-    submissionBatch.imgtSubmitterName = 'Ben Bioinformaticist'
-    submissionBatch.imgtAltContact = 'IMGTHLA_Alt_Contact'
-    submissionBatch.imgtSubmitterEmail = 'Ben@BioinformaticsResearch.com'
+    submissionBatch.ipdSubmitterId = 'IPD_Submitter_ID'
+    submissionBatch.ipdSubmitterName = 'Ben Bioinformaticist'
+    submissionBatch.ipdAltContact = 'IPD_Alt_Contact'
+    submissionBatch.ipdSubmitterEmail = 'Ben@BioinformaticsResearch.com'
     submissionBatch.labOfOrigin = 'Maastricht University Medical Center'
     submissionBatch.labContact = 'Marspel JR Spilanus'
 
@@ -87,9 +87,9 @@ gacagctgccttgtgtgggactgagaggcaagagttgttcctgcccttccctttgtgacttgaagaaccctgactttgtt
     submission1.submittedGene.geneLocus = 'HLA-DRB1'
     submission1.localAlleleName = 'A02_new44'
     submission1.closestAlleleWrittenDescription = 'DRB1:11 with a SNP in exon 2'
-    submission1.imgtSubmissionIdentifier = 'HWS100234567'
-    submission1.imgtSubmissionVersion = '1'
-    submission1.emblAccessionIdentifier = 'EMBLID42423'
+    submission1.ipdSubmissionIdentifier = 'HWS100234567'
+    submission1.ipdSubmissionVersion = '1'
+    submission1.enaAccessionIdentifier = 'ENAID42423'
     submission1.cellId = 'LMS_ID_14444'
     submission1.ethnicOrigin = 'Caucasoid - Dutch/Irish/English, Europe'
     submission1.sex = 'M'
@@ -140,9 +140,9 @@ gacagctgccttgtgtgggactgagaggcaagagttgttcctgcccttccctttgtgacttgaagaaccctgactttgtt
     #submission2.submittedGene.annotateFeatures()
     submission2.localAlleleName = 'A_02_new36'
     submission2.closestAlleleWrittenDescription = 'This is an A02 allele and it has interesting snps like 604G->T'
-    submission2.imgtSubmissionIdentifier = 'HWS104234667'
-    submission2.imgtSubmissionVersion = '1'
-    submission2.emblAccessionIdentifier = 'EMBLID12323'
+    submission2.ipdSubmissionIdentifier = 'HWS104234667'
+    submission2.ipdSubmissionVersion = '1'
+    submission2.enaAccessionIdentifier = 'ENAID12323'
     submission2.cellId = '12345_LMS_ID'
     submission2.ethnicOrigin = 'Caucasoid - Dutch/Irish/English, Europe'
     submission2.sex = 'M'
@@ -167,7 +167,7 @@ gacagctgccttgtgtgggactgagaggcaagagttgttcctgcccttccctttgtgacttgaagaaccctgactttgtt
     # Store my submission batch in the global variables.
     assignConfigurationValue('submission_batch', submissionBatch)
 
-    print('just assigned my submission batch, it looks like this:' + str(submissionBatch) + ' and has a submitter id of: ' + str(submissionBatch.imgtSubmitterId))
+    print('just assigned my submission batch, it looks like this:' + str(submissionBatch) + ' and has a submitter id of: ' + str(submissionBatch.ipdSubmitterId))
 
 
     writeConfigurationFile()
@@ -182,7 +182,7 @@ def testReadConfigFile():
     assert (getConfigurationValue('submission_batch') is not None)
 
     submissionBatch = getConfigurationValue('submission_batch')
-    #print('Before clearing variables, my submission has has a submitter id of: ' + str(submissionBatch.imgtSubmitterId))
+    #print('Before clearing variables, my submission has has a submitter id of: ' + str(submissionBatch.ipdSubmitterId))
 
     clearGlobalVariables()
 
@@ -195,43 +195,43 @@ def testReadConfigFile():
     assert (getConfigurationValue('submission_batch') is not None)
 
     submissionBatch = getConfigurationValue('submission_batch')
-    #print('After clearing variables, my submission has has a submitter id of: ' + str(submissionBatch.imgtSubmitterId))
+    #print('After clearing variables, my submission has has a submitter id of: ' + str(submissionBatch.ipdSubmitterId))
 
     # Assert that the values exist and are what we expect.
     assert (len(getConfigurationValue('submission_batch').submissionBatch) == 2)
 
 
 
-def testIMGTSubmissionFlatfileWithoutAnnotating():
+def testIPDSubmissionFlatfileWithoutAnnotating():
     #Can I still create an submission file, even though annotation is not working?
-    print ('Test: Creating IMGT Flatfile')
+    print ('Test: Creating IPD Flatfile')
 
     initializeLog()
 
-    imgtGenerator = ImgtSubGenerator()
+    ipdGenerator = IpdSubGenerator()
 
 
 
-    imgtGenerator.submission = getConfigurationValue('submission_batch').submissionBatch[1]
-    imgtGenerator.submissionBatch = getConfigurationValue('submission_batch')
+    ipdGenerator.submission = getConfigurationValue('submission_batch').submissionBatch[1]
+    ipdGenerator.submissionBatch = getConfigurationValue('submission_batch')
 
-    #imgtGenerator.sequenceAnnotation = identifyGenomicFeatures(annotatedSequence)
-    print ('I gave the imgtGenerator this submission: ' + str(imgtGenerator.submission))
-    print ('the submission has this local allele name:' + str(imgtGenerator.submission.localAlleleName))
+    #ipdGenerator.sequenceAnnotation = identifyGenomicFeatures(annotatedSequence)
+    print ('I gave the ipdGenerator this submission: ' + str(ipdGenerator.submission))
+    print ('the submission has this local allele name:' + str(ipdGenerator.submission.localAlleleName))
 
-    imgtSubmission = imgtGenerator.buildIMGTSubmission()
+    ipdSubmission = ipdGenerator.buildIpdSubmission()
 
-    print('IMGT SUBMISSION:\n' + imgtSubmission)
+    print('IPD SUBMISSION:\n' + ipdSubmission)
 
-    assert_true(len(imgtSubmission) > 20)
-    assert_true(imgtSubmission is not None)
+    assert_true(len(ipdSubmission) > 20)
+    assert_true(ipdSubmission is not None)
 
     # Maybe I don't want to safe my configuration with all these test values but maybe I don't care :D
     writeConfigurationFile()
 
     #Print out the submission to a file, for easier validation.
-    outputFileObject = open('Test_IMGT_Submission_HLAA02010101_NoAnnotation', 'w')
-    submissionText = imgtSubmission
+    outputFileObject = open('Test_IPD_Submission_HLAA02010101_NoAnnotation', 'w')
+    submissionText = ipdSubmission
     outputFileObject.write(submissionText)
 
 
@@ -254,27 +254,25 @@ def testCreateZipFile():
     # There should at least be 4 submissions in the batch right now.
 
     zipFileLocation = 'TestSubmissionZipFile.zip'
-    createIMGTZipFile(zipFileLocation)
+    createIPDZipFile(zipFileLocation)
 
 
 
 def testGoogleUpload():
+    # TODO: go through the whole pipeline here. Implement the methods to check credentials.
+    # TODO: Implement upload test helloworld, wait 5 sec, and check if it exists.
+    # TODO: Implement send email to self, wait 5 sec, check if it exists.
     print('Uploading a zip file to the google drive:')
-
-    #homeDirectory = expanduser("~")
-
-    #zipDirectory = join(homeDirectory, 'saddlebags_temp')
-    #workingDirectory = join(zipDirectory, 'submission_temp')
     zipFileName = 'TestSubmissionZipFile.zip'
 
-    uploadZipToImgtHla(zipFileName)
+    uploadZipToIpdHla(zipFileName)
 
 
 """
 #TODO: Annotation is not working. I can try to revert to the SeqAnn code, or fix the gfe service. 
 If the gfe service needs help, talk to Martin.
-def testCreateIMGTSubmissionFlatfileA():
-    print ('Test: Creating IMGT Flatfile')
+def testCreateIPDSubmissionFlatfileA():
+    print ('Test: Creating IPD Flatfile')
 
     initializeLog()
 
@@ -292,23 +290,23 @@ def testCreateIMGTSubmissionFlatfileA():
     annotatedSequence = parseExons(roughFeatureSequence, alleleCallWithGFE)
     assert_true(len(annotatedSequence) > 3)
 
-    imgtGenerator = ImgtSubGenerator()
+    ipdGenerator = IpdSubGenerator()
 
-    imgtGenerator.sequenceAnnotation = identifyGenomicFeatures(annotatedSequence)
+    ipdGenerator.sequenceAnnotation = identifyGenomicFeatures(annotatedSequence)
 
-    imgtSubmission = imgtGenerator.buildIMGTSubmission()
+    ipdSubmission = ipdGenerator.buildIPDSubmission()
 
-    print('IMGT SUBMISSION:\n' + imgtSubmission)
+    print('IPD SUBMISSION:\n' + ipdSubmission)
 
-    assert_true(len(imgtSubmission) > 3)
-    assert_true(imgtSubmission is not None)
+    assert_true(len(ipdSubmission) > 3)
+    assert_true(ipdSubmission is not None)
 
     # Maybe I don't want to safe my configuration with all these test values but maybe I don't care :D
     writeConfigurationFile()
 
     #Print out the submission to a file, for easier validation.
-    outputFileObject = open('Test_IMGT_Submission_HLA_DRB1.txt', 'w')
-    submissionText = imgtSubmission
+    outputFileObject = open('Test_IPD_Submission_HLA_DRB1.txt', 'w')
+    submissionText = ipdSubmission
     outputFileObject.write(submissionText)
 
 
@@ -317,8 +315,8 @@ def testCreateIMGTSubmissionFlatfileA():
 # Last time i checked, the DRB1 submission was not working, because the request is too big.
 """  
 
-def testCreateIMGTSubmissionFlatfileDRB1():
-    print ('Test: Creating IMGT Flatfile')
+def testCreateIPDSubmissionFlatfileDRB1():
+    print ('Test: Creating IPD Flatfile')
 
     mySubmissionBatch = getConfigurationValue('submission_batch').submissionBatch
 
@@ -338,32 +336,32 @@ def testCreateIMGTSubmissionFlatfileDRB1():
     #print (annotatedSequence)
     assert_true(len(annotatedSequence) > 3)
 
-    imgtGenerator = ImgtSubGenerator()
+    ipdGenerator = IpdSubGenerator()
 
-    imgtGenerator.sequenceAnnotation = identifyGenomicFeatures(annotatedSequence)
+    ipdGenerator.sequenceAnnotation = identifyGenomicFeatures(annotatedSequence)
 
 
-    imgtSubmission = imgtGenerator.buildIMGTSubmission()
+    ipdSubmission = ipdGenerator.buildIPDSubmission()
 
-    print('IMGT SUBMISSION:\n' + imgtSubmission)
+    print('IPD SUBMISSION:\n' + ipdSubmission)
 
-    assert_true(len(imgtSubmission) > 3)
-    assert_true(imgtSubmission is not None)
+    assert_true(len(ipdSubmission) > 3)
+    assert_true(ipdSubmission is not None)
 
     # Maybe I don't want to safe my configuration with all these test values but maybe I don't care :D
     writeConfigurationFile()
 
     #Print out the submission to a file, for easier validation.
-    outputFileObject = open('Test_IMGT_Submission_HLA_DRB1.txt', 'w')
-    submissionText = imgtSubmission
+    outputFileObject = open('Test_IPD_Submission_HLA_DRB1.txt', 'w')
+    submissionText = ipdSubmission
     outputFileObject.write(submissionText)
 
 """
 
 
 """
-def testCreateIMGTSubmissionFlatfileC():
-    logEvent ('Test: Creating IMGT Flatfile','INFO')
+def testCreateIPDSubmissionFlatfileC():
+    logEvent ('Test: Creating IPD Flatfile','INFO')
 
     initializeGlobalVariables()
     
@@ -372,8 +370,8 @@ def testCreateIMGTSubmissionFlatfileC():
     submission1.submittedGene.geneLocus = 'HLA-C'
     submission1.localAlleleName = 'HLA-C_NEW_1'
     submission1.closestAlleleWrittenDescription = 'Some C allele'
-    submission1.imgtSubmissionIdentifier = 'HWS177477467'
-    submission1.imgtSubmissionVersion = '1'
+    submission1.ipdSubmissionIdentifier = 'HWS177477467'
+    submission1.ipdSubmissionVersion = '1'
     submission1.cellId = 'Cosang_Cell_Line_1'
     submission1.ethnicOrigin = 'Caucasoid - Dutch/Irish/English, Europe'
     submission1.sex = 'M'
@@ -410,31 +408,31 @@ def testCreateIMGTSubmissionFlatfileC():
     #print (annotatedSequence)
     assert_true(len(annotatedSequence) > 3)
 
-    imgtGenerator = ImgtSubGenerator()
+    ipdGenerator = IpdSubGenerator()
 
-    imgtGenerator.sequenceAnnotation = identifyGenomicFeatures(annotatedSequence)
+    ipdGenerator.sequenceAnnotation = identifyGenomicFeatures(annotatedSequence)
 
 
-    imgtSubmission = imgtGenerator.buildIMGTSubmission()
+    ipdSubmission = ipdGenerator.buildIPDSubmission()
 
-    print('IMGT SUBMISSION:\n' + imgtSubmission)
+    print('IPD SUBMISSION:\n' + ipdSubmission)
 
-    assert_true(len(imgtSubmission) > 3)
-    assert_true(imgtSubmission is not None)
+    assert_true(len(ipdSubmission) > 3)
+    assert_true(ipdSubmission is not None)
     
     
     writeConfigurationFile()
 
     # Print out the submission to a file, for easier validation.
-    outputFileObject = open('Test_IMGT_Submission_HLA_C.txt', 'w')
-    submissionText = imgtSubmission
+    outputFileObject = open('Test_IPD_Submission_HLA_C.txt', 'w')
+    submissionText = ipdSubmission
     outputFileObject.write(submissionText)
 """
 
 """
-def testCreateIMGTSubmissionFlatfileDRB1_wSnp():
+def testCreateIPDSubmissionFlatfileDRB1_wSnp():
 
-    print ('Test: Creating IMGT Flatfile')
+    print ('Test: Creating IPD Flatfile')
     # assignConfigurationValue('nmdp_act_rest_address', 'http://act.b12x.org/type_align' )
     assignConfigurationValue('nmdp_act_rest_address', 'http://localhost/type_align')
     assert_true(True)
@@ -454,22 +452,22 @@ def testCreateIMGTSubmissionFlatfileDRB1_wSnp():
     # print (annotatedSequence)
     assert_true(len(annotatedSequence) > 3)
 
-    imgtGenerator = ImgtSubGenerator()
+    ipdGenerator = IpdSubGenerator()
 
-    imgtGenerator.sequenceAnnotation = identifyGenomicFeatures(annotatedSequence)
+    ipdGenerator.sequenceAnnotation = identifyGenomicFeatures(annotatedSequence)
 
-    assignConfigurationValue('imgt_submission_identifier', 'HWS100234567')
-    assignConfigurationValue('imgt_submission_version', '1')
-    # I think I dont need this embl release date.
-    # assignConfigurationValue('embl_release_date', '09/08/2017')
+    assignConfigurationValue('ipd_submission_identifier', 'HWS100234567')
+    assignConfigurationValue('ipd_submission_version', '1')
+    # I think I dont need this ena release date.
+    # assignConfigurationValue('ena_release_date', '09/08/2017')
     assignConfigurationValue('allele_name', 'HLA-DRB1_NEW_1')
     # I need a method to do this...I am adding it now.
-    # assignConfigurationValue('closest_allele_written_description', 'TEMP_IMGTHLA_IDENTIFIER')
-    assignConfigurationValue('embl_sequence_accession', 'EMBL_Seq_Acc')
-    assignConfigurationValue('imgt_submitter_id', 'IMGTHLA_Submitter_ID')
-    assignConfigurationValue('imgt_submitter_name', 'Ben Bioinformaticist')
-    assignConfigurationValue('imgt_alt_contact', 'IMGTHLA_Alt_Contact')
-    assignConfigurationValue('imgt_submitter_email', 'Ben@BioinformaticsResearch.com')
+    # assignConfigurationValue('closest_allele_written_description', 'TEMP_IPD_IDENTIFIER')
+    assignConfigurationValue('ena_sequence_accession', 'ENA_Seq_Acc')
+    assignConfigurationValue('ipd_submitter_id', 'IPD_Submitter_ID')
+    assignConfigurationValue('ipd_submitter_name', 'Ben Bioinformaticist')
+    assignConfigurationValue('ipd_alt_contact', 'IPD_Alt_Contact')
+    assignConfigurationValue('ipd_submitter_email', 'Ben@BioinformaticsResearch.com')
     assignConfigurationValue('cell_id', 'Cell_Identifier123')
     assignConfigurationValue('ethnic_origin', 'African American')
     assignConfigurationValue('sex', 'Unknown')
@@ -488,32 +486,32 @@ def testCreateIMGTSubmissionFlatfileDRB1_wSnp():
     assignConfigurationValue('sequenced_in_isolation', 'Yes')
     assignConfigurationValue('no_of_reactions', '3')
     assignConfigurationValue('method_comments', 'The method we used was MinION sequencing!')
-    # assignConfigurationValue('closest_known_allele', 'TEMP_IMGTHLA_IDENTIFIER')
+    # assignConfigurationValue('closest_known_allele', 'TEMP_IPD_IDENTIFIER')
     # I'm specifically escapting semicolons here.
     # Ben's unnoficial dirty trick: Convert any semi colon on the input to ;. Just store those 3 characters instead of a semicolon.
     assignConfigurationValue('citations',
                              '1-3503;PUBMED; 9349617.;Laforet M, Froelich N, Parissiadis A, Pfeiffer B, Schell A, Faller B, Woehl-Jaegle ML, Cazenave JP, Tongio MM;A nucleotide insertion in exon 4 is responsible for the absence of expression of an HLA-A*01 allele;Tissue Antigens 50:347 - 50(1997).;1-3503;PUBMED; 9349617.;Laforet M, Froelich N, Parissiadis A, Pfeiffer B, Schell A, Faller B, Woehl-Jaegle ML, Cazenave JP, Tongio MM;A nucleotide insertion in exon 4 is responsible for the absence of expression of an HLA-A*01 allele;Tissue Antigens 50:347 - 50(1997).')
 
-    imgtSubmission = imgtGenerator.buildIMGTSubmission()
+    ipdSubmission = ipdGenerator.buildIPDSubmission()
 
-    print('IMGT SUBMISSION:\n' + imgtSubmission)
+    print('IPD SUBMISSION:\n' + ipdSubmission)
 
-    assert_true(len(imgtSubmission) > 3)
-    assert_true(imgtSubmission is not None)
+    assert_true(len(ipdSubmission) > 3)
+    assert_true(ipdSubmission is not None)
 
     # Maybe I don't want to safe my configuration with all these test values but maybe I don't care :D
     writeConfigurationFile()
 
     # Print out the submission to a file, for easier validation.
-    outputFileObject = open('Test_IMGT_Submission_HLA_DRB1_SNP.txt', 'w')
-    submissionText = imgtSubmission
+    outputFileObject = open('Test_IPD_Submission_HLA_DRB1_SNP.txt', 'w')
+    submissionText = ipdSubmission
     outputFileObject.write(submissionText)
 
 
 """
 """
-def testCreateEMBLSubmissionFlatfile():
-    print ('Test: Create an EMBL SubmissionFlatfile')
+def testCreateENASubmissionFlatfile():
+    print ('Test: Create an ENA SubmissionFlatfile')
     assert_true(True)
 
     roughFeatureSequence = 'aag\nCGTCGT\nccg\nGGCTGA\naat'
@@ -523,7 +521,7 @@ def testCreateEMBLSubmissionFlatfile():
     assignConfigurationValue('class', '1')
     assignConfigurationValue('allele_name', 'Allele:01:02')
 
-    allGen = EmblSubGenerator()
+    allGen = EnaSubGenerator()
     # roughFeatureSequence = self.featureInputGuiObject.get('1.0', 'end')
 
     allGen.sequenceAnnotation = identifyGenomicFeatures(roughFeatureSequence)
@@ -534,7 +532,7 @@ def testCreateEMBLSubmissionFlatfile():
     assert_true(enaSubmission is not None)
 
     #Print out the submission to a file, for easier validation.
-    outputFileObject = open('Test_EMBL_Submission.txt', 'w')
+    outputFileObject = open('Test_ENA_Submission.txt', 'w')
     submissionText = enaSubmission
     outputFileObject.write(submissionText)
 

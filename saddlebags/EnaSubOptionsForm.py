@@ -23,7 +23,7 @@ from saddlebags.ScrolledWindow import VerticalScrolledFrame
 
 import logging
 
-class EmblSubOptionsForm(VerticalScrolledFrame):
+class EnaSubOptionsForm(VerticalScrolledFrame):
         
     # Initialize the GUI
     def __init__(self, root):
@@ -118,13 +118,13 @@ class EmblSubOptionsForm(VerticalScrolledFrame):
         self.submissionDetailsInputFrame = Frame(self.interior)
 
         self.usernameInstrText = StringVar()
-        self.usernameInstrText.set('EMBL Username:')
+        self.usernameInstrText.set('EMBL-ENA Username:')
         self.usernameInstrLabel = Label(self.submissionDetailsInputFrame, width=labelInputWidth, height=1, textvariable=self.usernameInstrText).grid(row=0, column=0)
         self.inputUsername = StringVar()
         self.inputUsernameEntry = Entry(self.submissionDetailsInputFrame, width=formInputWidth, textvariable=self.inputUsername).grid(row=0, column=1)
 
         self.passwordInstrText = StringVar()
-        self.passwordInstrText.set('EMBL Password:')
+        self.passwordInstrText.set('EMBL-ENA Password:')
         self.passwordInstrLabel = Label(self.submissionDetailsInputFrame, width=labelInputWidth, height=1, textvariable=self.passwordInstrText).grid(row=1, column=0)
         self.inputPassword = StringVar()
         self.inputPasswordEntry = Entry(self.submissionDetailsInputFrame, width=formInputWidth, textvariable=self.inputPassword, show="*").grid(row=1, column=1)
@@ -177,7 +177,7 @@ class EmblSubOptionsForm(VerticalScrolledFrame):
             + 'You must either:\n\n'
             + '1.) Provide an existing EMBL-ENA study/project accession #.\n'
             + 'This was provided in a previous submission, or you can see a list of\n'
-            + 'your projects by logging into EMBL Webin. (ex. \'PRJEB01234\')\n'
+            + 'your projects by logging into EMBL-ENA Webin. (ex. \'PRJEB01234\')\n'
             + '\n'
             + '2.) Specify metadata for a new study at EMBL-ENA.\n'
             + 'Provide an Identifier, Title, and short Abstract for the new Study,\n'
@@ -246,11 +246,11 @@ class EmblSubOptionsForm(VerticalScrolledFrame):
 
     # submissionOptions is a dictionary, passed by the parent.
     def loadOptions(self):
-        if getConfigurationValue('embl_username') is not None:
-            self.inputUsername.set(getConfigurationValue('embl_username'))
+        if getConfigurationValue('ena_username') is not None:
+            self.inputUsername.set(getConfigurationValue('ena_username'))
             
-        if getConfigurationValue('embl_password') is not None:
-            self.inputPassword.set(getConfigurationValue('embl_password'))
+        if getConfigurationValue('ena_password') is not None:
+            self.inputPassword.set(getConfigurationValue('ena_password'))
             
         if getConfigurationValue('sample_id') is not None:
             self.inputSampleID.set(getConfigurationValue('sample_id'))
@@ -264,7 +264,7 @@ class EmblSubOptionsForm(VerticalScrolledFrame):
             elif (str(getConfigurationValue('class')) == '2'):
                 self.chooseClassIntVar.set(2)
             else:
-                raise Exception('Error loading EMBL submission options. Invalid class:' + str(getConfigurationValue('class')))
+                raise Exception('Error loading EMBL-ENA submission options. Invalid class:' + str(getConfigurationValue('class')))
     
         if getConfigurationValue('allele_name') is not None:
             self.inputAllele.set(getConfigurationValue('allele_name'))
@@ -306,10 +306,10 @@ class EmblSubOptionsForm(VerticalScrolledFrame):
         if (self.checkOptions()):
             logging.info ('Saving Options....')
             
-            assignConfigurationValue('embl_username', self.inputUsername.get())
+            assignConfigurationValue('ena_username', self.inputUsername.get())
             # I store this password so I can use it in the submission
             # I don't ever want to save the password. Make sure it isn't being saved in the config, in AlleleSubCommon.py
-            assignConfigurationValue('embl_password', self.inputPassword.get())
+            assignConfigurationValue('ena_password', self.inputPassword.get())
             assignConfigurationValue('sample_id', self.inputSampleID.get())
             assignConfigurationValue('gene', self.inputGene.get())
             assignConfigurationValue('class', str(self.chooseClassIntVar.get()))             
@@ -337,8 +337,8 @@ class EmblSubOptionsForm(VerticalScrolledFrame):
         
         #logging.info ('Checking options.')
        
-        # Don't check the EMBL Username
-        # Don't check the EMBL Password
+        # Don't check the ena Username
+        # Don't check the ena Password
         
         # TODO: I should be more strict with this enforcement.  I got rid of the False returns because it was too darn annoying.
         

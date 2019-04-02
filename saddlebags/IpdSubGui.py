@@ -22,8 +22,8 @@ from tkinter import messagebox, filedialog, Frame, StringVar, Button, Label, Tex
 
 from tkinter.constants import BOTH, NORMAL, DISABLED, X, Y, BOTTOM, RIGHT, NONE, HORIZONTAL
 
-from saddlebags.ImgtSubGenerator import ImgtSubGenerator
-from saddlebags.ImgtSubOptionsForm import ImgtSubOptionsForm
+from saddlebags.IpdSubGenerator import IpdSubGenerator
+from saddlebags.IpdSubOptionsForm import IpdSubOptionsForm
 from saddlebags.AlleleSubCommon import collectAndValidateRoughSequence, assignIcon, assignConfigurationValue, parseExons, getConfigurationValue, identifyGenomicFeatures, isSequenceAlreadyAnnotated, collectRoughSequence
 #from saddlebags.AlleleSubCommonRest import fetchSequenceAlleleCallWithGFE
 from saddlebags.HlaSequenceException import HlaSequenceException
@@ -32,7 +32,7 @@ import logging
 #from HLAGene import HLAGene
 
 # The AlleleGui class is an extension of Tkinter.  The GUI elements and interactions are specified in this class.
-class ImgtSubGui(Frame):
+class IpdSubGui(Frame):
 
     # I shouldn't need to write a select-All method but TK is kind of annoying.
     def selectall(self, event):
@@ -115,9 +115,9 @@ class ImgtSubGui(Frame):
         # Output interface is contained on a frame.
         self.submOutputFrame = Frame(self)
         
-        self.outputEMBLSubmission = StringVar()
-        self.outputEMBLSubmission.set('Allele Submission Preview:')
-        self.outputEMBLLabel = Label(self.submOutputFrame, width=80, height=1, textvariable=self.outputEMBLSubmission).pack()
+        self.outputENASubmission = StringVar()
+        self.outputENASubmission.set('Allele Submission Preview:')
+        self.outputENALabel = Label(self.submOutputFrame, width=80, height=1, textvariable=self.outputENASubmission).pack()
 
         self.submOutputXScrollbar = Scrollbar(self.submOutputFrame, orient=HORIZONTAL)
         self.submOutputXScrollbar.pack(side=BOTTOM, fill=X)
@@ -140,8 +140,8 @@ class ImgtSubGui(Frame):
         self.uploadSubmissionFrame = Frame(self)        
         self.saveSubmissionButton = Button(self.uploadSubmissionFrame, text='4) Save Submission to My Computer', command=self.saveSubmissionFile)
         self.saveSubmissionButton.pack(**button_opt)
-        # TODO: Enable IMGT Upload functionality. Also enable this button.
-        self.uploadButton = Button(self.uploadSubmissionFrame, text='5) Upload Submission to IPD-IMGT/HLA', command=self.uploadSubmission, state=DISABLED)        
+        # TODO: Enable IPD Upload functionality. Also enable this button.
+        self.uploadButton = Button(self.uploadSubmissionFrame, text='5) Upload Submission to IPD-IMGT/HLA', command=self.uploadSubmission, state=DISABLED)
         self.uploadButton.pack(**button_opt)
         self.exitButton = Button(self.uploadSubmissionFrame, text='Exit', command=self.saveAndExit)
         self.exitButton.pack(**button_opt)
@@ -154,27 +154,27 @@ class ImgtSubGui(Frame):
         
         self.disableGUI()
         
-        imgtOptionsRoot = Toplevel()
-        imgtOptionsRoot.bind("<Destroy>", self.enableGUI)
-        ImgtSubOptionsForm(imgtOptionsRoot).pack()
+        ipdOptionsRoot = Toplevel()
+        ipdOptionsRoot.bind("<Destroy>", self.enableGUI)
+        IpdSubOptionsForm(ipdOptionsRoot).pack()
 
         # Set the X and the Y Position of the options window, so it is nearby.  
-        imgtOptionsRoot.update()        
+        ipdOptionsRoot.update()
         windowXpos = str(self.parent.winfo_geometry().split('+')[1])
         windowYpos = str(self.parent.winfo_geometry().split('+')[2])
-        newGeometry = (str(imgtOptionsRoot.winfo_width()) + 'x'
-            + str(imgtOptionsRoot.winfo_height()) + '+'
+        newGeometry = (str(ipdOptionsRoot.winfo_width()) + 'x'
+            + str(ipdOptionsRoot.winfo_height()) + '+'
             + str(windowXpos) + '+' 
             + str(windowYpos))
-        imgtOptionsRoot.geometry(newGeometry)
+        ipdOptionsRoot.geometry(newGeometry)
 
-        #imgtOptionsRoot.interior.update()
+        #ipdOptionsRoot.interior.update()
 
 
-        #imgtOptionsRoot.update()
+        #ipdOptionsRoot.update()
 
-        imgtOptionsRoot.mainloop()
-        #imgtOptionsRoot.update()
+        ipdOptionsRoot.mainloop()
+        #ipdOptionsRoot.update()
 
         
     def sampleSequence(self):
@@ -182,15 +182,15 @@ class ImgtSubGui(Frame):
         self.featureInputGuiObject.insert('1.0', 'aag\nCGTCGT\nccg\nGGCTGA\naat')
         
         # Clear the password, keep the username
-        assignConfigurationValue('imgt_password','')
+        assignConfigurationValue('ipd_password','')
         
         assignConfigurationValue("allele_name",'Allele:01:02')
         assignConfigurationValue('gene','HLA-C')
         assignConfigurationValue('sample_id', 'Donor_12345')
         assignConfigurationValue('class','1')
         
-        assignConfigurationValue('embl_sequence_accession', 'LT123456')        
-        assignConfigurationValue('embl_release_date', '01/01/2020')
+        assignConfigurationValue('ena_sequence_accession', 'LT123456')
+        assignConfigurationValue('ena_release_date', '01/01/2020')
         
         assignConfigurationValue('is_published','0')
         
@@ -258,9 +258,9 @@ class ImgtSubGui(Frame):
             + '4.) Push [Generate an IPD-IMGT/HLA submission]\n'
             + 'button to generate a submission.\n'
             # TODO: Change these instructions when the submission functionality works.
-            #+ '5.) Push [Upload Submission to EMBL]\n'
+            #+ '5.) Push [Upload Submission to ENA]\n'
             #+ 'to submit the sequence\n'
-            #+ 'using EMBL Webin REST interface\n\n'
+            #+ 'using ENA Webin REST interface\n\n'
             
             + 'If exon annotation is not available,\n'
             + 'it may be necessary to annotate manually.\n\n'
@@ -281,7 +281,7 @@ class ImgtSubGui(Frame):
 
             )
         
-    # Ask user for a output file location, and write the IMGT submission to a file.
+    # Ask user for a output file location, and write the IPD submission to a file.
     # This takes the input from the output field, rather than generate a new submission.
     # So the user can edit the submission before or after saving it.
     def saveSubmissionFile(self):
@@ -291,7 +291,7 @@ class ImgtSubGui(Frame):
         options['initialdir'] = expanduser("~")
         options['parent'] = self
         options['title'] = 'Specify your output file.'
-        options['initialfile'] = 'IMGT.HLA.Submission.txt'
+        options['initialfile'] = 'IPD.HLA.Submission.txt'
         outputFileObject = filedialog.asksaveasfile(**self.dir_opt)
         submissionText = self.submOutputGuiObject.get('1.0', 'end')
         outputFileObject.write(submissionText)
@@ -350,7 +350,7 @@ class ImgtSubGui(Frame):
         # TODO: Implement this method.
         logging.info ('This functionality is disabled until it works better.')
                       
-    # Gather sequence information from the input elements, and generate a text EMBL submission.
+    # Gather sequence information from the input elements, and generate a text ENA submission.
     def constructSubmission(self):
         try:
         
@@ -371,15 +371,15 @@ class ImgtSubGui(Frame):
                     # You chose not to annotate.  Hope this works out for you.
                     annotatedSequence = roughNucleotideSequence
                 
-            allGen = ImgtSubGenerator()
+            allGen = IpdSubGenerator()
             allGen.sequenceAnnotation = identifyGenomicFeatures(annotatedSequence)
 
-            # Don't assign a sequenceAnnotation anymore. Give it an AlleleSubmission object, like i'm doing in AlleleSubCommon.createIMGTZipFile
+            # Don't assign a sequenceAnnotation anymore. Give it an AlleleSubmission object, like i'm doing in AlleleSubCommon.createIPDZipFile
             FixThisBug
             
-            imgtSubmission = allGen.buildIMGTSubmission()
+            ipdSubmission = allGen.buildIpdSubmission()
                         
-            if (imgtSubmission is None or len(imgtSubmission) < 1):
+            if (ipdSubmission is None or len(ipdSubmission) < 1):
                 messagebox.showerror('Empty submission text'
                     ,'You are missing some required information.\n'
                     + 'Try the \'Submission Options\' button.\n')
@@ -388,7 +388,7 @@ class ImgtSubGui(Frame):
                 self.submOutputGuiObject.insert('1.0', '') 
             else:
                 self.submOutputGuiObject.delete('1.0','end')    
-                self.submOutputGuiObject.insert('1.0', imgtSubmission) 
+                self.submOutputGuiObject.insert('1.0', ipdSubmission)
             
         except KeyError:
             messagebox.showerror('Missing Submission Options'
