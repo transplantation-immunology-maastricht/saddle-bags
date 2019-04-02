@@ -22,7 +22,7 @@ import logging
 
 
 
-class ImgtSubOptionsForm(VerticalScrolledFrame):
+class IpdSubOptionsForm(VerticalScrolledFrame):
         
     # Initialize the GUI
     def __init__(self, root):
@@ -31,7 +31,7 @@ class ImgtSubOptionsForm(VerticalScrolledFrame):
         VerticalScrolledFrame.__init__(self, root)
         #Frame.__init__(self, root)
         #super(500, 500)
-        root.title("Choose IMGT/HLA Submission Options")
+        root.title("Choose IPD-IMGT/HLA Submission Options")
         self.parent = root
 
         #button_opt = {'fill': Tkconstants.BOTH, 'padx': 35, 'pady': 5}
@@ -48,8 +48,8 @@ class ImgtSubOptionsForm(VerticalScrolledFrame):
         
         self.instructionsFrame = Frame(self.interior)  
         self.instructionText = StringVar()       
-        self.instructionText.set('\nThese options are required for an IMGT allele submission.\n'
-            + 'Login Credentials will not be stored, but they will be sent to IMGT via\n'
+        self.instructionText.set('\nThese options are required for an IPD allele submission.\n'
+            + 'Login Credentials will not be stored, but they will be sent to IPD via\n'
             + 'secure https connection.\n')        
         Label(self.instructionsFrame, width=85, height=6, textvariable=self.instructionText).pack()
         self.instructionsFrame.pack()
@@ -63,20 +63,20 @@ class ImgtSubOptionsForm(VerticalScrolledFrame):
         self.submissionDetailsInputFrame = Frame(self.interior)
 
         self.usernameInstrText = StringVar()
-        self.usernameInstrText.set('IMGT Username:')
+        self.usernameInstrText.set('IPD Username:')
         self.usernameInstrLabel = Label(self.submissionDetailsInputFrame, width=labelInputWidth, height=1, textvariable=self.usernameInstrText).grid(row=0, column=0)
         self.inputUsername = StringVar()
         self.inputUsernameEntry = Entry(self.submissionDetailsInputFrame, width=formInputWidth, textvariable=self.inputUsername).grid(row=0, column=1)
 
         self.passwordInstrText = StringVar()
-        self.passwordInstrText.set('IMGT Password:')
+        self.passwordInstrText.set('IPD Password:')
         self.passwordInstrLabel = Label(self.submissionDetailsInputFrame, width=labelInputWidth, height=1, textvariable=self.passwordInstrText).grid(row=1, column=0)
         self.inputPassword = StringVar()
         self.inputPasswordEntry = Entry(self.submissionDetailsInputFrame, width=formInputWidth, textvariable=self.inputPassword, show="*").grid(row=1, column=1)
         
         
         # TODO: Submitter / Laboratory ID.  
-        # This is on the IMGT form.
+        # This is on the IPD form.
         #Do I know this infromation? Do I need to tell user how to get it?
   
         self.sampleIDInstrText = StringVar()
@@ -109,31 +109,31 @@ class ImgtSubOptionsForm(VerticalScrolledFrame):
         # Gotta add this to the load/save config nonsense below.
         
         
-        # TODO: Can I just load an EMBL accession? I think that is possible.  Easier than filling it in here
+        # TODO: Can I just load an ENA accession? I think that is possible.  Easier than filling it in here
         
         
-        # TODO: When EMBL Sequence Accession # Is provided, I can probably lookup an annotated sequence.
+        # TODO: When ENA Sequence Accession # Is provided, I can probably lookup an annotated sequence.
         # Should I put a button next to this field 
-        # Button: "Lookup This EMBL Sequence Accession #"
+        # Button: "Lookup This ENA Sequence Accession #"
         # If it is found, then i already know the sequence with exon boundaries.
         
         
-        # TODO: Do I need to specify if it is EMBL / Genbank / The other one?  Probably not.
-        # I can require an EMBL code and disregard Genbank.  
+        # TODO: Do I need to specify if it is ENA / Genbank / The other one?  Probably not.
+        # I can require an ENA code and disregard Genbank.
         # Radio Buttons?  
-        # EMBL / Genbank Accession #
-        # No, this tool is for EMBL submission. But this is a question for James Robinson.
+        # ENA / Genbank Accession #
+        # No, this tool is for ENA submission. But this is a question for James Robinson.
         # Should i choose between which intermediate databse they use?
-        self.emblAccInstrText = StringVar()
-        self.emblAccInstrText.set('EMBL Sequence Accession #:')
-        self.emblAccInstrLabel = Label(self.submissionDetailsInputFrame, width=labelInputWidth, height=1, textvariable=self.emblAccInstrText).grid(row=6, column=0)
-        self.inputEmblAcc = StringVar() 
-        self.inputEmblAccEntry = Entry(self.submissionDetailsInputFrame, width=formInputWidth, textvariable=self.inputEmblAcc).grid(row=6, column=1)
+        self.enaAccInstrText = StringVar()
+        self.enaAccInstrText.set('ENA Sequence Accession #:')
+        self.enaAccInstrLabel = Label(self.submissionDetailsInputFrame, width=labelInputWidth, height=1, textvariable=self.enaAccInstrText).grid(row=6, column=0)
+        self.inputEnaAcc = StringVar()
+        self.inputEnaAccEntry = Entry(self.submissionDetailsInputFrame, width=formInputWidth, textvariable=self.inputEnaAcc).grid(row=6, column=1)
 
         
         # Release Date
         self.releaseDateInstrText = StringVar()
-        self.releaseDateInstrText.set('IMGT Release Date:')
+        self.releaseDateInstrText.set('IPD Release Date:')
         self.releaseDateInstrLabel = Label(self.submissionDetailsInputFrame, width=labelInputWidth, height=1, textvariable=self.releaseDateInstrText).grid(row=7, column=0)
         self.inputReleaseDate = StringVar() 
         self.inputReleaseDateEntry = Entry(self.submissionDetailsInputFrame, width=formInputWidth, textvariable=self.inputReleaseDate).grid(row=7, column=1)
@@ -188,7 +188,7 @@ class ImgtSubOptionsForm(VerticalScrolledFrame):
         # I had to make 2 of them to organize my gui, maybe I can name this better.
         self.submissionDetailsInputFrame2 = Frame(self.interior)
             
-        # /alignment -> defined by IMGT sequence alignment service        
+        # /alignment -> defined by IPD sequence alignment service
         # In this case, it is the closest known allele.
         self.closestAlleleInstrText = StringVar()
         self.closestAlleleInstrText.set('Closest Known HLA Allele:')
@@ -274,7 +274,7 @@ class ImgtSubOptionsForm(VerticalScrolledFrame):
         
         # Cell Workshop Details
         # I think Cell Workshop Details is just a header. there isn't new information here, just a header. 
-        # TODO: Compare this with the IMGT Submission website, im not missing something?
+        # TODO: Compare this with the IPD Submission website, im not missing something?
         
         self.submissionDetailsInputFrame2.pack()
         
@@ -330,11 +330,11 @@ class ImgtSubOptionsForm(VerticalScrolledFrame):
 
     # submissionOptions is a dictionary, passed by the parent.
     def loadOptions(self):
-        if getConfigurationValue('imgt_username') is not None:
-            self.inputUsername.set(getConfigurationValue('imgt_username'))
+        if getConfigurationValue('ipd_username') is not None:
+            self.inputUsername.set(getConfigurationValue('ipd_username'))
             
-        if getConfigurationValue('imgt_password') is not None:
-            self.inputPassword.set(getConfigurationValue('imgt_password'))
+        if getConfigurationValue('ipd_password') is not None:
+            self.inputPassword.set(getConfigurationValue('ipd_password'))
             
         if getConfigurationValue('sample_id') is not None:
             self.inputSampleID.set(getConfigurationValue('sample_id'))
@@ -348,16 +348,16 @@ class ImgtSubOptionsForm(VerticalScrolledFrame):
             elif (str(getConfigurationValue('class')) == '2'):
                 self.chooseClassIntVar.set(2)
             else:
-                raise Exception('Error loading IMGT submission options. Invalid class:' + str(getConfigurationValue('class')))
+                raise Exception('Error loading IPD submission options. Invalid class:' + str(getConfigurationValue('class')))
     
         if getConfigurationValue('allele_name') is not None:
             self.inputAllele.set(getConfigurationValue('allele_name'))
             
-        if getConfigurationValue('embl_sequence_accession') is not None:
-            self.inputEmblAcc.set(getConfigurationValue('embl_sequence_accession'))
+        if getConfigurationValue('ena_sequence_accession') is not None:
+            self.inputEnaAcc.set(getConfigurationValue('ena_sequence_accession'))
         
-        if getConfigurationValue('embl_release_date') is not None:
-            self.inputReleaseDate.set(getConfigurationValue('embl_release_date')) 
+        if getConfigurationValue('ena_release_date') is not None:
+            self.inputReleaseDate.set(getConfigurationValue('ena_release_date'))
    
         # 0=unpublished, 1=published
         #print('1Setting is_published value to:' + getConfigurationValue('is_published'))
@@ -422,17 +422,17 @@ class ImgtSubOptionsForm(VerticalScrolledFrame):
             
             logging.info ('Saving Options....')
             
-            assignConfigurationValue('imgt_username', self.inputUsername.get())
+            assignConfigurationValue('ipd_username', self.inputUsername.get())
             # I store this password so I can use it in the submission
             # I don't ever want to save the password. Make sure it isn't being saved in the config, in AlleleSubCommon.py
-            assignConfigurationValue('imgt_password', self.inputPassword.get())
+            assignConfigurationValue('ipd_password', self.inputPassword.get())
             assignConfigurationValue('sample_id', self.inputSampleID.get())
             assignConfigurationValue('gene', self.inputGene.get())
             assignConfigurationValue('class', str(self.chooseClassIntVar.get()))             
             assignConfigurationValue('allele_name', self.inputAllele.get())
 
-            assignConfigurationValue('embl_sequence_accession', self.inputEmblAcc.get())
-            assignConfigurationValue('embl_release_date', self.inputReleaseDate.get())
+            assignConfigurationValue('ena_sequence_accession', self.inputEnaAcc.get())
+            assignConfigurationValue('ena_release_date', self.inputReleaseDate.get())
             
             assignConfigurationValue('is_published', str(self.publishedReferenceIntVar.get()))
             #print('Saving is_published configuration as :' + str(self.publishedReferenceIntVar.get()))
@@ -471,8 +471,8 @@ class ImgtSubOptionsForm(VerticalScrolledFrame):
         # TODO this method
         logging.info ('Checking options.')
 
-        # Don't check the IMGT Username
-        # Don't check the IMGT Password
+        # Don't check the IPD Username
+        # Don't check the IPD Password
         
         if (not self.inputSampleID.get()):
             messagebox.showwarning('Missing Form Value',
@@ -487,13 +487,13 @@ class ImgtSubOptionsForm(VerticalScrolledFrame):
                 'You are missing an Allele Name. Please try again.')
             return False
         
-        if (not self.inputEmblAcc.get()):
+        if (not self.inputEnaAcc.get()):
             messagebox.showwarning('Missing Form Value',
-                'You are missing an EMBL Accession Number. Please try again.')
+                'You are missing an ENA Accession Number. Please try again.')
             return False
         if (not self.inputReleaseDate.get()):
             messagebox.showwarning('Missing Form Value',
-                'You are missing an IMGT Submission Release Date. Please try again.')
+                'You are missing an IPD Submission Release Date. Please try again.')
             return False
 
         # This is NOne if nothing is selected.

@@ -24,8 +24,8 @@ from saddlebags.AcademicCitation import AcademicCitation
 
 import logging
 
-# The ImgtSubGenerator class contains logic to generate an IPD-IMGT/HLA allele submission flatfile
-class ImgtSubGenerator():   
+# The IpdSubGenerator class contains logic to generate an IPD-IMGT/HLA allele submission flatfile
+class IpdSubGenerator():
     
     def __init__(self):
         # Instead of storing an HlaGene, im now storing a ALleleSubmission object.
@@ -35,8 +35,8 @@ class ImgtSubGenerator():
         self.submission = AlleleSubmission()
         self.submissionBatch = SubmissionBatch()
     
-    # Create the text submission based on the IMGT format.
-    def buildIMGTSubmission(self):    
+    # Create the text submission based on the IPD format.
+    def buildIpdSubmission(self):
         
         documentBuffer = ''
 
@@ -75,27 +75,27 @@ class ImgtSubGenerator():
         
         headerText = ''
         
-        # TODO: Get these values from IMGT, they shouldn't be hardcoded.  
-        # Maybe it should be an unknown identifier with
-        imgtIdentifier = self.submission.imgtSubmissionIdentifier
-        imgtIdentifierWithVersion = str(self.submission.imgtSubmissionIdentifier + '.' + self.submission.imgtSubmissionVersion)
-        currentSubmissionDate = '{:%d/%m/%Y}'.format(datetime.now())
+        # TODO: just use the ENA identifier, or something else.
+        ipdIdentifier = self.submission.ipdSubmissionIdentifier
+        ipdIdentifierWithVersion = str(self.submission.ipdSubmissionIdentifier + '.' + self.submission.ipdSubmissionVersion)
+        #currentSubmissionDate = '{:%d/%m/%Y}'.format(datetime.now())   # I don't need this?
 
 
         # TODO: I'm removing the IMGT/HLA identifier from the input file, because I think I don't need it.
+        # Check my notes, i think I was going to just provide an ENA identifier. IMGT/HLA can give us an "HS" identifier, I shouldn't assign those.
         # It's assigned by IMGT/HLA?
-        headerText += 'ID   ' + str(imgtIdentifier) + '; Sequence Submission; Confidential; ' + str(self.submission.submittedGene.totalLength()) + ' BP.\n'
+        headerText += 'ID   ' + str(ipdIdentifier) + '; Sequence Submission; Confidential; ' + str(self.submission.submittedGene.totalLength()) + ' BP.\n'
         headerText += 'XX\n'
-        headerText += 'AC   ' + str(imgtIdentifier) + ';\n'
+        headerText += 'AC   ' + str(ipdIdentifier) + ';\n'
         headerText += 'XX\n'
-        headerText += 'SV   ' + str(imgtIdentifierWithVersion) + '\n'
+        headerText += 'SV   ' + str(ipdIdentifierWithVersion) + '\n'
         headerText += 'XX\n'
 
-        # TODO: The DT fields refer to versions of the IMGT  database.
-        # The manual.md on github describes it better, but i think these are DB versions assigned by IMGT.
+        # TODO: The DT fields refer to versions of the IMGT/HLA  database.
+        # The manual.md on github describes it better, but i think these are DB versions assigned by IMGT/HLA.
         # Check our previous submissions and check with James. But I think we can skip this section...Not sure.
         #headerText += 'DT   ' + str(currentSubmissionDate) + ' (Submitted)\n'
-        #headerText += 'DT   ' + str(self.submission.embl_release_date')) + ' (Release)\n'
+        #headerText += 'DT   ' + str(self.submission.ena_release_date')) + ' (Release)\n'
         #headerText += 'XX\n'
 
         # TODO: I'm using the local allele name that is assigned by the user.
@@ -120,8 +120,8 @@ class ImgtSubGenerator():
         headerText += 'OC   Eukaryota; Metazoa; Chordata; Vertebrata; Mammalia; Eutheria; Primates;\n'
         headerText += 'OC   Catarrhini; Hominidae; Homo.\n'
         headerText += 'XX\n'
-        # TODO: Our submission says GENBANK, but we're using EMBL Numbers.  Also what does that [1] mean?
-        headerText += 'DR   GENBANK; ' + str(self.submission.emblAccessionIdentifier) + '.\n'
+        # TODO: Our submission says GENBANK, but we're using ENA Numbers. This works fine but maybe I should write ENA instead?
+        headerText += 'DR   GENBANK; ' + str(self.submission.enaAccessionIdentifier) + '.\n'
 
         return headerText
 
@@ -131,13 +131,15 @@ class ImgtSubGenerator():
 
         citationTextList = self.submission.citations
         #
-        #str(self.submission.imgt_submission_identifier'))
+        #str(self.submission.ipd_submission_identifier'))
 
         citationText += 'RN   [1]\n'
         citationText += 'RC   Unpublished.\n'
         citationText += 'XX\n'
 
         # TODO: Fix the citation input. The citation input is a free form input String
+        # Actually, don't. Based on discussions with james and Dom I can probably assume most submissions have no citations.
+        # They are able to add any relevent citations later.
         # Pretty sure I don't need to parse the @@@ characters. Those are in the configuration file.
         # I planned to just split by newline character, but maybe James has a suggestion.
 
@@ -194,17 +196,17 @@ class ImgtSubGenerator():
         # I should be able to calculate the indices, at least.
 
         submitterText += 'FT   submittor      1..' + str(self.submission.submittedGene.totalLength()) + '\n'
-        submitterText += 'FT                  /ID="' + str(self.submissionBatch.imgtSubmitterId) + '"\n'
-        submitterText += 'FT                  /name="' + str(self.submissionBatch.imgtSubmitterName) + '"\n'
-        submitterText += 'FT                  /alt_contact="' + str(self.submissionBatch.imgtAltContact) + '"\n'
-        submitterText += 'FT                  /email="' + str(self.submissionBatch.imgtSubmitterEmail) + '"\n'
+        submitterText += 'FT                  /ID="' + str(self.submissionBatch.ipdSubmitterId) + '"\n'
+        submitterText += 'FT                  /name="' + str(self.submissionBatch.ipdSubmitterName) + '"\n'
+        submitterText += 'FT                  /alt_contact="' + str(self.submissionBatch.ipdAltContact) + '"\n'
+        submitterText += 'FT                  /email="' + str(self.submissionBatch.ipdSubmitterEmail) + '"\n'
         
         return submitterText
 
     def printSource(self):
         sourceText = ''
         
-        # TODO: Submitting Laboratory Information. Can this be fetched from IMGT, or use some sort of lookup
+        # TODO: Submitting Laboratory Information. Can this be fetched from imgt, or use some sort of lookup
 
         sourceText += 'FT   source         1..' + str(self.submission.submittedGene.totalLength()) + '\n'
         sourceText += 'FT                  /cell_id="' + str(self.submission.cellId) + '"\n'
@@ -223,11 +225,11 @@ class ImgtSubGenerator():
         sourceText += 'FT                  /cell_bank="' + str(self.submission.cellBank) + '"\n'
         
         # TODO: James suggested that I only allow valid fully-sequenced alleles.
-        # Should I validate this, or should I leave that work to IMGT?
+        # Should I validate this, or should I leave that work to ipd?
         # Yeah he's better at validating that than I am, I can't maintain a list of alleles, James can.
         # But this should be a dropdown list. I can store these in a list in the config file but why
 
-        # The HLA alleles in the IMGT submission file are stored in sections labeled as HLA-A and HLA-B.
+        # The HLA alleles in the ipd submission file are stored in sections labeled as HLA-A and HLA-B.
         # That's dumb, since we could just include that in a single string. They want me to make other alleles.
         # I think I'll just store the proper allele name in saddlebags and split based on the * character.
 
@@ -284,7 +286,7 @@ class ImgtSubGenerator():
         primerList = self.submission.primers.split(';')
 
 
-        #print('I will add the primers to the imgt submission:' + str(primerList))
+        #print('I will add the primers to the ipd submission:' + str(primerList))
 
         if primerList is not None:
             for index, primer in enumerate(primerList):
@@ -415,7 +417,7 @@ class ImgtSubGenerator():
             + str(otherCount) + ' other;\n')
 
         # Here's some logic to print the sequence information in groups of 10.
-        # This format is specified in the User manual specified by EMBL.
+        # This format is specified in the User manual specified by ENA.
         currentSeqIndex = 0
 
         while (currentSeqIndex < self.submission.submittedGene.totalLength()):

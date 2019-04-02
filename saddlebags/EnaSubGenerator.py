@@ -24,7 +24,7 @@ import logging
 
 # The AlleleGenerator class contains logic to generate an EMBL HLA allele submission 
 # In ENA format.  
-class EmblSubGenerator():   
+class EnaSubGenerator():
     
     def __init__(self):
         self.sequenceAnnotation = HlaGene()

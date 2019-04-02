@@ -27,10 +27,18 @@ from googleapiclient.errors import HttpError
 from apiclient.http import MediaFileUpload
 from email.mime.text import MIMEText
 
+from saddlebags.AlleleSubCommon import getSaddlebagsDirectory
+
 from os.path import expanduser, join
 
 # If modifying these scopes, delete the file token.pickle.
-SCOPES = ['https://www.googleapis.com/auth/drive', 'https://www.googleapis.com/auth/gmail.send']
+# I need to send emails. I don't think I need to read emails, i prefer not to if i can help it.
+# /auth/drive is full read write delete access. Not very comfortable with that but I
+# must be able to create files.
+SCOPES = [
+    'https://www.googleapis.com/auth/drive',
+    'https://www.googleapis.com/auth/gmail.send'
+]
 
 # Commenting this, I'm not runnign this as a main method.
 #if __name__ == '__main__':
@@ -43,10 +51,21 @@ SCOPES = ['https://www.googleapis.com/auth/drive', 'https://www.googleapis.com/a
 # There is a link there to authorize and create a credential file.
 # google around, there may be simpler ways to do this.
 # https://developers.google.com/drive/api/v3/quickstart/python
-#
+# The links on that page give access to a "quickstart" project.
+# That works...but it's dumb. I want to automatically create a Saddlebags project.
+# I haven't found a way to directly link and create a Saddlebags API project.
+# Can be done through the browser like this (a magic link:):
+# https://console.developers.google.com/flows/enableapi?apiid=drive
+# Ah okay. I can use the browser to activate the Project in Google.
+# I think this is telling me to have a gmail account for the project owner (saddlebags.admin@gmail.com)
+# Then I can distribute the client_secrets.json with the application.
+# Then I can allow users to login and authorize saddlebags to access their stuff. (i think)
+# https://cloud.google.com/docs/authentication/end-user
+# Another tutorial: https://o7planning.org/en/11917/create-credentials-for-google-drive-api
+# https://codelabs.developers.google.com/codelabs/gsuite-apis-intro/#7
 
 
-def uploadZipToImgtHla(zipFileName):
+def uploadZipToIpdHla(zipFileName):
 
     """Shows basic usage of the Drive v3 API.
     Prints the names and ids of the first 10 files the user has access to.
@@ -55,34 +74,13 @@ def uploadZipToImgtHla(zipFileName):
 
     print ('Uploading a zip file to IMGT/HLA:' + str(zipFileName))
 
-    # TODO: i'm tired of calculating these paths, put the paths in a common method somewhere.
 
-    homeDirectory = expanduser("~")
-    homeTempDirectory = join(homeDirectory, 'saddlebags_temp')
+    homeTempDirectory = getSaddlebagsDirectory()
     zipFileFullPath = join(homeTempDirectory, zipFileName)
-    jsonFileLocation = join(homeTempDirectory, 'credentials.json')
-    tokenPickleLocation = join(homeTempDirectory, 'token.pickle')
+    #jsonFileLocation = join(homeTempDirectory, 'credentials.json')
+    #tokenPickleLocation = join(homeTempDirectory, 'token.pickle')
 
-    creds = None
-    # The file token.pickle stores the user's access and refresh tokens, and is
-    # created automatically when the authorization flow completes for the first
-    # time.
-    if os.path.exists(tokenPickleLocation):
-        with open(tokenPickleLocation, 'rb') as token:
-            creds = pickle.load(token)
-    # If there are no (valid) credentials available, let the user log in.
-    if not creds or not creds.valid:
-        if creds and creds.expired and creds.refresh_token:
-            creds.refresh(Request())
-        else:
-            flow = InstalledAppFlow.from_client_secrets_file(
-                jsonFileLocation, SCOPES)
-            creds = flow.run_local_server()
-        # Save the credentials for the next run
-        with open(tokenPickleLocation, 'wb') as token:
-            pickle.dump(creds, token)
-
-    service = build('drive', 'v3', credentials=creds)
+    service = getGoogleDriveService()
 
     # Call the Drive v3 API
     # Get a list of 10 files.
@@ -115,7 +113,11 @@ def uploadZipToImgtHla(zipFileName):
     # Use google interface to do this again.
     # put (Test) in the email subject.
 
-    folder_id = '1haV3w8DYawFKo0V4-pwwXoai4JUFaqeT'
+    # This folder is shared with mumc.tissuetyping.
+    #folder_id = '1haV3w8DYawFKo0V4-pwwXoai4JUFaqeT'
+
+    # This folder is in the personal drive of mumc.transplantationimmunology
+    folder_id = '1Yw6Skb_ZsQn2kCbYUjo_zTnjSf-jstxX'
 
     print('zip file full path:' + zipFileFullPath)
     # Lets try to upload the file
@@ -149,11 +151,47 @@ def uploadZipToImgtHla(zipFileName):
 
     # or should the sender be "me"...maybe it's silly to pass this information in.
     # I reckon I could hard-code the target email address. not sure what it is right now, ipdsubmissions@anthonynolan.org? I made that up.
-    sendEmail(emailSubject, emailBody, 'ben.matern@mumc.nl', 'me', service)
+    sendEmail(emailSubject, emailBody, 'ben.matern@mumc.nl', 'me')
 
 
+def getService(serviceName, apiVersion):
+    # For some reason, the drive API suggests 'v3' for the api version, but gmail wants 'v1'. Ok.
 
-def sendEmail(subject, body, targetEmailAddress, senderEmailAddresss, service):
+
+    creds = None
+    # The file token.pickle stores the user's access and refresh tokens, and is
+    # created automatically when the authorization flow completes for the first
+    # time.
+    homeTempDirectory = getSaddlebagsDirectory()
+    #jsonFileLocation = join(homeTempDirectory, 'credentials.json')
+    jsonFileLocation = join(homeTempDirectory, 'client_secrets.json')
+    tokenPickleLocation = join(homeTempDirectory, 'token.pickle')
+
+
+    if os.path.exists(tokenPickleLocation):
+        with open(tokenPickleLocation, 'rb') as token:
+            creds = pickle.load(token)
+    # If there are no (valid) credentials available, let the user log in.
+    if not creds or not creds.valid:
+        if creds and creds.expired and creds.refresh_token:
+            creds.refresh(Request())
+        else:
+            flow = InstalledAppFlow.from_client_secrets_file(
+                jsonFileLocation, SCOPES)
+            creds = flow.run_local_server()
+        # Save the credentials for the next run
+        with open(tokenPickleLocation, 'wb') as token:
+            pickle.dump(creds, token)
+    service = build(serviceName, apiVersion, credentials=creds)
+    return service
+
+def getGmailService():
+    return getService('gmail', 'v1')
+
+def getGoogleDriveService():
+    return getService('drive', 'v3')
+
+def sendEmail(subject, body, targetEmailAddress, senderEmailAddress):
 #def create_message(sender, to, subject, message_text):
     """Create a message for an email.
 
@@ -169,11 +207,16 @@ def sendEmail(subject, body, targetEmailAddress, senderEmailAddresss, service):
 
     message = MIMEText(body)
     message['to'] = targetEmailAddress
-    message['from'] = senderEmailAddresss
+    message['from'] = senderEmailAddress
     message['subject'] = subject
 
-    # Don't return this, but I think i need this for the sending step.
-    encodedMessage = {'raw': base64.urlsafe_b64encode(message.as_string().encode("utf-8"))}
+    # Some bugs with python 3 and encoding the message properly.
+    # https://stackoverflow.com/questions/38633781/python-gmail-api-not-json-serializable
+    #encodedMessage = {'raw': base64.urlsafe_b64encode(message.as_string().encode("utf-8"))}
+    rawMessage = base64.urlsafe_b64encode(message.as_bytes())
+    rawMessage = rawMessage.decode()
+
+    encodedMessage = {'raw': rawMessage}
 
 
 
@@ -190,6 +233,9 @@ def sendEmail(subject, body, targetEmailAddress, senderEmailAddresss, service):
     Returns:
     Sent Message.
     """
+
+    service = getGmailService()
+
     try:
         message = (service.users().messages().send(userId='me', body=encodedMessage).execute())
         print('Message Id: %s' % message['id'])

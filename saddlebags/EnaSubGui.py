@@ -23,9 +23,9 @@ from tkinter.constants import BOTH, BOTTOM, RIGHT, X, Y, NONE, HORIZONTAL, NORMA
 #import Tkinter, Tkconstants, tkFileDialog, tkMessageBox
 #from Tkinter import Scrollbar, BOTTOM, RIGHT, X, Y, NONE, HORIZONTAL, NORMAL, DISABLED
 
-from saddlebags.EmblSubGenerator import EmblSubGenerator
-from saddlebags.EmblSubOptionsForm import EmblSubOptionsForm
-from saddlebags.EmblSubRest import performFullSubmission
+from saddlebags.EnaSubGenerator import EnaSubGenerator
+from saddlebags.EnaSubOptionsForm import EnaSubOptionsForm
+from saddlebags.EnaSubRest import performFullSubmission
 from saddlebags.AlleleSubCommon import getConfigurationValue, assignConfigurationValue, parseExons, isSequenceAlreadyAnnotated, identifyGenomicFeatures, assignIcon, collectAndValidateRoughSequence, collectRoughSequence
 #from saddlebags.AlleleSubCommonRest import fetchSequenceAlleleCallWithGFE
 from saddlebags.AlleleSubCommon import fetchSequenceAlleleCallWithGFE
@@ -34,7 +34,7 @@ from saddlebags.HlaSequenceException import HlaSequenceException
 import logging
 
 # The AlleleGui class is an extension of Tkinter.  The GUI elements and interactions are specified in this class.
-class EmblSubGui(Frame):
+class EnaSubGui(Frame):
 
     # I shouldn't need to write a select-All method but TK is kind of annoying.
     def selectall(self, event):
@@ -109,16 +109,16 @@ class EmblSubGui(Frame):
         self.submissionOptionsButton.grid(row=0, column=0)
         self.annotateFeaturesButton = Button(self.submButtonFrame, text='2) Annotate Exons & Introns' , command=self.annotateInputSequence)
         self.annotateFeaturesButton.grid(row=0, column=1)
-        self.generateSubmissionButton = Button(self.submButtonFrame, text='3) Generate an EMBL-ENA submission', command=self.constructSubmission)
+        self.generateSubmissionButton = Button(self.submButtonFrame, text='3) Generate an ENA-ENA submission', command=self.constructSubmission)
         self.generateSubmissionButton.grid(row=0, column=2)
         self.submButtonFrame.pack()
 
         # Output interface is contained on a frame.
         self.submOutputFrame = Frame(self)
         
-        self.outputEMBLSubmission = StringVar()
-        self.outputEMBLSubmission.set('Allele Submission Preview:')
-        self.outputEMBLLabel = Label(self.submOutputFrame, width=80, height=1, textvariable=self.outputEMBLSubmission).pack()
+        self.outputENASubmission = StringVar()
+        self.outputENASubmission.set('Allele Submission Preview:')
+        self.outputENALabel = Label(self.submOutputFrame, width=80, height=1, textvariable=self.outputENASubmission).pack()
 
         self.submOutputXScrollbar = Scrollbar(self.submOutputFrame, orient=HORIZONTAL)
         self.submOutputXScrollbar.pack(side=BOTTOM, fill=X)
@@ -154,21 +154,21 @@ class EmblSubGui(Frame):
         
         self.disableGUI()
         
-        emblOptionsRoot = Toplevel()
-        emblOptionsRoot.bind("<Destroy>", self.enableGUI)
-        EmblSubOptionsForm(emblOptionsRoot).pack()
+        enaOptionsRoot = Toplevel()
+        enaOptionsRoot.bind("<Destroy>", self.enableGUI)
+        EnaSubOptionsForm(enaOptionsRoot).pack()
         
         # Set the X and the Y Position of the options window, so it is nearby.  
-        emblOptionsRoot.update()        
+        enaOptionsRoot.update()
         windowXpos = str(self.parent.winfo_geometry().split('+')[1])
         windowYpos = str(self.parent.winfo_geometry().split('+')[2])
-        newGeometry = (str(emblOptionsRoot.winfo_width()) + 'x' 
-            + str(emblOptionsRoot.winfo_height()) + '+' 
+        newGeometry = (str(enaOptionsRoot.winfo_width()) + 'x'
+            + str(enaOptionsRoot.winfo_height()) + '+'
             + str(windowXpos) + '+' 
             + str(windowYpos))
-        emblOptionsRoot.geometry(newGeometry)
+        enaOptionsRoot.geometry(newGeometry)
 
-        emblOptionsRoot.mainloop()
+        enaOptionsRoot.mainloop()
         
 
       
@@ -177,8 +177,8 @@ class EmblSubGui(Frame):
         self.featureInputGuiObject.insert('1.0', 'aag\nCGTCGT\nccg\nGGCTGA\naat')
         
         # Clear the password, keep the username
-        #assignConfigurationValue('embl_username','')
-        assignConfigurationValue('embl_password','')
+        #assignConfigurationValue('ena_username','')
+        assignConfigurationValue('ena_password','')
         
         assignConfigurationValue('sample_id', 'sample_12345')
         assignConfigurationValue('gene','HLA-C')
@@ -204,7 +204,7 @@ class EmblSubGui(Frame):
     def howToUse(self):
         messagebox.showinfo('How to use this tool',
             'This software is to be used to create an\n'
-            + 'EMBL-formatted submission document,\n'
+            + 'ENA-formatted submission document,\n'
             + 'which specifies a (novel) HLA allele.\n\n'       
                        
             + 'This tool requires you to submit a\n'
@@ -222,7 +222,7 @@ class EmblSubGui(Frame):
             + 'button to generate a submission.\n'
             + '5.) Push [Upload Submission to EMBL-ENA]\n'
             + 'to submit the sequence\n'
-            + 'using EMBL Webin REST interface\n\n'
+            + 'using ENA Webin REST interface\n\n'
             
             + 'If exon annotation is not available,\n'
             + 'it may be necessary to annotate manually.\n\n'
@@ -244,7 +244,7 @@ class EmblSubGui(Frame):
             )
 
     def saveSubmissionFile(self):  
-        # Ask user for a output file location, and write the EMBL submission to a file.
+        # Ask user for a output file location, and write the ENA submission to a file.
         # This takes the input from the output field, rather than generate a new submission.
         # So the user can edit the submission before or after saving it.
 
@@ -252,7 +252,7 @@ class EmblSubGui(Frame):
         options['initialdir'] = expanduser("~")
         options['parent'] = self
         options['title'] = 'Specify your output file.'
-        options['initialfile'] = 'EMBL.HLA.Submission.txt'
+        options['initialfile'] = 'ENA.HLA.Submission.txt'
         outputFileObject = filedialog.asksaveasfile(**self.dir_opt)
         submissionText = self.submOutputGuiObject.get('1.0', 'end')
         outputFileObject.write(submissionText)
@@ -295,7 +295,7 @@ class EmblSubGui(Frame):
     def uploadSubmission(self):
         performFullSubmission(self.submOutputGuiObject.get('1.0', 'end') )
         
-    # Gather sequence information from the input elements, and generate a text EMBL submission.
+    # Gather sequence information from the input elements, and generate a text ENA submission.
     def constructSubmission(self):
         try:
         
@@ -316,7 +316,7 @@ class EmblSubGui(Frame):
                     # You chose not to annotate.  Hope this works out for you.
                     annotatedSequence = roughNucleotideSequence
                 
-            allGen = EmblSubGenerator()
+            allGen = EnaSubGenerator()
             allGen.sequenceAnnotation = identifyGenomicFeatures(annotatedSequence)
 
             enaSubmission = allGen.buildENASubmission()

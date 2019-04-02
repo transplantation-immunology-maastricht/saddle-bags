@@ -19,20 +19,14 @@
 # An AlleleSubmission has an HlaGene, which has multiple GeneLocus.
 # Multiple submissions are stored in a SubmissionBatch object.
 
-
-#import logging
-#from os.path import expanduser, join
-
-#from saddlebags.AlleleSubCommon import getConfigurationValue
-
 class SubmissionBatch():
     def __init__(self):
         # It's dumb to reuse a variable name, should think of a better name here.
         self.submissionBatch = []
-        self.imgtSubmitterId = ''
-        self.imgtSubmitterName = ''
-        self.imgtAltContact = ''
-        self.imgtSubmitterEmail = ''
+        self.ipdSubmitterId = ''
+        self.ipdSubmitterName = ''
+        self.ipdAltContact = ''
+        self.ipdSubmitterEmail = ''
         self.labOfOrigin = ''
         self.labContact = ''
 
@@ -43,9 +37,9 @@ class AlleleSubmission():
         self.submittedGene=HlaGene()
         self.localAlleleName = ''
         self.closestAlleleWrittenDescription = ''
-        self.imgtSubmissionIdentifier = ''
-        self.imgtSubmissionVersion = ''
-        self.emblAccessionIdentifier = ''
+        self.ipdSubmissionIdentifier = ''
+        self.ipdSubmissionVersion = ''
+        self.enaAccessionIdentifier = ''
         # TODO: i think this column is intended for use identifying cell line names, if we are submitting the HLA types of cell lines.
         self.cellId = ''
         self.ethnicOrigin = ''

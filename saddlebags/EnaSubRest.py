@@ -35,12 +35,12 @@ from tkinter import messagebox
 
 import logging
 
-from saddlebags.AlleleSubCommon import getConfigurationValue, createOutputFile, assignConfigurationValue
-from saddlebags.EmblSubXml import createProjectXML, createProjectSubmissionXML, createAnalysisSubmissionXML , createAnalysisXML
+from saddlebags.AlleleSubCommon import getConfigurationValue, createOutputFile, assignConfigurationValue, getSaddlebagsDirectory
+from saddlebags.EnaSubXml import createProjectXML, createProjectSubmissionXML, createAnalysisSubmissionXML , createAnalysisXML
 
 
 
-# Here we have methods to perform REST interactions necessary for EMBL submission.
+# Here we have methods to perform REST interactions necessary for ENA submission.
 
 def performProjectSubmission(submissionFileName, projectFileName):
     POST_DATA = [('SUBMISSION', (FORM_FILE, submissionFileName)), 
@@ -64,11 +64,11 @@ def performSubmission(submissionFileName, POST_DATA):
     
     
     if (str(getConfigurationValue('test_submission')) == '0'):
-        logging.info ('THIS IS A LIVE SUBMISSION AT EMBL.')
-        requestURL = str(getConfigurationValue('embl_rest_address_prod')) + '?auth=ENA%20' + str(getConfigurationValue('embl_username')) + '%20' + str(getConfigurationValue('embl_password'))
+        logging.info ('THIS IS A LIVE SUBMISSION AT ENA.')
+        requestURL = str(getConfigurationValue('ena_rest_address_prod')) + '?auth=ENA%20' + str(getConfigurationValue('ena_username')) + '%20' + str(getConfigurationValue('ena_password'))
     else:
-        logging.info ('THIS IS A TEST SUBMISSION AT EMBL.')
-        requestURL = str(getConfigurationValue('embl_rest_address_test')) + '?auth=ENA%20' + str(getConfigurationValue('embl_username')) + '%20' + str(getConfigurationValue('embl_password'))
+        logging.info ('THIS IS A TEST SUBMISSION AT ENA.')
+        requestURL = str(getConfigurationValue('ena_rest_address_test')) + '?auth=ENA%20' + str(getConfigurationValue('ena_username')) + '%20' + str(getConfigurationValue('ena_password'))
     
     # Problem: StringIO Doesn't work with pycurl in python 3.6. Must replace this with a BytesIO.
     #curlResponseBuffer = StringIO()
@@ -195,11 +195,11 @@ def writeMd5(inputFileName, outputFileName):
 # TODO: This method is long, can i clean it up at all?
 
 def performFullSubmission(submissionText):
-    logging.info('Uploading Submission to EMBL')
+    logging.info('Uploading Submission to ENA')
     
     # Determine a working directory. Folder underneath executable called temp.
     try:
-        workingDirectory = join(expanduser("~"), 'temp_saddlebags')
+        workingDirectory = getSaddlebagsDirectory()
         logging.info('I can work in this directory:' + workingDirectory)
         
         if not isdir(workingDirectory):
@@ -216,29 +216,29 @@ def performFullSubmission(submissionText):
             +  str(exc_info()[1]))
         return
 
-    emblUsername = getConfigurationValue('embl_username')
-    emblPassword = getConfigurationValue('embl_password')
-    if(emblUsername is None 
-        or len(emblUsername) < 1
-        or emblPassword is None 
-        or len(emblPassword) < 1):
+    enaUsername = getConfigurationValue('ena_username')
+    enaPassword = getConfigurationValue('ena_password')
+    if(enaUsername is None
+        or len(enaUsername) < 1
+        or enaPassword is None
+        or len(enaPassword) < 1):
         messagebox.showinfo('Missing Login Credentials', 
-            'You must provide EMBL username and password.\n'
+            'You must provide ENA username and password.\n'
             'Please use the "Submission Options" button.')
-        logging.error('Missing EMBL Username or Password.' + '\n')
+        logging.error('Missing ENA Username or Password.' + '\n')
         return
     else:
-        logging.info('EMBL Username and Password exist.' + '\n')
+        logging.info('ENA Username and Password exist.' + '\n')
        
 
     useTestServers = (int(getConfigurationValue('test_submission')) == 1)
     # Are you sure?
     if useTestServers:
-        logging.info('Using Test EMBL Server.' + '\n')
-        result = messagebox.askquestion("Submit to TEST / DEMO environment", "You are about to submit a sequence to the\n\nTEST / DEMO EMBL environment.\n\nAre You Sure?", icon='warning')
+        logging.info('Using Test ENA Server.' + '\n')
+        result = messagebox.askquestion("Submit to TEST / DEMO environment", "You are about to submit a sequence to the\n\nTEST / DEMO ENA environment.\n\nAre You Sure?", icon='warning')
     else:
-        logging.info('Using Production EMBL Server.' + '\n')
-        result = messagebox.askquestion("Submit to LIVE / PROD environment", "You are about to submit a sequence to the\n\nLIVE / PROD EMBL environment.\n\nAre You Sure?", icon='warning')
+        logging.info('Using Production ENA Server.' + '\n')
+        result = messagebox.askquestion("Submit to LIVE / PROD environment", "You are about to submit a sequence to the\n\nLIVE / PROD ENA environment.\n\nAre You Sure?", icon='warning')
 
     if result == 'yes':
         pass
@@ -315,16 +315,16 @@ def performFullSubmission(submissionText):
     
     logging.info('md5 file was created:\n' + str(md5FileName) + '\n')
 
-    # Use FTP  to send the file to EMBL
+    # Use FTP  to send the file to ENA
     try:
         if useTestServers:
-            ftpServerAddress = getConfigurationValue('embl_ftp_upload_site_test')      
+            ftpServerAddress = getConfigurationValue('ena_ftp_upload_site_test')
         else:
-            ftpServerAddress = getConfigurationValue('embl_ftp_upload_site_prod')   
+            ftpServerAddress = getConfigurationValue('ena_ftp_upload_site_prod')
         
         #logging.info ('attempting to open ftp connection')
         ftp = FTP(ftpServerAddress)
-        ftp.login(getConfigurationValue('embl_username'), getConfigurationValue('embl_password'))
+        ftp.login(getConfigurationValue('ena_username'), getConfigurationValue('ena_password'))
         ftp.storbinary('STOR ' + '/' + split(zippedFileName)[1], open(zippedFileName, 'rb'), 1024)
         ftp.storbinary('STOR ' + '/' + split(md5FileName)[1], open(md5FileName, 'rb'), 1024)
         ftp.close()
@@ -334,7 +334,7 @@ def performFullSubmission(submissionText):
         logging.error ('Cannot Upload to FTP site')
         logging.error (exc_info())
         messagebox.showinfo('Cannot Upload to FTP site', 
-            'Sorry, I failed to upload your submission files to the EMBL FTP site\nand I cannot continue.\n' 
+            'Sorry, I failed to upload your submission files to the ENA FTP site\nand I cannot continue.\n'
             +  str(exc_info()[1]))
         logging.error('Failure to upload to FTP site:' + str(exc_info()[1]) + '\n')
         return
@@ -391,7 +391,7 @@ def performFullSubmission(submissionText):
             else:
                 messageText = ('There was a problem in the Project Submission.\n' 
                     + 'I cannot continue.\n'
-                    + 'These messages were reported by EMBL:\n')
+                    + 'These messages were reported by ENA:\n')
                 for errorMessage in projectErrorMessages:
                     messageText += ('\n' + errorMessage + '\n')                    
                 messagebox.showinfo('Cannot Submit Project XML via REST', messageText)
@@ -448,7 +448,7 @@ def performFullSubmission(submissionText):
         else:
             messageText = ('There was a problem in the Analysis Submission.\n' 
                 + 'I cannot continue.\n'
-                + 'These messages were reported by EMBL:\n')
+                + 'These messages were reported by ENA:\n')
             for errorMessage in analysisErrorMessages:
                 messageText += ('\n' + errorMessage + '\n')                    
             messagebox.showinfo('Cannot Submit Analysis XML via REST', messageText)
@@ -467,7 +467,7 @@ def performFullSubmission(submissionText):
 
 
     # Popup message with Results
-    messagebox.showinfo('Success uploading submission to EMBL.', 
+    messagebox.showinfo('Success uploading submission to ENA.',
         'The sequence and analysis was uploaded to EMBL ENA Successfully.\n\n' 
         + 'For your reference:\n\n'
         + 'You can use this Project/Study accession\nnumber on future submissions:\n'
@@ -477,8 +477,8 @@ def performFullSubmission(submissionText):
         + 'Find your submission files here:\n'
         + workingDirectory + '\n\n'
         + 'If EMBL successfully validates your sequence, you will\n'
-        + 'receive an email with an EMBL Sequence accession number.\n'
-        + 'This accession number is necessary for IMGT/HLA submission.\n'
+        + 'receive an email with an ENA Sequence accession number.\n'
+        + 'This accession number is necessary for IPD-IMGT/HLA submission.\n'
         + 'Contact EMBL Support with your\nAnalysis Accession # if it has been\nmore than 48 hours since submission.\n'
 
         )

@@ -43,7 +43,8 @@ from json import loads, dumps # these method names are terrible IMO.
 from zipfile import ZipFile
 
 from saddlebags.AlleleSubmission import HlaGene, GeneFeature, SubmissionBatch, AlleleSubmission
-from saddlebags.ImgtSubGenerator import ImgtSubGenerator
+from saddlebags.IpdSubGenerator import IpdSubGenerator # TODO: I shouldn't need to import this one. I'm making circular dependencies.
+# TODO:
 
 import logging
 
@@ -64,7 +65,7 @@ def fetchSequenceAlleleCallWithGFE(rawSequence, locus):
 
     # Set the log file for seeing urllib and gfe logging.
     # https://github.com/nmdp-bioinformatics/gfe_client
-    logFileLocation = join(join(expanduser("~"),'saddlebags_temp'),'Saddlebags.GFE.Log.txt')
+    logFileLocation = join(getSaddlebagsDirectory(),'Saddlebags.GFE.Log.txt')
     # In Configuration.py Mike made his "setters" in a cool pythony way.
     # It was sorta confusing but I can just assign it like a normal parameter.
     config.logger_file = logFileLocation
@@ -193,7 +194,7 @@ def translateSequence(inputSequence):
                         'Double check your protein sequence,\n' + 
                         'this might indicate a missense mutation.\n\n' + 
                         'Translated Protein:\n' + proteinSequence + 
-                        '\n\nProtein in EMBL Submission:\n' + proteinSequence[0:stopCodonLocation] + 
+                        '\n\nProtein in ENA Submission:\n' + proteinSequence[0:stopCodonLocation] +
                         '\n'
                         )
                     proteinSequence = proteinSequence[0:stopCodonLocation]
@@ -210,7 +211,7 @@ def translateSequence(inputSequence):
                         'Double check your protein sequence,\n' + 
                         'this might indicate a missense mutation.\n\n' + 
                         'Translated Protein:\n' + proteinSequence + 
-                        '\n\nProtein in EMBL Submission:\n' + proteinSequence[0:stopCodonLocation] + 
+                        '\n\nProtein in ENA Submission:\n' + proteinSequence[0:stopCodonLocation] +
                         '\n'
                         )
                     proteinSequence = proteinSequence[0:stopCodonLocation]
@@ -753,7 +754,7 @@ def getConfigurationValue(configurationKey):
 def initializeLog():
     # Potential problem = I must initialize log before importing anything.
     # the order of imports is very important for logging.
-    logFileLocation = join(join(expanduser("~"),'saddlebags_temp'),'Saddlebags.Log.txt')
+    logFileLocation = join(getSaddlebagsDirectory(),'Saddlebags.Log.txt')
 
     # If there is no "globals" yet, then I haven't loaded a config yet, lets default to 'DEBUG' level.
     if not ("globalVariables" in globals()):
@@ -774,8 +775,7 @@ def initializeLog():
 
 def assignConfigName():
     # Join together the working directory, a subfolder called "saddlebags_temp", and the config name.
-    assignConfigurationValue('config_file_location',join(join(
-        expanduser("~"),'saddlebags_temp'),'Saddlebags.Config.xml'))
+    assignConfigurationValue('config_file_location',join(getSaddlebagsDirectory(),'Saddlebags.Config.xml'))
 
 # Encode semicolons within a config value.
 # Store lists as a string separated by a semicolon.
@@ -828,8 +828,8 @@ def writeConfigurationFile():
         # Don't store passwords.
         # I handle the submission batch manually.
         if(key not in [
-            'embl_password'
-            , 'imgt_password'
+            'ena_password'
+            , 'ipd_password'
             , 'submission_batch'
             ]):
 
@@ -847,10 +847,10 @@ def writeConfigurationFile():
     
     # Create a node object, most of this stuff can be parameters on the node.
     submissionBatchElement = ET.SubElement(root, 'submission_batch')
-    submissionBatchElement.set('imgtsubmitterid', serializeConfigValue(submissionBatch.imgtSubmitterId))
-    submissionBatchElement.set('imgtsubmittername', serializeConfigValue(submissionBatch.imgtSubmitterName))
-    submissionBatchElement.set('imgtaltcontact', serializeConfigValue(submissionBatch.imgtAltContact))
-    submissionBatchElement.set('imgtsubmitteremail', serializeConfigValue(submissionBatch.imgtSubmitterEmail))
+    submissionBatchElement.set('ipdsubmitterid', serializeConfigValue(submissionBatch.ipdSubmitterId))
+    submissionBatchElement.set('ipdsubmittername', serializeConfigValue(submissionBatch.ipdSubmitterName))
+    submissionBatchElement.set('ipdaltcontact', serializeConfigValue(submissionBatch.ipdAltContact))
+    submissionBatchElement.set('ipdsubmitteremail', serializeConfigValue(submissionBatch.ipdSubmitterEmail))
     submissionBatchElement.set('laboforigin', serializeConfigValue(submissionBatch.labOfOrigin))
     submissionBatchElement.set('labcontact', serializeConfigValue(submissionBatch.labContact))
 
@@ -864,9 +864,9 @@ def writeConfigurationFile():
         submissionElement.set('genelocus',                       serializeConfigValue(hlaSubmission.submittedGene.geneLocus))
         submissionElement.set('localallelename'                , serializeConfigValue(hlaSubmission.localAlleleName))
         submissionElement.set('closestallelewrittendescription', serializeConfigValue(hlaSubmission.closestAlleleWrittenDescription))
-        submissionElement.set('imgtsubmissionidentifier'       , serializeConfigValue(hlaSubmission.imgtSubmissionIdentifier))
-        submissionElement.set('imgtsubmissionversion'          , serializeConfigValue(hlaSubmission.imgtSubmissionVersion))
-        submissionElement.set('emblaccessionidentifier'       , serializeConfigValue(hlaSubmission.emblAccessionIdentifier))
+        submissionElement.set('ipdsubmissionidentifier'       , serializeConfigValue(hlaSubmission.ipdSubmissionIdentifier))
+        submissionElement.set('ipdsubmissionversion'          , serializeConfigValue(hlaSubmission.ipdSubmissionVersion))
+        submissionElement.set('enaaccessionidentifier'       , serializeConfigValue(hlaSubmission.enaAccessionIdentifier))
         submissionElement.set('cellid', serializeConfigValue(hlaSubmission.cellId))
         submissionElement.set('ethnicorigin', serializeConfigValue(hlaSubmission.ethnicOrigin))
         submissionElement.set('sex', serializeConfigValue(hlaSubmission.sex))
@@ -911,10 +911,10 @@ def loadFromCSV(csvFileName):
         submissionBatch = SubmissionBatch()
 
         # Assign some default information about this batch of submissions
-        submissionBatch.imgtSubmitterId = ''
-        submissionBatch.imgtSubmitterName = ''
-        submissionBatch.imgtAltContact = ''
-        submissionBatch.imgtSubmitterEmail = ''
+        submissionBatch.ipdSubmitterId = ''
+        submissionBatch.ipdSubmitterName = ''
+        submissionBatch.ipdAltContact = ''
+        submissionBatch.ipdSubmitterEmail = ''
         submissionBatch.labOfOrigin = ''
         submissionBatch.labContact = ''
 
@@ -930,7 +930,7 @@ def loadFromCSV(csvFileName):
 
     # Check for the existence of each required field in the header.
     # Store the indices of the column headers in a dictionary. So I can lookup the fields in any order, input file is more flexible.
-    requiredFields = ['CELLBANK','CELLID','CITATIONS','CLOSESTALLELEWRITTENDESCRIPTION','CONSANGUINEOUS','ETHNICORIGIN','GENELOCUS','HOMOZYGOUS','IMGTSUBMISSIONIDENTIFIER','IMGTSUBMISSIONVERSION','EMBLSEQUENCEACCESSION','LOCALALLELENAME','MATERIALAVAILABILITY','METHODCOMMENTS','NUMOFREACTIONS','PRIMARYSEQUENCINGMETHODOLOGY','PRIMERS','PRIMERTYPE','SECONDARYSEQUENCINGMETHODOLOGY','SEQUENCEDINISOLATION','SEQUENCINGDIRECTION','SEX','TYPEDALLELES','SEQUENCE']
+    requiredFields = ['CELLBANK','CELLID','CITATIONS','CLOSESTALLELEWRITTENDESCRIPTION','CONSANGUINEOUS','ETHNICORIGIN','GENELOCUS','HOMOZYGOUS','IPDSUBMISSIONIDENTIFIER','IPDSUBMISSIONVERSION','ENASEQUENCEACCESSION','LOCALALLELENAME','MATERIALAVAILABILITY','METHODCOMMENTS','NUMOFREACTIONS','PRIMARYSEQUENCINGMETHODOLOGY','PRIMERS','PRIMERTYPE','SECONDARYSEQUENCINGMETHODOLOGY','SEQUENCEDINISOLATION','SEQUENCINGDIRECTION','SEX','TYPEDALLELES','SEQUENCE']
     requiredFieldIndices = {}
     try:
         for requiredField in requiredFields:
@@ -954,9 +954,9 @@ def loadFromCSV(csvFileName):
         submission.submittedGene.geneLocus = submissionCSVRow[requiredFieldIndices['GENELOCUS']]
         submission.localAlleleName = submissionCSVRow[requiredFieldIndices['LOCALALLELENAME']]
         submission.closestAlleleWrittenDescription = submissionCSVRow[requiredFieldIndices['CLOSESTALLELEWRITTENDESCRIPTION']]
-        submission.imgtSubmissionIdentifier = submissionCSVRow[requiredFieldIndices['IMGTSUBMISSIONIDENTIFIER']]
-        submission.imgtSubmissionVersion = submissionCSVRow[requiredFieldIndices['IMGTSUBMISSIONVERSION']]
-        submission.emblAccessionIdentifier = submissionCSVRow[requiredFieldIndices['EMBLSEQUENCEACCESSION']]
+        submission.ipdSubmissionIdentifier = submissionCSVRow[requiredFieldIndices['IPDSUBMISSIONIDENTIFIER']]
+        submission.ipdSubmissionVersion = submissionCSVRow[requiredFieldIndices['IPDSUBMISSIONVERSION']]
+        submission.enaAccessionIdentifier = submissionCSVRow[requiredFieldIndices['ENASEQUENCEACCESSION']]
         submission.cellId = submissionCSVRow[requiredFieldIndices['CELLID']]
         submission.ethnicOrigin = submissionCSVRow[requiredFieldIndices['ETHNICORIGIN']]
         submission.sex = submissionCSVRow[requiredFieldIndices['SEX']]
@@ -1006,13 +1006,11 @@ def parseTypedAlleleInput(alleleInputString):
 
 
 
-def createIMGTZipFile(zipFileName):
+def createIPDZipFile(zipFileName):
     logging.debug('Saving Zip File:' + str(zipFileName))
 
     # create a temp working directory in the current folder.
-    homeDirectory = expanduser("~")
-
-    zipDirectory = join(homeDirectory, 'saddlebags_temp')
+    zipDirectory = getSaddlebagsDirectory()
     workingDirectory = join(zipDirectory, 'submission_temp')
     #makedirs(workingDirectory)
 
@@ -1032,18 +1030,18 @@ def createIMGTZipFile(zipFileName):
 
         # Create a submission for each entry in the batch.
 
-        allGen = ImgtSubGenerator()
+        allGen = IpdSubGenerator()
         allGen.submission = submissionObject
         allGen.submissionBatch = submissionBatch
         #allGen.sequenceAnnotation = identifyGenomicFeatures(annotatedSequence)
-        imgtSubmission = allGen.buildIMGTSubmission()
+        ipdSubmission = allGen.buildIpdSubmission()
 
         submissionLocalFileName = str(submissionObject.localAlleleName) + '_submission.txt'
         submissionFileName = join(workingDirectory, submissionLocalFileName)
         submissionFileList.append(submissionLocalFileName)
 
         submissionFileObject = createOutputFile(submissionFileName)
-        submissionFileObject.write(imgtSubmission)
+        submissionFileObject.write(ipdSubmission)
         submissionFileObject.close()
 
         print ('I just saved this file: ' + submissionFileName)
@@ -1070,6 +1068,11 @@ def createIMGTZipFile(zipFileName):
 
 
 
+def getSaddlebagsDirectory():
+    # Do I need to detect operating system? I don't think so.
+    homeDirectory = expanduser("~")
+    saddlebagsDirectory = join(homeDirectory, 'saddlebags')
+    return saddlebagsDirectory
 
 
 
@@ -1097,10 +1100,10 @@ def loadConfigurationFile():
                     submissionBatch = SubmissionBatch()
 
                     # Assign some information about this batch of submissions.
-                    submissionBatch.imgtSubmitterId = deserializeConfigValue(child.attrib['imgtsubmitterid'])
-                    submissionBatch.imgtSubmitterName = deserializeConfigValue(child.attrib['imgtsubmittername'])
-                    submissionBatch.imgtAltContact = deserializeConfigValue(child.attrib['imgtaltcontact'])
-                    submissionBatch.imgtSubmitterEmail = deserializeConfigValue(child.attrib['imgtsubmitteremail'])
+                    submissionBatch.ipdSubmitterId = deserializeConfigValue(child.attrib['ipdsubmitterid'])
+                    submissionBatch.ipdSubmitterName = deserializeConfigValue(child.attrib['ipdsubmittername'])
+                    submissionBatch.ipdAltContact = deserializeConfigValue(child.attrib['ipdaltcontact'])
+                    submissionBatch.ipdSubmitterEmail = deserializeConfigValue(child.attrib['ipdsubmitteremail'])
                     submissionBatch.labOfOrigin = deserializeConfigValue(child.attrib['laboforigin'])
                     submissionBatch.labContact = deserializeConfigValue(child.attrib['labcontact'])
 
@@ -1116,9 +1119,9 @@ def loadConfigurationFile():
                         submission.submittedGene.geneLocus = deserializeConfigValue(submissionChild.attrib['genelocus'])
                         submission.localAlleleName = deserializeConfigValue(submissionChild.attrib['localallelename'])
                         submission.closestAlleleWrittenDescription = deserializeConfigValue(submissionChild.attrib['closestallelewrittendescription'])
-                        submission.imgtSubmissionIdentifier = deserializeConfigValue(submissionChild.attrib['imgtsubmissionidentifier'])
-                        submission.imgtSubmissionVersion = deserializeConfigValue(submissionChild.attrib['imgtsubmissionversion'])
-                        submission.emblAccessionIdentifier = deserializeConfigValue(submissionChild.attrib['emblaccessionidentifier'])
+                        submission.ipdSubmissionIdentifier = deserializeConfigValue(submissionChild.attrib['ipdsubmissionidentifier'])
+                        submission.ipdSubmissionVersion = deserializeConfigValue(submissionChild.attrib['ipdsubmissionversion'])
+                        submission.enaAccessionIdentifier = deserializeConfigValue(submissionChild.attrib['enaaccessionidentifier'])
                         submission.cellId = deserializeConfigValue(submissionChild.attrib['cellid'])
                         submission.ethnicOrigin = deserializeConfigValue(submissionChild.attrib['ethnicorigin'])
                         submission.sex = deserializeConfigValue(submissionChild.attrib['sex'])
@@ -1156,7 +1159,7 @@ def loadConfigurationFile():
 
             # Here is where I assign the common/critical configuration values
             # test_submission indicates if we should use the "test" values.
-            # I think I'll use this value for both EMBL and IMGT submissions, if it applies.
+            # I think I'll use this value for both ENA and IPD submissions, if it applies.
             assignIfNotExists('test_submission', '1')
 
             # Log levels are defined in the Saddlebags config, and passed into the python logging module.
@@ -1165,12 +1168,12 @@ def loadConfigurationFile():
             assignIfNotExists('proxy', None)
 
             # I'm storing FTP without the ftp:// identifier, because it is not necessary.
-            # The test and prod ftp sites have the same address. This is intentional, embl doesn't have a test ftp
+            # The test and prod ftp sites have the same address. This is intentional, ena doesn't have a test ftp
             # TODO : I still need this stuff? Probably. I think the act service does not need the method name anymore though.
-            assignIfNotExists('embl_ftp_upload_site_test', 'webin.ebi.ac.uk')
-            assignIfNotExists('embl_ftp_upload_site_prod', 'webin.ebi.ac.uk')
-            assignIfNotExists('embl_rest_address_test', 'https://www-test.ebi.ac.uk/ena/submit/drop-box/submit/')
-            assignIfNotExists('embl_rest_address_prod', 'https://www.ebi.ac.uk/ena/submit/drop-box/submit/')
+            assignIfNotExists('ena_ftp_upload_site_test', 'webin.ebi.ac.uk')
+            assignIfNotExists('ena_ftp_upload_site_prod', 'webin.ebi.ac.uk')
+            assignIfNotExists('ena_rest_address_test', 'https://www-test.ebi.ac.uk/ena/submit/drop-box/submit/')
+            assignIfNotExists('ena_rest_address_prod', 'https://www.ebi.ac.uk/ena/submit/drop-box/submit/')
             #assignIfNotExists('nmdp_act_rest_address', 'http://act.b12x.org/type_align')
             assignIfNotExists('nmdp_act_rest_address', 'http://act.b12x.org')
             # TODO: i should use the nmdp configuration value when I call the GFE/ACT services. It is currently hardcoded AFAIK
