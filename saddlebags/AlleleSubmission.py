@@ -60,6 +60,8 @@ class AlleleSubmission():
         self.numOfReactions = ''
         self.methodComments = ''
         self.citations = ''
+        self.enaSubmissionText = None
+        self.ipdSubmissionText = None
 
 class GeneFeature():
     
@@ -80,6 +82,8 @@ class HlaGene():
         self.fullSequence = ''
         self.features = []
         self.geneLocus = ''
+        # TODO: I don't think I'm generating the class anywhere. I'm putting a ? mark here so I can spot mistakes. Just make it Blank or None or something
+        self.hlaClass = '?'
 
     def totalLength(self):
         #print('Calculating the total length. It is:' + str(len(self.getCompleteSequence())))

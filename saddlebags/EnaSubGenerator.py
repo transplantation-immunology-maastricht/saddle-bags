@@ -16,7 +16,7 @@
 #from Bio.Seq import Seq
 #from Bio.Alphabet import generic_dna
 
-from saddlebags.AlleleSubmission import HlaGene
+from saddlebags.AlleleSubmission import HlaGene, AlleleSubmission, SubmissionBatch
 from saddlebags.AlleleSubCommon import getConfigurationValue, translateSequence
 from saddlebags.HlaSequenceException import HlaSequenceException
 
@@ -25,9 +25,20 @@ import logging
 # The AlleleGenerator class contains logic to generate an EMBL HLA allele submission 
 # In ENA format.  
 class EnaSubGenerator():
-    
+
+
+    # TODO: This class does not support batch submissions. I should be passing in an Allele Submission object somehow.
+    # Not using the getConfigurationValues.
+    # The IPD generator is correct for this. Copy the logic like in there.
+    # TODO: Search for "getConfigurationValue". Did I get them all?
+
     def __init__(self):
-        self.sequenceAnnotation = HlaGene()
+        #self.sequenceAnnotation = HlaGene()
+        # Instead of storing an HlaGene, im now storing a ALleleSubmission object.
+        # A ALleleSubmission object has it's own HLA gene, so this is better.
+        # I think I need to also store the submission batch because it needs that info too. This is a bit redundant, but oh well.
+        self.submission = AlleleSubmission()
+        self.submissionBatch = SubmissionBatch()
 
 
     def printHeader(self):      
@@ -35,7 +46,8 @@ class EnaSubGenerator():
         headerText = ''
         
         # Print header
-        headerText += 'ID   XXX; XXX; linear; genomic DNA; XXX; XXX; ' + str(self.sequenceAnnotation.totalLength()) + ' BP.\n'
+        totalLength = self.submission.submittedGene.totalLength()
+        headerText += 'ID   XXX; XXX; linear; genomic DNA; XXX; XXX; ' + str(totalLength) + ' BP.\n'
         headerText += 'XX\n'
         # A valid document should have an AC (Accession Number) and DE (Description) field.
         # I don't have an AC number available, so it's blank.
@@ -44,8 +56,8 @@ class EnaSubGenerator():
         #headerText += 'DE   Human Leukocyte Antigen\n'
         #Requested change to the DE line.  It should look like:
         #Homo sapiens HLA-B gene for MHC class I antigen, allele "/allele name"
-        headerText += ('DE   Homo sapiens ' + str(getConfigurationValue('gene')) 
-            + ' gene for MHC class ' + str(('I' if ('1'==str(getConfigurationValue('class'))) else 'II')) 
+        headerText += ('DE   Homo sapiens ' + str(self.submission.submittedGene.geneLocus)
+            + ' gene for MHC class ' + str(self.submission.submittedGene.hlaClass)
             + ' antigen, allele "' + str(getConfigurationValue('allele_name')) + '"\n')
         headerText += 'XX\n'
 

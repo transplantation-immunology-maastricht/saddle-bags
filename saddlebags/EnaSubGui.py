@@ -25,7 +25,7 @@ from tkinter.constants import BOTH, BOTTOM, RIGHT, X, Y, NONE, HORIZONTAL, NORMA
 
 from saddlebags.EnaSubGenerator import EnaSubGenerator
 from saddlebags.EnaSubOptionsForm import EnaSubOptionsForm
-from saddlebags.EnaSubRest import performFullSubmission
+#from saddlebags.EnaSubRest import performFullSubmission
 from saddlebags.AlleleSubCommon import getConfigurationValue, assignConfigurationValue, parseExons, isSequenceAlreadyAnnotated, identifyGenomicFeatures, assignIcon, collectAndValidateRoughSequence, collectRoughSequence
 #from saddlebags.AlleleSubCommonRest import fetchSequenceAlleleCallWithGFE
 from saddlebags.AlleleSubCommon import fetchSequenceAlleleCallWithGFE

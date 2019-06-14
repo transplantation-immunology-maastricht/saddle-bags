@@ -126,8 +126,8 @@ def uploadZipToIpdHla(zipFileName):
     media = MediaFileUpload(zipFileFullPath,
                             mimetype='application/zip')
     file = service.files().create(body=file_metadata,
-                                        media_body=media,
-                                        fields='id').execute()
+        media_body=media,
+        fields='id').execute()
     print('File ID: %s' % file.get('id'))
 
     # TODO: Somehow export the gui stuff to the GUI. Popups shouldn't happen in here.
@@ -153,6 +153,21 @@ def uploadZipToIpdHla(zipFileName):
     # I reckon I could hard-code the target email address. not sure what it is right now, ipdsubmissions@anthonynolan.org? I made that up.
     sendEmail(emailSubject, emailBody, 'ben.matern@mumc.nl', 'me')
 
+
+def checkServiceConnection():
+    print ('Checking Gdrive connection...(TODO)')
+    # Maybe there is a simpler way to do this and I don't need to do these steps.
+
+
+    # Generate filename for helloworld.txt
+
+    # Create File
+
+    # Upload the file.
+
+    # does the file exist?
+
+    # Delete the file.
 
 def getService(serviceName, apiVersion):
     # For some reason, the drive API suggests 'v3' for the api version, but gmail wants 'v1'. Ok.

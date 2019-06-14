@@ -20,7 +20,9 @@ from tkinter import messagebox
 
 #from saddlebags.AlleleSubCommon import getConfigurationValue
 from saddlebags.AlleleSubmission import HlaGene, AlleleSubmission, SubmissionBatch
-from saddlebags.AcademicCitation import AcademicCitation
+#from saddlebags.AcademicCitation import AcademicCitation
+# TODO: I removed AcademicCitation because I'm pretty sure we don't actually need that in the submission. James and Dom agree this isn't necessary.
+
 
 import logging
 

@@ -25,7 +25,7 @@ try:
 except Exception:
     print('No MEIPASS Directory. This is not running from a compiled EXE file. No problem.')
 
-from os import makedirs
+from os import makedirs, remove, rmdir, name
 from os.path import join, expanduser, isfile, abspath, isdir, split
 
 from tkinter import messagebox
@@ -44,15 +44,21 @@ from zipfile import ZipFile
 
 from saddlebags.AlleleSubmission import HlaGene, GeneFeature, SubmissionBatch, AlleleSubmission
 from saddlebags.IpdSubGenerator import IpdSubGenerator # TODO: I shouldn't need to import this one. I'm making circular dependencies.
-# TODO:
+# TODO: Fix this, i think the solution is moving stuff from this file to IPDSubGenerator. Or GoogleDriveUpload.
 
 import logging
 
+from gfe_client import Configuration, ApiClient, TypeSeqApi
+
+def showInfoBox(title, message):
+    # A wrapper method for the tkinter popup box.
+    messagebox.showinfo(title, message)
+
+def showQuestionBox(title, message):
+    # A wrapper method for the tkinter ask question box.
+    return messagebox.askquestion(title, message,icon='warning')
 
 def fetchSequenceAlleleCallWithGFE(rawSequence, locus):
-    # Just importing here because this is the only place it's used. Sloppy.
-    from gfe_client import Configuration, ApiClient, TypeSeqApi
-
     logging.debug('Attempting to fetch an allele call using GFE.')
     logging.debug(rawSequence)
     logging.debug(locus)
@@ -98,16 +104,26 @@ def assignIcon(tkRootWindow):
 
     # Find window location inside executable
     try:
-        # PyInstaller creates a temp folder and stores path in _MEIPASS
-        #base_path = _MEIPASS
-        iconFileLocation = resourcePath('images\\horse_image_icon.ico')
-        logging.debug('I am assigning this icon:' + imageFileLocation)
-        tkRootWindow.wm_iconbitmap(iconFileLocation)
+        # Changing this to use the join function, I don't know why I did this double slash thing before.
+        # TODO: Does the icon work in the compiled exe?
+        #iconFileLocation = resourcePath('images\\horse_image_icon.ico')
+        windowsIconFileLocation = resourcePath(join('images', 'horse_image_icon.ico'))
+        linuxIconFileLocation = resourcePath(join('images', 'horse_image_icon.xbm'))
+
+
+
+        # Different icon code for Linux and Windows. "name"="os.name"
+        if "nt" == name:
+            logging.debug('I am assigning this icon:' + windowsIconFileLocation)
+            tkRootWindow.wm_iconbitmap(bitmap=windowsIconFileLocation)
+        else:
+            logging.debug('I am assigning this icon:@' + linuxIconFileLocation)
+            tkRootWindow.wm_iconbitmap(bitmap="@" + linuxIconFileLocation)
     except Exception:
         #base_path = os.path.abspath(".")
-        logging.error('Could not assign icon based on path inside executable.', 'ERROR')
+        logging.error('Could not assign icon based on path inside executable.')
         
-        logging.error (exc_info(), 'ERROR')
+        logging.error (exc_info())
 
     # Linux
     # I have given up on setting an icon in linux. I can't seem to load up any file format.
@@ -115,6 +131,7 @@ def assignIcon(tkRootWindow):
  
 def resourcePath(relativePath):
     # Where will I find my resources? This should work in, or outside, a compiled EXE
+    # PyInstaller creates a temp folder and stores path in _MEIPASS
     if hasattr(sys, '_MEIPASS'):
         return join(_MEIPASS, relativePath)
     return join(abspath('.'), relativePath)
@@ -752,26 +769,33 @@ def getConfigurationValue(configurationKey):
         return None
 
 def initializeLog():
-    # Potential problem = I must initialize log before importing anything.
-    # the order of imports is very important for logging.
     logFileLocation = join(getSaddlebagsDirectory(),'Saddlebags.Log.txt')
 
     # If there is no "globals" yet, then I haven't loaded a config yet, lets default to 'DEBUG' level.
-    if not ("globalVariables" in globals()):
+    if (not ("globalVariables" in globals()) or  getConfigurationValue('logging') is None):
         logLevelText = 'DEBUG'
     else:
         logLevelText = getConfigurationValue('logging')
 
     logLevel = getattr(logging,logLevelText.upper())
-    print('ASSIGNING LOG LEVEL: ' + str(logLevelText) + ' : ' + str(logLevel))
 
-    # why is this not writing to file? Very strange.
-    logging.basicConfig(filename=logFileLocation
-        , filemode='a'
-        #, level=logLevel
-        , level=logging.DEBUG
-        , format='%(asctime)s:%(name)s:%(levelname)s:%(message)s'
-        )
+    logFormatter = logging.Formatter("%(asctime)s:%(name)s:%(levelname)s:%(message)s")
+    rootLogger = logging.getLogger()
+
+    # Remove handlers, It's easiest for me to add my own.
+    rootLogger.handlers = []
+    rootLogger.setLevel(logLevel)
+
+    # Add the Stream Handler to print to console.
+    consoleHandler = logging.StreamHandler()
+    consoleHandler.setFormatter(logFormatter)
+    rootLogger.addHandler(consoleHandler)
+
+    # Add the File Handler to log to a file.
+    fileHandler = logging.FileHandler(logFileLocation)
+    fileHandler.setFormatter(logFormatter)
+    rootLogger.addHandler(fileHandler)
+
 
 def assignConfigName():
     # Join together the working directory, a subfolder called "saddlebags_temp", and the config name.
@@ -1005,7 +1029,7 @@ def parseTypedAlleleInput(alleleInputString):
         return {}
 
 
-
+# TODO: I suppose this method should be in an IPD SubGenerator file.
 def createIPDZipFile(zipFileName):
     logging.debug('Saving Zip File:' + str(zipFileName))
 
@@ -1057,15 +1081,32 @@ def createIPDZipFile(zipFileName):
             fullPath = join(workingDirectory,fileName)
             zip.write(fullPath,fileName)
 
-    # TODO: Delete the Evidence. Actually don't.
-    # Loop submission files,
-        # delete the submission files.
+    # Delete the files.
+    # TODO: Report results and submission identifiers. I should create a report, maybe save our submitted sequence .zip.
+    # Give a report of what was submitted. It should be clear to the user what was submitted.
+    # At the very least, just tell the user where the .zip file is. I can check what was submitted myself.
+    try:
+        successfulDeletion = True
+        for fileName in submissionFileList:
+            fullPath = join(workingDirectory, fileName)
+            if isfile(fullPath):
+                remove(fullPath)
+            else:
+                successfulDeletion = False
+                raise Exception('ERROR when deleting file, it does not seem to exist:' + fullPath)
 
-    # Report results and submission identifiers. I should create a report, save our submitted sequences.
-    # Give a report of what was submitted.
 
-    # delete the working directory
 
+        # delete the working directory
+        if(successfulDeletion):
+            if isdir(workingDirectory):
+                rmdir(workingDirectory)
+            else:
+                raise Exception('ERROR when deleting workign directory, it does not seem to exist:' + workingDirectory)
+
+    except Exception as error:
+        logging.error('ERROR when removing working directory and submission files:' + str(error))
+        raise()
 
 
 def getSaddlebagsDirectory():
@@ -1178,7 +1219,8 @@ def loadConfigurationFile():
             assignIfNotExists('nmdp_act_rest_address', 'http://act.b12x.org')
             # TODO: i should use the nmdp configuration value when I call the GFE/ACT services. It is currently hardcoded AFAIK
 
-            # Last step is to initialize the log files.
+            # Last step is to initialize the log files. Why is this the last step? initializing log should be first
+            # but I need some config values before starting the log.
             initializeLog()
     except:
         logging.error('Error when loading configuration file:' + str(globalVariables['config_file_location']) + '. Try deleting your configuration file and reload Saddlebags.')

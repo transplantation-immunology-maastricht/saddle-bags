@@ -189,7 +189,7 @@ class AlleleSubMainGui(Frame):
         if(submissionType=='IPD'):
             logging.info ('Opening the IPD-IMGT/HLA Submission GUI', 'INFO')
             IpdSubGui(self.alleleSubRoot).pack()
-        elif(submissionType=='EnA'):
+        elif(submissionType=='ENA'):
             logging.info ('Opening the EMBL-ENA Submission GUI', 'INFO')
             EnaSubGui(self.alleleSubRoot).pack()
         else:

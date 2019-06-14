@@ -15,6 +15,7 @@ from saddlebags.EnaSubGenerator import EnaSubGenerator
 from saddlebags.IpdSubGenerator import IpdSubGenerator
 from saddlebags.AlleleSubmission import SubmissionBatch, AlleleSubmission
 from saddlebags.IpdGoogleDriveUpload import uploadZipToIpdHla
+from saddlebags.EnaSub import performFullEnaSubmission
 
 from os.path import join, expanduser
 
@@ -85,6 +86,7 @@ gacagctgccttgtgtgggactgagaggcaagagttgttcctgcccttccctttgtgacttgaagaaccctgactttgtt
 
     #submission1.submittedGene.annotateFeatures() # TODO: I think this won't work, because, the sequence is not annotated (capital and lowercase).
     submission1.submittedGene.geneLocus = 'HLA-DRB1'
+    submission2.submittedGene.hlaClass = 'II'
     submission1.localAlleleName = 'A02_new44'
     submission1.closestAlleleWrittenDescription = 'DRB1:11 with a SNP in exon 2'
     submission1.ipdSubmissionIdentifier = 'HWS100234567'
@@ -132,6 +134,7 @@ gacagctgccttgtgtgggactgagaggcaagagttgttcctgcccttccctttgtgacttgaagaaccctgactttgtt
 
     submission2.submittedGene = identifyGenomicFeatures(annotatedSequence)
     submission2.submittedGene.geneLocus = 'HLA-A'
+    submission2.submittedGene.hlaClass = 'I'
 
     print('The second submission has this many features:' + str(len(submission2.submittedGene.features)))
     assert_true(len(submission2.submittedGene.features) == 17)
@@ -200,7 +203,17 @@ def testReadConfigFile():
     # Assert that the values exist and are what we expect.
     assert (len(getConfigurationValue('submission_batch').submissionBatch) == 2)
 
+def testEMBLENASubmission():
+    assert (getConfigurationValue('submission_batch') is not None)
 
+    submissionBatch = getConfigurationValue('submission_batch')
+
+    performBatchEnaSubmission(submissionBatch)
+
+
+
+# TODO: the Google upload / zip file was working but i disabled it while i work on the ENA stuff.
+"""
 
 def testIPDSubmissionFlatfileWithoutAnnotating():
     #Can I still create an submission file, even though annotation is not working?
@@ -266,6 +279,11 @@ def testGoogleUpload():
     zipFileName = 'TestSubmissionZipFile.zip'
 
     uploadZipToIpdHla(zipFileName)
+
+
+"""
+
+
 
 
 """
