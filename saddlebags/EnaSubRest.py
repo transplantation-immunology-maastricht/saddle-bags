@@ -13,7 +13,7 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with saddle-bags. If not, see <http://www.gnu.org/licenses/>.
 
-#import sys
+"""
 
 from os import makedirs
 from os.path import join, isdir, split, expanduser
@@ -37,10 +37,16 @@ import logging
 
 from saddlebags.AlleleSubCommon import getConfigurationValue, createOutputFile, assignConfigurationValue, getSaddlebagsDirectory
 from saddlebags.EnaSubXml import createProjectXML, createProjectSubmissionXML, createAnalysisSubmissionXML , createAnalysisXML
-
+"""
 
 
 # Here we have methods to perform REST interactions necessary for ENA submission.
+# Some REST functionality was removed by ENA, but I must still perform a few things.
+# I need to "Register Study",  Study = Project.
+# Analysis is no longer needed, those are created by the Webin CLI tool automatically.
+
+
+
 
 def performProjectSubmission(submissionFileName, projectFileName):
     POST_DATA = [('SUBMISSION', (FORM_FILE, submissionFileName)), 
@@ -49,14 +55,6 @@ def performProjectSubmission(submissionFileName, projectFileName):
     responseText = performSubmission(submissionFileName, POST_DATA)    
     return interpretProjectSubmissionResults(responseText)
 
-def performAnalysisSubmission(submissionFileName, analysisFileName):
-    POST_DATA = [('SUBMISSION', (FORM_FILE, submissionFileName)), 
-        ('ANALYSIS', (FORM_FILE, analysisFileName))]
-    
-    responseText = performSubmission(submissionFileName, POST_DATA)
-    
-    return interpretAnalysisSubmissionResults(responseText)
-    
 def performSubmission(submissionFileName, POST_DATA):
     
     logging.info('Performing submission of ' + submissionFileName + '\n')
@@ -143,38 +141,9 @@ def interpretProjectSubmissionResults(responseText):
     # (Success, ProjectAccession, Messages[])      
     return (submissionSuccess,projectAccession,messages)
 
-def interpretAnalysisSubmissionResults(responseText):
-    
-    logging.info('Parsing Analysis Submission Results:\n' + str(responseText) + '\n')
-    
-        
-    root = fromstring(responseText)  
-    submissionSuccess = (root.attrib['success'] == 'true')
-    
-    analysisAccession = None
-    messages = []    
-
-    for child in root:
-        if(child.tag == 'ANALYSIS'):
-            if ('accession' in child.attrib.keys()):
-                analysisAccession = child.attrib['accession']
-            else:
-                analysisAccession = None
-            #logging.info('I found a project node.')
-        elif(child.tag == 'MESSAGES'):
-            logging.info('I found some messages.')
-            for messageNode in child:
-                #logging.info (messageNode.tag + ':' + messageNode.text)
-                messages.append(messageNode.tag + ':' + messageNode.text)
-        else:
-            # Don't care about the other nodes
-            pass
-    
-    # Return value should be a tuple:
-    # (Success, ProjectAccession, Messages[])      
-    return (submissionSuccess,analysisAccession,messages)
-
-        
+# Pretty sure I only needed the Md5 checksum for the FTP, which i no longer use.
+# TODO: Remove the Md5 when I feel brave.
+"""
 def writeMd5(inputFileName, outputFileName):
     hash_md5 = md5()
     with open(inputFileName, "rb") as f:
@@ -189,11 +158,11 @@ def writeMd5(inputFileName, outputFileName):
     outputFile.close()
     
     return hashValue
+"""
 
 
-
-# TODO: This method is long, can i clean it up at all?
-
+# TODO: I'm moving this logic to EnaSub.py, remove it from here when I feel brave.
+"""
 def performFullSubmission(submissionText):
     logging.info('Uploading Submission to ENA')
     
@@ -216,6 +185,7 @@ def performFullSubmission(submissionText):
             +  str(exc_info()[1]))
         return
 
+    # get username and password
     enaUsername = getConfigurationValue('ena_username')
     enaPassword = getConfigurationValue('ena_password')
     if(enaUsername is None
@@ -482,3 +452,6 @@ def performFullSubmission(submissionText):
         + 'Contact EMBL Support with your\nAnalysis Accession # if it has been\nmore than 48 hours since submission.\n'
 
         )
+
+"""
+
