@@ -384,7 +384,7 @@ def validateAndSubmit(submission, submissionBatch, workingDirectory, dateTimeNow
     (analysisSubmissionSuccess, analysisAccessionNumber, analysisErrorMessages) = interpretAnalysisSubmissionResults(analysisResultText)
     if (analysisSubmissionSuccess):
         # Great. The analysis was created successfully.
-        showInfoBox('Successful submission. The analysis Accession number is:' + str(analysisAccessionNumber))
+        showInfoBox('Successful Submission.','Successful submission. ' + str(submission.localAlleleName) + ' has analysis Accession number is:' + str(analysisAccessionNumber))
         pass
     else:
         messageText = ('There was a problem in the Analysis Submission.\n'

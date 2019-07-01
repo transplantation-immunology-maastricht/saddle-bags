@@ -849,20 +849,16 @@ def deserializeConfigValue(serializedConfigString):
 def writeConfigurationFile():
     assignConfigName()
     logging.debug ('Writing a config file to:\n' + getConfigurationValue('config_file_location'))
-    
-    root = ET.Element("config")
 
     # Root node stores "normal" configuration keys, stuff related to software
     # and not necessarily HLA or sequence submission.
-    configElement = ET.SubElement(root, 'config_file_location').text = getConfigurationValue('config_file_location')
+    root = ET.Element("config")
 
-
-    # The purpose of this loop is to make sure I don't miss any keys but I can just do that myself.
+    # Loop through configuration keys in the dictionary and write em out.
     for key in globalVariables.keys():
-
         # "normal" configuration keys, stuff related to software and not necessarily HLA or sequence submission.
         # Some config values I don't want to store. I can add more to this list if i want.
-        # Don't store passwords.
+        # Don't store passwords. Passwords should be attached to the submission batch, no need to worry about it here.
         # I handle the submission batch manually.
         if(key not in [
             #'ena_password'
