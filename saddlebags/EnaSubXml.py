@@ -36,15 +36,10 @@ def writeToXml(fullXmlFilePath, xmlElementTree):
     
     return prettyXmlText
 
-def createProjectXML(fullXmlFilePath):
+def createProjectXML(fullXmlFilePath, projectID, projectShortTitle, projectAbstract):
     # They are called "Project" in xml, but "Study" on the website.
     # Project = Study
     root = ET.Element('PROJECT_SET')
-
-    projectID = getConfigurationValue('study_identifier')
-    projectShortTitle = getConfigurationValue('study_short_title')
-    projectAbstract = getConfigurationValue('study_abstract')
-    
     projectElement = ET.SubElement(root, 'PROJECT')
     projectElement.set('alias', projectID)
     titleElement = ET.SubElement(projectElement, 'TITLE')

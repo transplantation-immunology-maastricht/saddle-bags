@@ -24,7 +24,7 @@ from tkinter.constants import BOTH, NORMAL, DISABLED, X, Y, BOTTOM, RIGHT, NONE,
 
 from saddlebags.IpdSubGenerator import IpdSubGenerator
 from saddlebags.IpdSubOptionsForm import IpdSubOptionsForm
-from saddlebags.AlleleSubCommon import collectAndValidateRoughSequence, assignIcon, assignConfigurationValue, parseExons, getConfigurationValue, identifyGenomicFeatures, isSequenceAlreadyAnnotated, collectRoughSequence
+from saddlebags.AlleleSubCommon import collectAndValidateRoughSequence, assignIcon, assignConfigurationValue, parseExons, getConfigurationValue, identifyGenomicFeatures, isSequenceAlreadyAnnotated, collectRoughSequence, showYesNoBox
 #from saddlebags.AlleleSubCommonRest import fetchSequenceAlleleCallWithGFE
 from saddlebags.HlaSequenceException import HlaSequenceException
 
@@ -360,7 +360,7 @@ class IpdSubGui(Frame):
                 annotatedSequence = roughNucleotideSequence
                 
             else:
-                if (messagebox.askyesno('Auto - Annotate Exons?'
+                if (showYesNoBox('Auto - Annotate Exons?'
                     , 'It looks like your sequence features have not been identified.\n' +
                     'Would you like to annotate using NMDP: BeTheMatch\n' +
                     'Gene Feature Enumeration Tool?')):

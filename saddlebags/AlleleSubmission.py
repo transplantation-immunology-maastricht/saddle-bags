@@ -23,51 +23,56 @@ class SubmissionBatch():
     def __init__(self):
         # It's dumb to reuse a variable name, should think of a better name here.
         self.submissionBatch = []
-        self.ipdSubmitterId = ''
-        self.ipdSubmitterName = ''
-        self.ipdAltContact = ''
-        self.ipdSubmitterEmail = ''
-        self.labOfOrigin = ''
-        self.labContact = ''
+        self.enaUserName = None
+        self.enaPassword = None
+        self.ipdSubmitterId = None
+        self.ipdSubmitterName = None
+        self.ipdAltContact = None
+        self.ipdSubmitterEmail = None
+        self.labOfOrigin = None
+        self.labContact = None
+        self.studyAccession = None
+        self.chooseProject = 2 # 2 = new project. 1 = existing project, use the studyaccession number. Study=Project
 
 
 class AlleleSubmission():
 
     def __init__(self):
         self.submittedGene=HlaGene()
-        self.localAlleleName = ''
-        self.closestAlleleWrittenDescription = ''
-        self.ipdSubmissionIdentifier = ''
-        self.ipdSubmissionVersion = ''
-        self.enaAccessionIdentifier = ''
+        self.localAlleleName = None
+        self.closestAlleleWrittenDescription = None
+        self.ipdSubmissionIdentifier = None
+        self.ipdSubmissionVersion = None
+        self.enaAccessionIdentifier = None
         # TODO: i think this column is intended for use identifying cell line names, if we are submitting the HLA types of cell lines.
-        self.cellId = ''
-        self.ethnicOrigin = ''
-        self.sex = ''
-        self.consanguineous = ''
-        self.homozygous = ''
+        self.cellId = None
+        self.ethnicOrigin = None
+        self.sex = None
+        self.consanguineous = None
+        self.homozygous = None
         # Necessary = A,B, DRB1. The rest are extra, and they help James trust the submitted sequence.
         # I store the typed alleles as a dictionary. Key is the Locus (HLA-A) and the value is a String with the alleles, separated by a comma (02:01,03:01:14)
         self.typedAlleles = {}
-        self.materialAvailability = ''
-        self.cellBank = ''
-        self.primarySequencingMethodology = ''
-        self.secondarySequencingMethodology = ''
-        self.primerType = ''
-        self.primers = ''
-        self.sequencedInIsolation = ''
-        self.sequencingDirection = ''
-        self.numOfReactions = ''
-        self.methodComments = ''
-        self.citations = ''
+        self.materialAvailability = None
+        self.cellBank = None
+        self.primarySequencingMethodology = None
+        self.secondarySequencingMethodology = None
+        self.primerType = None
+        self.primers = None
+        self.sequencedInIsolation = None
+        self.sequencingDirection = None
+        self.numOfReactions = None
+        self.methodComments = None
+        self.citations = None
         self.enaSubmissionText = None
         self.ipdSubmissionText = None
+        self.isPseudoGene = False # It's considered a pseudogene if length of the coding sequence is not a multiple of 3.
 
 class GeneFeature():
     
     def __init__(self):
-        self.name = ''
-        self.sequence = ''
+        self.name = None
+        self.sequence = None
         self.exon = False
         self.beginIndex = 0
         self.endIndex = 0
@@ -79,11 +84,11 @@ class GeneFeature():
 class HlaGene():
 
     def __init__(self):
-        self.fullSequence = ''
+        self.fullSequence = None
         self.features = []
-        self.geneLocus = ''
+        self.geneLocus = None
         # TODO: I don't think I'm generating the class anywhere. I'm putting a ? mark here so I can spot mistakes. Just make it Blank or None or something
-        self.hlaClass = '?'
+        self.hlaClass = None
 
     def totalLength(self):
         #print('Calculating the total length. It is:' + str(len(self.getCompleteSequence())))
@@ -158,7 +163,7 @@ class HlaGene():
             
             
     # Print a summary of the inputted sequence to console.
-    # Todo: Log this info instead of printing it. I can't because of a circular dependency. Look into that.
+    # Todo: Log this info instead of printing it. I can't because of a weird circular dependency. Look into that.
     def printGeneSummary(self):
         #print('\nPrinting Gene Summary')
         for x in range(0, len(self.features)):

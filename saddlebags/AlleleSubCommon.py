@@ -28,7 +28,7 @@ except Exception:
 from os import makedirs, remove, rmdir, name
 from os.path import join, expanduser, isfile, abspath, isdir, split
 
-from tkinter import messagebox
+from tkinter import messagebox, simpledialog
 
 from xml.etree import ElementTree as ET
 from xml.dom import minidom as MD
@@ -54,9 +54,15 @@ def showInfoBox(title, message):
     # A wrapper method for the tkinter popup box.
     messagebox.showinfo(title, message)
 
-def showQuestionBox(title, message):
-    # A wrapper method for the tkinter ask question box.
-    return messagebox.askquestion(title, message,icon='warning')
+def getInfoBox(title, message):
+    # wrapper to get a text input from the user.
+    return simpledialog.askstring(title, message)
+
+def showYesNoBox(title, message):
+    # A wrapper method for the tkinter ask yes/no question box.
+    response = messagebox.askquestion(title, message,icon='warning')
+    # the response is a string, 'yes' or 'no'. That's really funny.
+    return response == 'yes'
 
 def fetchSequenceAlleleCallWithGFE(rawSequence, locus):
     logging.debug('Attempting to fetch an allele call using GFE.')
@@ -139,8 +145,9 @@ def resourcePath(relativePath):
 # This is a short wrapper method to use biopython's translation method. 
 # Most of this code is just checking for things that went wrong
 
-def translateSequence(inputSequence):
+def translateSequence(submission):
 
+    inputSequence = submission.submittedGene.getExonSequence()
     proteinSequence = ''
     
     try:
@@ -161,7 +168,8 @@ def translateSequence(inputSequence):
             
             # If no stop codon was found
             if (stopCodonLocation == -1):
-                assignConfigurationValue('is_pseudo_gene','1')
+                submission.isPseudoGene = True
+                #assignConfigurationValue('is_pseudo_gene','1')
                 logging.info ('No Stop Codon found. This is a "pseudo-gene".')
                 # If multiple of three (correct codon length)
                 if(len(coding_dna) % 3 == 0):
@@ -178,8 +186,9 @@ def translateSequence(inputSequence):
                         'This is indicated by a /pseudo flag in the sequence submission.')
 
             # If Stop Codon is in the end of the protein (This is expected and correct)
-            elif (stopCodonLocation == len(proteinSequence) - 1):                
-                assignConfigurationValue('is_pseudo_gene','0')
+            elif (stopCodonLocation == len(proteinSequence) - 1):
+                submission.isPseudoGene = False
+                #assignConfigurationValue('is_pseudo_gene','0')
                 
                 # If multiple of three (correct codon length)
                 if(len(coding_dna) % 3 == 0):
@@ -199,7 +208,8 @@ def translateSequence(inputSequence):
             # Else Stop Codon is premature (before the end of the protein) 
             else:
                 logging.info ('A premature stop codon was found. This is a "pseudo-gene".')
-                assignConfigurationValue('is_pseudo_gene','1')
+                submission.isPseudoGene = True
+                #assignConfigurationValue('is_pseudo_gene','1')
                 
                 # If multiple of three (correct codon length)
                 if(len(coding_dna) % 3 == 0):
@@ -347,7 +357,7 @@ def isSequenceAlreadyAnnotated(inputSequenceText):
     # Circle back on this one later, should I store a variable somewhere if the sequence has been annotated?
     return False
 
-def parseExons(roughFeatureSequence, alleleCallWithGFEJson):
+def parseExons(roughFeatureSequence, alleleCallWithGFEJson, submission):
     
     # TODO: Parse the JSON in the alleleCallWithGFEJson.  
     # There should be some information about the exons in here.
@@ -516,7 +526,8 @@ def parseExons(roughFeatureSequence, alleleCallWithGFEJson):
             else:
                 alleleDescription += 'Could not determine closest HLA allele, please provide a detailed description of the novel sequence.'
 
-            assignConfigurationValue('closest_allele_written_description', alleleDescription)
+            #assignConfigurationValue('closest_allele_written_description', alleleDescription)
+            submission.closestAlleleWrittenDescription = alleleDescription
 
             if (len(fivePrimeSequence) < 1):
                 logging.warning ('I cannot find a five prime UTR.')
@@ -798,7 +809,7 @@ def initializeLog():
 
 
 def assignConfigName():
-    # Join together the working directory, a subfolder called "saddlebags_temp", and the config name.
+    # Join together the working directory, a subfolder called "saddlebags", and the config name.
     assignConfigurationValue('config_file_location',join(getSaddlebagsDirectory(),'Saddlebags.Config.xml'))
 
 # Encode semicolons within a config value.
@@ -817,7 +828,9 @@ def serializeConfigValue(configListObject):
         serializedString = serializedString[:-1]
         return serializedString
     else:
-        raise(TypeException('Unknown configuration type, can not serialize:' + str(type(configListObject))))
+        # TODO: Yeah I did have one random problem when the type was an int. I can just always use strings or maybe handle it smarter.
+
+        raise(Exception('Unknown configuration type, can not serialize:' + str(type(configListObject))))
 
 # Split strings containing semicolon into a list.
 # Decode @@@ back into a semicolon.
@@ -836,32 +849,29 @@ def deserializeConfigValue(serializedConfigString):
 def writeConfigurationFile():
     assignConfigName()
     logging.debug ('Writing a config file to:\n' + getConfigurationValue('config_file_location'))
-    
-    root = ET.Element("config")
 
     # Root node stores "normal" configuration keys, stuff related to software
     # and not necessarily HLA or sequence submission.
-    configElement = ET.SubElement(root, 'config_file_location').text = getConfigurationValue('config_file_location')
+    root = ET.Element("config")
 
-
-    # The purpose of this loop is to make sure I don't miss any keys but I can just do that myself.
+    # Loop through configuration keys in the dictionary and write em out.
     for key in globalVariables.keys():
-
         # "normal" configuration keys, stuff related to software and not necessarily HLA or sequence submission.
         # Some config values I don't want to store. I can add more to this list if i want.
-        # Don't store passwords.
+        # Don't store passwords. Passwords should be attached to the submission batch, no need to worry about it here.
         # I handle the submission batch manually.
         if(key not in [
-            'ena_password'
-            , 'ipd_password'
-            , 'submission_batch'
+            #'ena_password'
+            #, 'ipd_password'
+            #,
+            'submission_batch'
             ]):
 
             # getConfigurationValue will handle serializing and encoding semicolons.
             ET.SubElement(root, key).text = getConfigurationValue(key)
 
     # Add keys for "each" batch of submissions.
-    # TODO: i may add functionality for multiple batches later. Put this in a loop.
+    # TODO: i may add functionality for multiple batches later. Put this in a loop. Batches of Batches, I don't think this is necessary.
     submissionBatch = getConfigurationValue('submission_batch')
     
     # If the config is not already initiated, this can be None. Make a new one.
@@ -870,13 +880,21 @@ def writeConfigurationFile():
     
     
     # Create a node object, most of this stuff can be parameters on the node.
+    # Dont write any passwords to the config.
     submissionBatchElement = ET.SubElement(root, 'submission_batch')
-    submissionBatchElement.set('ipdsubmitterid', serializeConfigValue(submissionBatch.ipdSubmitterId))
-    submissionBatchElement.set('ipdsubmittername', serializeConfigValue(submissionBatch.ipdSubmitterName))
-    submissionBatchElement.set('ipdaltcontact', serializeConfigValue(submissionBatch.ipdAltContact))
+    submissionBatchElement.set('enausername'      , serializeConfigValue(submissionBatch.enaUserName))
+    submissionBatchElement.set('ipdsubmitterid'   , serializeConfigValue(submissionBatch.ipdSubmitterId))
+    submissionBatchElement.set('ipdsubmittername' , serializeConfigValue(submissionBatch.ipdSubmitterName))
+    submissionBatchElement.set('ipdaltcontact'    , serializeConfigValue(submissionBatch.ipdAltContact))
     submissionBatchElement.set('ipdsubmitteremail', serializeConfigValue(submissionBatch.ipdSubmitterEmail))
-    submissionBatchElement.set('laboforigin', serializeConfigValue(submissionBatch.labOfOrigin))
-    submissionBatchElement.set('labcontact', serializeConfigValue(submissionBatch.labContact))
+    submissionBatchElement.set('laboforigin'      , serializeConfigValue(submissionBatch.labOfOrigin))
+    submissionBatchElement.set('labcontact'       , serializeConfigValue(submissionBatch.labContact))
+    submissionBatchElement.set('chooseproject'    , serializeConfigValue(submissionBatch.chooseProject))
+    submissionBatchElement.set('studyaccession'   , serializeConfigValue(submissionBatch.studyAccession))
+    submissionBatchElement.set('projectid'        , serializeConfigValue(submissionBatch.projectId))
+    submissionBatchElement.set('projectshorttitle', serializeConfigValue(submissionBatch.projectShortTitle))
+    submissionBatchElement.set('projectabstract'  , serializeConfigValue(submissionBatch.projectAbstract))
+
 
     # Keys for each submission.
     for hlaSubmission in submissionBatch.submissionBatch:
@@ -888,9 +906,9 @@ def writeConfigurationFile():
         submissionElement.set('genelocus',                       serializeConfigValue(hlaSubmission.submittedGene.geneLocus))
         submissionElement.set('localallelename'                , serializeConfigValue(hlaSubmission.localAlleleName))
         submissionElement.set('closestallelewrittendescription', serializeConfigValue(hlaSubmission.closestAlleleWrittenDescription))
-        submissionElement.set('ipdsubmissionidentifier'       , serializeConfigValue(hlaSubmission.ipdSubmissionIdentifier))
-        submissionElement.set('ipdsubmissionversion'          , serializeConfigValue(hlaSubmission.ipdSubmissionVersion))
-        submissionElement.set('enaaccessionidentifier'       , serializeConfigValue(hlaSubmission.enaAccessionIdentifier))
+        submissionElement.set('ipdsubmissionidentifier'        , serializeConfigValue(hlaSubmission.ipdSubmissionIdentifier))
+        submissionElement.set('ipdsubmissionversion'           , serializeConfigValue(hlaSubmission.ipdSubmissionVersion))
+        submissionElement.set('enaaccessionidentifier'         , serializeConfigValue(hlaSubmission.enaAccessionIdentifier))
         submissionElement.set('cellid', serializeConfigValue(hlaSubmission.cellId))
         submissionElement.set('ethnicorigin', serializeConfigValue(hlaSubmission.ethnicOrigin))
         submissionElement.set('sex', serializeConfigValue(hlaSubmission.sex))
@@ -903,7 +921,6 @@ def writeConfigurationFile():
             for loci in sorted(hlaSubmission.typedAlleles.keys()):
                 typedAlleleText += str(loci) + '*' + hlaSubmission.typedAlleles[loci] + ';'
         submissionElement.set('typedalleles', serializeConfigValue(typedAlleleText))
-
         submissionElement.set('materialavailability', serializeConfigValue(hlaSubmission.materialAvailability))
         submissionElement.set('cellbank', serializeConfigValue(hlaSubmission.cellBank))
         submissionElement.set('primarysequencingmethodology', serializeConfigValue(hlaSubmission.primarySequencingMethodology))
@@ -954,7 +971,7 @@ def loadFromCSV(csvFileName):
 
     # Check for the existence of each required field in the header.
     # Store the indices of the column headers in a dictionary. So I can lookup the fields in any order, input file is more flexible.
-    requiredFields = ['CELLBANK','CELLID','CITATIONS','CLOSESTALLELEWRITTENDESCRIPTION','CONSANGUINEOUS','ETHNICORIGIN','GENELOCUS','HOMOZYGOUS','IPDSUBMISSIONIDENTIFIER','IPDSUBMISSIONVERSION','ENASEQUENCEACCESSION','LOCALALLELENAME','MATERIALAVAILABILITY','METHODCOMMENTS','NUMOFREACTIONS','PRIMARYSEQUENCINGMETHODOLOGY','PRIMERS','PRIMERTYPE','SECONDARYSEQUENCINGMETHODOLOGY','SEQUENCEDINISOLATION','SEQUENCINGDIRECTION','SEX','TYPEDALLELES','SEQUENCE']
+    requiredFields = ['CLASS','CELLBANK','CELLID','CITATIONS','CLOSESTALLELEWRITTENDESCRIPTION','CONSANGUINEOUS','ETHNICORIGIN','GENELOCUS','HOMOZYGOUS','IPDSUBMISSIONIDENTIFIER','IPDSUBMISSIONVERSION','ENASEQUENCEACCESSION','LOCALALLELENAME','MATERIALAVAILABILITY','METHODCOMMENTS','NUMOFREACTIONS','PRIMARYSEQUENCINGMETHODOLOGY','PRIMERS','PRIMERTYPE','SECONDARYSEQUENCINGMETHODOLOGY','SEQUENCEDINISOLATION','SEQUENCINGDIRECTION','SEX','TYPEDALLELES','SEQUENCE']
     requiredFieldIndices = {}
     try:
         for requiredField in requiredFields:
@@ -973,9 +990,11 @@ def loadFromCSV(csvFileName):
         # Create a submission Object
         # Get each column of data and store it in the submission.
         submission = AlleleSubmission()
+        # TODO: What if the .csv file is not annotated? I believe identifyGenomicFeatures expects the annotated sequence.
         submission.submittedGene = identifyGenomicFeatures( submissionCSVRow[requiredFieldIndices['SEQUENCE']])
         #submission.submittedGene.fullSequence = submissionCSVRow[requiredFieldIndices['SEQUENCE']]
         submission.submittedGene.geneLocus = submissionCSVRow[requiredFieldIndices['GENELOCUS']]
+        submission.submittedGene.hlaClass = submissionCSVRow[requiredFieldIndices['CLASS']]
         submission.localAlleleName = submissionCSVRow[requiredFieldIndices['LOCALALLELENAME']]
         submission.closestAlleleWrittenDescription = submissionCSVRow[requiredFieldIndices['CLOSESTALLELEWRITTENDESCRIPTION']]
         submission.ipdSubmissionIdentifier = submissionCSVRow[requiredFieldIndices['IPDSUBMISSIONIDENTIFIER']]
@@ -998,10 +1017,7 @@ def loadFromCSV(csvFileName):
         submission.numOfReactions = submissionCSVRow[requiredFieldIndices['NUMOFREACTIONS']]
         submission.methodComments = submissionCSVRow[requiredFieldIndices['METHODCOMMENTS']]
         submission.citations = submissionCSVRow[requiredFieldIndices['CITATIONS']]
-
         submissionBatch.submissionBatch.append(submission)
-
-
 
     csvFile.close()
 
@@ -1141,12 +1157,19 @@ def loadConfigurationFile():
                     submissionBatch = SubmissionBatch()
 
                     # Assign some information about this batch of submissions.
+                    submissionBatch.enaUserName = deserializeConfigValue(child.attrib['enausername'])
+                    submissionBatch.studyAccession = deserializeConfigValue(child.attrib['studyaccession'])
+                    submissionBatch.chooseProject = deserializeConfigValue(child.attrib['chooseproject'])
                     submissionBatch.ipdSubmitterId = deserializeConfigValue(child.attrib['ipdsubmitterid'])
                     submissionBatch.ipdSubmitterName = deserializeConfigValue(child.attrib['ipdsubmittername'])
                     submissionBatch.ipdAltContact = deserializeConfigValue(child.attrib['ipdaltcontact'])
                     submissionBatch.ipdSubmitterEmail = deserializeConfigValue(child.attrib['ipdsubmitteremail'])
                     submissionBatch.labOfOrigin = deserializeConfigValue(child.attrib['laboforigin'])
                     submissionBatch.labContact = deserializeConfigValue(child.attrib['labcontact'])
+                    submissionBatch.projectId = deserializeConfigValue(child.attrib['projectid'])
+                    submissionBatch.projectShortTitle = deserializeConfigValue(child.attrib['projectshorttitle'])
+                    submissionBatch.projectAbstract = deserializeConfigValue(child.attrib['projectabstract'])
+
 
                     # Loop the children, they are submission objects. Load up their information.
                     for submissionChild in child:
@@ -1211,6 +1234,7 @@ def loadConfigurationFile():
             # I'm storing FTP without the ftp:// identifier, because it is not necessary.
             # The test and prod ftp sites have the same address. This is intentional, ena doesn't have a test ftp
             # TODO : I still need this stuff? Probably. I think the act service does not need the method name anymore though.
+            # TODO: I probably don't do FTP uploads anymore, i think i remove this config value.
             assignIfNotExists('ena_ftp_upload_site_test', 'webin.ebi.ac.uk')
             assignIfNotExists('ena_ftp_upload_site_prod', 'webin.ebi.ac.uk')
             assignIfNotExists('ena_rest_address_test', 'https://www-test.ebi.ac.uk/ena/submit/drop-box/submit/')
@@ -1223,5 +1247,6 @@ def loadConfigurationFile():
             # but I need some config values before starting the log.
             initializeLog()
     except:
+        logging.error (exc_info()[1])
         logging.error('Error when loading configuration file:' + str(globalVariables['config_file_location']) + '. Try deleting your configuration file and reload Saddlebags.')
         # TODO: Should I just delete the config file with any exception? Probably not.
