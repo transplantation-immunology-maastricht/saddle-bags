@@ -26,7 +26,7 @@ def findJarFile():
     print ('Searching for a Jar File.')
     # TODO: Put this in a config file. Hardcode the default value of just the file name, to be found inside the extracted directory.
     # Allow user to change it to a full path in the config file.
-    return "/home/ben/Github/saddle-bags/jar/webin-cli-1.8.6.jar"
+    return "/home/ben/Github/saddle-bags/jar/webin-cli-1.8.11.jar"
 
 
 

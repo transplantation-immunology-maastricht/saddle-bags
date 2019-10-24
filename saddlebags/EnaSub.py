@@ -154,33 +154,34 @@ def registerStudy(submissionBatch, workingDirectory, dateTimeNow):
 
     # The configuration value comes from a radio button in the configuration GUI. existing study = 1, new study = 2
     # Study = Project, because ENA is always sensible.
-    newProject = (str(submissionBatch.chooseProject) == '2')
-
+    newProject = (str(submissionBatch.chooseStudy) == '2')
 
     if newProject:
 
         # Abstract = Description. ENA should have only one name for identical things, that's confusing.
         #popup confirmation for new project.
-        if(showYesNoBox('Create New Project', 'Are you sure you want me to create a new Project to store your submission(s)?'
-            + '\nID:\n' + str(submissionBatch.projectId)
-            + '\nShort Title:\n' + str(submissionBatch.projectShortTitle)
-            + '\nDescription:\n' + str(submissionBatch.projectAbstract))):
-
+        if(showYesNoBox('Create New Study', 'Are you sure you want me to create a new Study to store your submission(s)?'
+            + '\nID:\n' + str(submissionBatch.studyId)
+            + '\nShort Title:\n' + str(submissionBatch.studyShortTitle)
+            + '\nDescription:\n' + str(submissionBatch.studyAbstract))):
 
             # Generate Project and Project Submission XML Files
             try:
                 projectFileName = join(workingDirectory, 'project.xml')
-                #createProjectXML(fullXmlFilePath, projectID, projectShortTitle, projectAbstract):
-                projectText = createProjectXML(projectFileName, submissionBatch.projectId, submissionBatch.projectShortTitle, submissionBatch.projectAbstract)
+                #createProjectXML(fullXmlFilePath, projectID, studyShortTitle, studyAbstract):
+                projectText = createProjectXML(projectFileName, submissionBatch.studyId, submissionBatch.studyShortTitle, submissionBatch.studyAbstract)
 
-                logging.debug('Project Text:\n' + projectText)
+
+                # TODO: All these references to "project" should be changed to "study". The same word is used for both, but
+                # "study" is the text on the ENA website. Study is better.
+                logging.debug('Study Text:\n' + projectText)
 
                 projectSubmissionFileName = join(workingDirectory, 'project_submission.xml')
                 projectSubmissionText = createProjectSubmissionXML(projectSubmissionFileName
                     , 'proj_sub_' + dateTimeNow
                     , 'project.xml')
 
-                logging.debug('Project Submission Text:\n' + projectSubmissionText)
+                logging.debug('Study Submission Text:\n' + projectSubmissionText)
 
             except Exception:
                 logging.error('Cannot Create Project Submission XML')
@@ -191,7 +192,7 @@ def registerStudy(submissionBatch, workingDirectory, dateTimeNow):
                 logging.error('Failure to create project submission file:' + str(exc_info()[1]) + '\n')
                 return
 
-            logging.info('Project/Submission XML files were created.\n')
+            logging.info('Study/Submission XML files were created.\n')
 
             # Use REST to submit this project
             try:
@@ -203,25 +204,25 @@ def registerStudy(submissionBatch, workingDirectory, dateTimeNow):
                     # Great. The project was created successfully.
                     # Lets use this new study accession moving forward. Any future submissions in this batch are submitted to the same project.
                     submissionBatch.studyAccession = projectAccessionNumber
-                    submissionBatch.chooseProject = "1"
+                    submissionBatch.chooseStudy = "1"
 
                     logging.info('New study has been uploaded, accession:' + str(submissionBatch.studyAccession) + '\n' + 'Subsequent submissions will use this project number.')
                     showInfoBox('Success!','New study has been uploaded, accession:' + str(
                         submissionBatch.studyAccession) + '\n' + 'Subsequent submissions will use this project number.')
                 else:
-                    messageText = ('There was a problem in the Project Submission.\n'
+                    messageText = ('There was a problem in the Study Submission.\n'
                         + 'I cannot continue.\n'
                         + 'These messages were reported by ENA:\n')
                     for errorMessage in projectErrorMessages:
                         messageText += ('\n' + errorMessage + '\n')
-                    showInfoBox('Cannot Submit Project XML via REST', messageText)
+                    showInfoBox('Cannot Submit Study XML via REST', messageText)
                     logging.error('Failure to submit project submission file:' + str(exc_info()[1]) + '\n' + messageText + '\n')
                     return
 
             except Exception:
-                logging.error('Cannot Submit Project XML')
+                logging.error('Cannot Submit Study XML')
                 logging.error(exc_info()[1])
-                showInfoBox('Cannot Submit Project XML',
+                showInfoBox('Cannot Submit Study XML',
                     'Sorry, I failed to submit the project XML file\nand I cannot continue.\n'
                     + str(exc_info()[1]))
                 logging.error('Failure to upload project submission file:' + str(exc_info()[1]) + '\n')
@@ -232,9 +233,8 @@ def registerStudy(submissionBatch, workingDirectory, dateTimeNow):
             logging.error('User asked me to not create a new project. I try to get a new project id from them.')
             submissionBatch.studyAccession = getInfoBox('A Project ID Please.','In that case, please provide a project ID I can use. You can find it on the ENA webin website after you login.\nIt should look like this:PRJEB12345')
             if(submissionBatch.studyAccession is not None and len(submissionBatch.studyAccession) > 3):
-                submissionBatch.chooseProject = '1'
+                submissionBatch.chooseStudy = '1'
                 logging.info('User gave me a new project number. I will use this one:' + str(submissionBatch.studyAccession))
-
 
     # existing project, we will use the supplied accession#. Easy.
     else:
@@ -377,7 +377,11 @@ def validateAndSubmit(submission, submissionBatch, workingDirectory, dateTimeNow
     # the analysis reciept / result file has the analysis accession, submission accession, and messages.
     #analysisResultFile= '/home/ben/saddlebags/submission_temp/SubmissionOutput/sequence/HLA-DRA_MUMC_1/submit/receipt.xml'
 
-    analysisResultFileLocation = join(join(join(join(outputDir, 'sequence'), submission.localAlleleName), 'submit'), 'receipt.xml')
+    analysisResultFileLocation = join(join(join(join(outputDir, 'sequence')
+        # TODO: the webin commandline tool places things in a folder name, but gets rid of special characters.
+        # TODO: For HLA, that means * and : characters.
+        , submission.localAlleleName.replace('*','_').replace(':','_'))
+        , 'submit'), 'receipt.xml')
     analysisResultFile =  open(analysisResultFileLocation, 'r')
     analysisResultText = analysisResultFile.read()
 
