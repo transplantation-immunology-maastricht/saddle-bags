@@ -149,13 +149,15 @@ def translateSequence(submission):
 
     inputSequence = submission.submittedGene.getExonSequence()
     proteinSequence = ''
+    alleleLocalName = submission.localAlleleName
     
     try:
         # Do nothing if the input sequence is blank.
         if( len(inputSequence) > 0 ):
             
             coding_dna = Seq(inputSequence, generic_dna)        
-            proteinSequence = str(coding_dna.translate())   
+            proteinSequence = str(coding_dna.translate())
+            logging.debug('Translating allele:' + alleleLocalName)
             logging.debug ('Exon Sequence before translation:' + coding_dna)
             logging.debug ('Translated Protein:' + proteinSequence)
             
@@ -826,7 +828,9 @@ def serializeConfigValue(configListObject):
         for configString in configListObject:
             serializedString = serializedString + str(configString).replace(';','@@@') + ';'
         serializedString = serializedString[:-1]
-        return serializedString
+        return
+    elif (configListObject is None):
+        return ''
     else:
         # TODO: Yeah I did have one random problem when the type was an int. I can just always use strings or maybe handle it smarter.
 
@@ -873,12 +877,11 @@ def writeConfigurationFile():
     # Add keys for "each" batch of submissions.
     # TODO: i may add functionality for multiple batches later. Put this in a loop. Batches of Batches, I don't think this is necessary.
     submissionBatch = getConfigurationValue('submission_batch')
-    
+
     # If the config is not already initiated, this can be None. Make a new one.
     if (submissionBatch is None):
         submissionBatch = SubmissionBatch()
-    
-    
+
     # Create a node object, most of this stuff can be parameters on the node.
     # Dont write any passwords to the config.
     submissionBatchElement = ET.SubElement(root, 'submission_batch')
@@ -889,11 +892,11 @@ def writeConfigurationFile():
     submissionBatchElement.set('ipdsubmitteremail', serializeConfigValue(submissionBatch.ipdSubmitterEmail))
     submissionBatchElement.set('laboforigin'      , serializeConfigValue(submissionBatch.labOfOrigin))
     submissionBatchElement.set('labcontact'       , serializeConfigValue(submissionBatch.labContact))
-    submissionBatchElement.set('chooseproject'    , serializeConfigValue(submissionBatch.chooseProject))
+    submissionBatchElement.set('choosestudy'      , serializeConfigValue(submissionBatch.chooseStudy))
     submissionBatchElement.set('studyaccession'   , serializeConfigValue(submissionBatch.studyAccession))
-    submissionBatchElement.set('projectid'        , serializeConfigValue(submissionBatch.projectId))
-    submissionBatchElement.set('projectshorttitle', serializeConfigValue(submissionBatch.projectShortTitle))
-    submissionBatchElement.set('projectabstract'  , serializeConfigValue(submissionBatch.projectAbstract))
+    submissionBatchElement.set('studyid'          , serializeConfigValue(submissionBatch.studyId))
+    submissionBatchElement.set('studyshorttitle'  , serializeConfigValue(submissionBatch.studyShortTitle))
+    submissionBatchElement.set('studyabstract'    , serializeConfigValue(submissionBatch.studyAbstract))
 
 
     # Keys for each submission.
@@ -1159,16 +1162,16 @@ def loadConfigurationFile():
                     # Assign some information about this batch of submissions.
                     submissionBatch.enaUserName = deserializeConfigValue(child.attrib['enausername'])
                     submissionBatch.studyAccession = deserializeConfigValue(child.attrib['studyaccession'])
-                    submissionBatch.chooseProject = deserializeConfigValue(child.attrib['chooseproject'])
+                    submissionBatch.chooseStudy = deserializeConfigValue(child.attrib['choosestudy'])
                     submissionBatch.ipdSubmitterId = deserializeConfigValue(child.attrib['ipdsubmitterid'])
                     submissionBatch.ipdSubmitterName = deserializeConfigValue(child.attrib['ipdsubmittername'])
                     submissionBatch.ipdAltContact = deserializeConfigValue(child.attrib['ipdaltcontact'])
                     submissionBatch.ipdSubmitterEmail = deserializeConfigValue(child.attrib['ipdsubmitteremail'])
                     submissionBatch.labOfOrigin = deserializeConfigValue(child.attrib['laboforigin'])
                     submissionBatch.labContact = deserializeConfigValue(child.attrib['labcontact'])
-                    submissionBatch.projectId = deserializeConfigValue(child.attrib['projectid'])
-                    submissionBatch.projectShortTitle = deserializeConfigValue(child.attrib['projectshorttitle'])
-                    submissionBatch.projectAbstract = deserializeConfigValue(child.attrib['projectabstract'])
+                    submissionBatch.studyId = deserializeConfigValue(child.attrib['studyid'])
+                    submissionBatch.studyShortTitle = deserializeConfigValue(child.attrib['studyshorttitle'])
+                    submissionBatch.studyAbstract = deserializeConfigValue(child.attrib['studyabstract'])
 
 
                     # Loop the children, they are submission objects. Load up their information.
@@ -1221,31 +1224,33 @@ def loadConfigurationFile():
                     assignConfigurationValue(child.tag, child.text)
 
 
-            # Here is where I assign the common/critical configuration values
-            # test_submission indicates if we should use the "test" values.
-            # I think I'll use this value for both ENA and IPD submissions, if it applies.
-            assignIfNotExists('test_submission', '1')
 
-            # Log levels are defined in the Saddlebags config, and passed into the python logging module.
-            assignIfNotExists('logging', 'DEBUG')
+        # Here is where I assign the common/critical configuration values
+        # I do this if the config file already existed, or if it didnt.
+        # test_submission indicates if we should use the "test" values.
+        # I think I'll use this value for both ENA and IPD submissions, if it applies.
+        assignIfNotExists('test_submission', '1')
 
-            assignIfNotExists('proxy', None)
+        # Log levels are defined in the Saddlebags config, and passed into the python logging module.
+        assignIfNotExists('logging', 'DEBUG')
 
-            # I'm storing FTP without the ftp:// identifier, because it is not necessary.
-            # The test and prod ftp sites have the same address. This is intentional, ena doesn't have a test ftp
-            # TODO : I still need this stuff? Probably. I think the act service does not need the method name anymore though.
-            # TODO: I probably don't do FTP uploads anymore, i think i remove this config value.
-            assignIfNotExists('ena_ftp_upload_site_test', 'webin.ebi.ac.uk')
-            assignIfNotExists('ena_ftp_upload_site_prod', 'webin.ebi.ac.uk')
-            assignIfNotExists('ena_rest_address_test', 'https://www-test.ebi.ac.uk/ena/submit/drop-box/submit/')
-            assignIfNotExists('ena_rest_address_prod', 'https://www.ebi.ac.uk/ena/submit/drop-box/submit/')
-            #assignIfNotExists('nmdp_act_rest_address', 'http://act.b12x.org/type_align')
-            assignIfNotExists('nmdp_act_rest_address', 'http://act.b12x.org')
-            # TODO: i should use the nmdp configuration value when I call the GFE/ACT services. It is currently hardcoded AFAIK
+        assignIfNotExists('proxy', None)
 
-            # Last step is to initialize the log files. Why is this the last step? initializing log should be first
-            # but I need some config values before starting the log.
-            initializeLog()
+        # I'm storing FTP without the ftp:// identifier, because it is not necessary.
+        # The test and prod ftp sites have the same address. This is intentional, ena doesn't have a test ftp
+        # TODO : I commented out the ena ftp addresses, as well as the ena rest addresses
+        # Pretty sure I don't need them.
+        #assignIfNotExists('ena_ftp_upload_site_test', 'webin.ebi.ac.uk')
+        #assignIfNotExists('ena_ftp_upload_site_prod', 'webin.ebi.ac.uk')
+        assignIfNotExists('ena_rest_address_test', 'https://www-test.ebi.ac.uk/ena/submit/drop-box/submit/')
+        assignIfNotExists('ena_rest_address_prod', 'https://www.ebi.ac.uk/ena/submit/drop-box/submit/')
+        #assignIfNotExists('nmdp_act_rest_address', 'http://act.b12x.org/type_align')
+        assignIfNotExists('nmdp_act_rest_address', 'http://act.b12x.org')
+        # TODO: i should use the nmdp configuration value when I call the GFE/ACT services. It is currently hardcoded AFAIK
+
+        # Last step is to initialize the log files. Why is this the last step? initializing log should be first
+        # but I need some config values before starting the log.
+        initializeLog()
     except:
         logging.error (exc_info()[1])
         logging.error('Error when loading configuration file:' + str(globalVariables['config_file_location']) + '. Try deleting your configuration file and reload Saddlebags.')

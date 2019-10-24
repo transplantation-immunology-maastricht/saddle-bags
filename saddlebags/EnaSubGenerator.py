@@ -316,7 +316,9 @@ class EnaSubGenerator():
                 if(not totalLength > 0):
                     raise Exception('The HLA sequence is empty.\nPlease fill in an annotated HLA sequence\nbefore generating the submission.' )
                 else:
-                    raise Exception ('Inputs do not look valid. Not sure what is missing.')
+                    raise Exception ('Inputs do not look valid. The total length of sequence '
+                                     + str(self.submission.localAlleleName)
+                                     + ' is:' + str(totalLength))
                 return None
     
     
@@ -333,6 +335,8 @@ class EnaSubGenerator():
     # TODO: Maybe I should delete this method, and add error handling to the generate methods.
     def validateInputs(self):
         #raise Exception ('Validate Inputs Method is being used, after all.')
+
+        logging.debug('Checking inputs for sequence:' + str(self.submission.localAlleleName))
         
         if (self.submission.cellId is None or len(self.submission.cellId) < 1):
             logging.error('Invalid Sequence ID:' + str(self.submission.cellId))

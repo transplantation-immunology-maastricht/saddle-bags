@@ -174,6 +174,13 @@ class EnaSubGui(Frame):
       
     def sampleSequence(self):
         self.featureInputGuiObject.delete('1.0','end')
+
+        # Old code. I need to create the batch submission here.
+
+
+
+
+        """
         self.featureInputGuiObject.insert('1.0', 'aag\nCGTCGT\nccg\nGGCTGA\naat')
         
         # Clear the password, keep the username
@@ -198,6 +205,7 @@ class EnaSubGui(Frame):
         assignConfigurationValue('analysis_description','This is an HLA-A sequence from a patient. It was discovered that he has Leukemia, so we decided to sequence his HLA.')
         
         self.constructSubmission()
+        """
         
     # This method should popup some instruction text in a wee window.
     # This should be explicit on how to use the tool.    

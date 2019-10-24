@@ -32,7 +32,10 @@ class SubmissionBatch():
         self.labOfOrigin = None
         self.labContact = None
         self.studyAccession = None
-        self.chooseProject = 2 # 2 = new project. 1 = existing project, use the studyaccession number. Study=Project
+        self.chooseStudy = "2" # 2 = new study. 1 = existing study, use the studyaccession number. Study=Project
+        self.studyId = None
+        self.studyShortTitle = None
+        self.studyAbstract = None
 
 
 class AlleleSubmission():
