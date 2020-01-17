@@ -15,12 +15,10 @@
 
 from tkinter import Frame, Label, StringVar, IntVar, Entry, Radiobutton, messagebox, Button
 
-from saddlebags.AlleleSubCommon import getConfigurationValue, assignConfigurationValue
+from saddlebags.SaddlebagsConfig import getConfigurationValue, assignConfigurationValue
 from saddlebags.ScrolledWindow import VerticalScrolledFrame
 
 import logging
-
-
 
 class IpdSubOptionsForm(VerticalScrolledFrame):
         

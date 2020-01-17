@@ -16,4 +16,4 @@
 :: See the file README.MD for how to set up your virtual environment.
 
 
-C:\github\saddle-bags\minionvenv\Scripts\activate &&  python AlleleSubMain.py 
+C:\Users\ben\Envs\minionvenv\Scripts\activate &&  python AlleleSubMain.py

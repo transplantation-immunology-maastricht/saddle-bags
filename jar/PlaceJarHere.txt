@@ -1,1 +1,9 @@
-The webin jar can go in this folder. Pyinstaller looks here when creating the executable.
+Download a webin jar from here:
+https://github.com/enasequence/webin-cli/releases
+
+The webin jar can go in this folder. Please remove the version name, and rename your .jar file to webin-cli.java. 
+
+Pyinstaller includes the .jar in the bundled executable. It will look here.
+This is the filename that Saddlebags and pyinstaller is looking for.
+
+To use an alternative EMBL Jar file, you must change the Saddlebags Configuration to point at it.

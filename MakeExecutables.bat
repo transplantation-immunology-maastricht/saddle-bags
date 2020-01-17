@@ -23,7 +23,7 @@
 SET CodePath=saddlebags
 SET BinPath=bin
 SET SpecFile=AlleleSubInstallerOptions_Windows.spec
-SET VirtualEnvironmentLocation=C:\github\saddle-bags\minionvenv\Scripts\
+SET VirtualEnvironmentLocation=C:\Users\ben\Envs\minionvenv\Scripts\
 
 :: Run Pyinstaller to create executables
 :: cd %CodePath%

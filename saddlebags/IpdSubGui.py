@@ -13,23 +13,20 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with saddle-bags. If not, see <http://www.gnu.org/licenses/>.
 
-#import os
 from sys import exc_info
-
 from os.path import expanduser
 
 from tkinter import messagebox, filedialog, Frame, StringVar, Button, Label, Text, Scrollbar, Toplevel
-
 from tkinter.constants import BOTH, NORMAL, DISABLED, X, Y, BOTTOM, RIGHT, NONE, HORIZONTAL
 
 from saddlebags.IpdSubGenerator import IpdSubGenerator
 from saddlebags.IpdSubOptionsForm import IpdSubOptionsForm
-from saddlebags.AlleleSubCommon import collectAndValidateRoughSequence, assignIcon, assignConfigurationValue, parseExons, getConfigurationValue, identifyGenomicFeatures, isSequenceAlreadyAnnotated, collectRoughSequence, showYesNoBox
-#from saddlebags.AlleleSubCommonRest import fetchSequenceAlleleCallWithGFE
+from saddlebags.AlleleSubCommon import assignIcon,  showYesNoBox
+from saddlebags.HlaSequence import collectAndValidateRoughSequence
+from saddlebags.SaddlebagsConfig import assignConfigurationValue, getConfigurationValue
 from saddlebags.HlaSequenceException import HlaSequenceException
 
 import logging
-#from HLAGene import HLAGene
 
 # The AlleleGui class is an extension of Tkinter.  The GUI elements and interactions are specified in this class.
 class IpdSubGui(Frame):
