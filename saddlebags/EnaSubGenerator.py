@@ -13,17 +13,12 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with saddle-bags. If not, see <http://www.gnu.org/licenses/>.
 
-#from Bio.Seq import Seq
-#from Bio.Alphabet import generic_dna
-
-from saddlebags.AlleleSubmission import HlaGene, AlleleSubmission, SubmissionBatch
-from saddlebags.AlleleSubCommon import translateSequence
+from saddlebags.AlleleSubmission import AlleleSubmission, SubmissionBatch
+from saddlebags.HlaSequence import translateSequence
 from saddlebags.HlaSequenceException import HlaSequenceException
 
 import logging
 
-# The AlleleGenerator class contains logic to generate an EMBL HLA allele submission 
-# In ENA format.  
 class EnaSubGenerator():
 
     def __init__(self):
@@ -32,15 +27,15 @@ class EnaSubGenerator():
         # A ALleleSubmission object has it's own HLA gene, so this is better.
         # I think I need to also store the submission batch because it needs that info too. This is a bit redundant, but oh well.
         self.submission = AlleleSubmission()
-        self.submissionBatch = SubmissionBatch()
+        self.submissionBatch = SubmissionBatch(False)
+        # TODO: should I just pass in a submission batch to the constructor?
 
-
-    def printHeader(self):      
+    def printHeader(self):
         #print('The EMBL Print Header Method.')
         headerText = ''
         
         # Print header
-        totalLength = self.submission.submittedGene.totalLength()
+        totalLength = self.submission.submittedAllele.totalLength()
         headerText += 'ID   XXX; XXX; linear; genomic DNA; XXX; XXX; ' + str(totalLength) + ' BP.\n'
         headerText += 'XX\n'
         # A valid document should have an AC (Accession Number) and DE (Description) field.
@@ -50,8 +45,8 @@ class EnaSubGenerator():
         #headerText += 'DE   Human Leukocyte Antigen\n'
         #Requested change to the DE line.  It should look like:
         #Homo sapiens HLA-B gene for MHC class I antigen, allele "/allele name"
-        headerText += ('DE   Homo sapiens ' + str(self.submission.submittedGene.geneLocus)
-            + ' gene for MHC class ' + str(self.submission.submittedGene.hlaClass)
+        headerText += ('DE   Homo sapiens ' + str(self.submission.submittedAllele.geneLocus)
+            + ' gene for MHC class ' + str(self.submission.submittedAllele.hlaClass)
             + ' antigen, allele "' + str(self.submission.localAlleleName) + '"\n')
         headerText += 'XX\n'
 
@@ -61,7 +56,7 @@ class EnaSubGenerator():
         
         # Print source
         # It's from a human.
-        headerText += ('FT   source          1..' + str(self.submission.submittedGene.totalLength()) + '\n')
+        headerText += ('FT   source          1..' + str(self.submission.submittedAllele.totalLength()) + '\n')
         headerText += ('FT                   /organism="Homo sapiens"\n')
         headerText += ('FT                   /db_xref="taxon:9606"\n')
         headerText += ('FT                   /mol_type="genomic DNA"\n')
@@ -77,8 +72,8 @@ class EnaSubGenerator():
         
         # Iterate through the indices of the UTRs and exons.
         # The 3' and 5' UTR are included in the mRNA
-        for x in range(0, len(self.submission.submittedGene.features)):
-            geneLocus = self.submission.submittedGene.features[x]
+        for x in range(0, len(self.submission.submittedAllele.features)):
+            geneLocus = self.submission.submittedAllele.features[x]
             # If it is an exon or UTR
             if (geneLocus.exon or 'UT' in geneLocus.name):
                 mRNAText += str(geneLocus.beginIndex) + '..' + str(geneLocus.endIndex) + ','
@@ -86,14 +81,13 @@ class EnaSubGenerator():
         # Trim off the last comma and add a parenthese
         mRNAText = mRNAText[0:len(mRNAText)-1] + ')\n'
 
-        mRNAText += ('FT                   /gene="' + str(self.submission.submittedGene.geneLocus) + '"\n')
+        mRNAText += ('FT                   /gene="' + str(self.submission.submittedAllele.geneLocus) + '"\n')
         mRNAText += ('FT                   /allele="' + str(self.submission.localAlleleName) + '"\n')
         # TODO: Is this sufficient to allow I, II, 1, and 2?
         # TODO: What if it's class III?
-        mRNAText += ('FT                   /product=\"MHC class ' + str(('I' if ('1'==str(self.submission.submittedGene.hlaClass)) else 'II')) + ' antigen\"\n')
+        mRNAText += ('FT                   /product=\"MHC class ' + str(('I' if ('1' == str(self.submission.submittedAllele.hlaClass)) else 'II')) + ' antigen\"\n')
         
         return mRNAText
-    
     
     def printCDS(self):
         # I need to perform the translation first, so I know if this is a "pseudogene" or not
@@ -105,11 +99,11 @@ class EnaSubGenerator():
         # CDS is the coding sequence.  It should include the exons, but not the UTRs/Introns
         # The range 1:featureCount-1 will exclude the UTRs.
         cdsText += ('FT   CDS             join(') 
-        for x in range(0, len(self.submission.submittedGene.features)):
-            geneLocus = self.submission.submittedGene.features[x]
+        for x in range(0, len(self.submission.submittedAllele.features)):
+            geneLocus = self.submission.submittedAllele.features[x]
             if (geneLocus.exon):
                 cdsText += str(geneLocus.beginIndex) + '..' + str(geneLocus.endIndex)
-                if not x == len(self.submission.submittedGene.features) - 2:
+                if not x == len(self.submission.submittedAllele.features) - 2:
                     cdsText += ','
                 else:
                     cdsText += ')\n'
@@ -127,9 +121,9 @@ class EnaSubGenerator():
             pass
         
         
-        cdsText += ('FT                   /gene="' + str(self.submission.submittedGene.geneLocus) + '"\n')
+        cdsText += ('FT                   /gene="' + str(self.submission.submittedAllele.geneLocus) + '"\n')
         cdsText += ('FT                   /allele="' + str(self.submission.localAlleleName) + '"\n')
-        cdsText += ('FT                   /product=\"MHC class ' + str(('I' if ('1'==str(self.submission.submittedGene.hlaClass)) else 'II')) + ' antigen\"\n')
+        cdsText += ('FT                   /product=\"MHC class ' + str(('I' if ('1' == str(self.submission.submittedAllele.hlaClass)) else 'II')) + ' antigen\"\n')
         cdsText += ('FT                   /translation=\"')
 
         # Some simple formatting for the peptide sequence, making it human and computer readable.  
@@ -137,7 +131,7 @@ class EnaSubGenerator():
         # 66 is 80-14, where 14 is the length of { /translation=" }
         
         # The translation is commented out here. I had to move it to the top of this method.
-        #peptideSequence = self.translateSequence(self.submission.submittedGene.getExonSequence())
+        #peptideSequence = self.translateSequence(self.submission.submittedAllele.getExonSequence())
         if(len(peptideSequence) < 66):
             cdsText += (peptideSequence) + '\"\n'
         else:
@@ -165,14 +159,14 @@ class EnaSubGenerator():
         geneHas3UTR = False
         geneHas5UTR = False
             
-        for x in range(0, len(self.submission.submittedGene.features)):
-            currentFeature = self.submission.submittedGene.features[x]
+        for x in range(0, len(self.submission.submittedAllele.features)):
+            currentFeature = self.submission.submittedAllele.features[x]
 
             # 3' UTR
             if(currentFeature.name == '3UT'):
                 featureText += ('FT   3\'UTR           ' + str(currentFeature.beginIndex) + '..' + str(currentFeature.endIndex) + '\n')
                 featureText += ('FT                   /note=\"3\'UTR\"\n')
-                featureText += ('FT                   /gene="' + str(self.submission.submittedGene.geneLocus) + '"\n')
+                featureText += ('FT                   /gene="' + str(self.submission.submittedAllele.geneLocus) + '"\n')
                 featureText += ('FT                   /allele="' + str(self.submission.localAlleleName) + '"\n')
                 geneHas3UTR = True  
                 
@@ -180,7 +174,7 @@ class EnaSubGenerator():
             elif(currentFeature.name == '5UT'):
                 featureText += ('FT   5\'UTR           ' + str(currentFeature.beginIndex) + '..' + str(currentFeature.endIndex) + '\n')
                 featureText += ('FT                   /note=\"5\'UTR\"\n')
-                featureText += ('FT                   /gene="' + str(self.submission.submittedGene.geneLocus) + '"\n')
+                featureText += ('FT                   /gene="' + str(self.submission.submittedAllele.geneLocus) + '"\n')
                 featureText += ('FT                   /allele="' + str(self.submission.localAlleleName) + '"\n')
                 geneHas5UTR = True   
             
@@ -189,7 +183,7 @@ class EnaSubGenerator():
                 featureText += ('FT   exon            ' + str(currentFeature.beginIndex) 
                     + '..' + str(currentFeature.endIndex) + '\n')
                 featureText += ('FT                   /number=' + str(exonIndex) + '\n') 
-                featureText += ('FT                   /gene="' + str(self.submission.submittedGene.geneLocus) + '"\n')
+                featureText += ('FT                   /gene="' + str(self.submission.submittedAllele.geneLocus) + '"\n')
                 featureText += ('FT                   /allele="' + str(self.submission.localAlleleName) + '"\n')
                 exonIndex += 1
             
@@ -198,7 +192,7 @@ class EnaSubGenerator():
                 featureText += ('FT   intron          ' + str(currentFeature.beginIndex) 
                     + '..' + str(currentFeature.endIndex) + '\n')   
                 featureText += ('FT                   /number=' + str(intronIndex) + '\n') 
-                featureText += ('FT                   /gene="' + str(self.submission.submittedGene.geneLocus) + '"\n')
+                featureText += ('FT                   /gene="' + str(self.submission.submittedAllele.geneLocus) + '"\n')
                 featureText += ('FT                   /allele="' + str(self.submission.localAlleleName) + '"\n')
                 intronIndex += 1
 
@@ -234,28 +228,28 @@ class EnaSubGenerator():
     def printSequence(self):
         sequenceText = ''
  
-        completeSequence = self.submission.submittedGene.getCompleteSequence().upper()
+        completeSequence = self.submission.submittedAllele.getAnnotatedSequence(includeLineBreaks=False).upper()
                 
         cCount = completeSequence.count('C')
         gCount = completeSequence.count('G')
         tCount = completeSequence.count('T')
         aCount = completeSequence.count('A')
-        otherCount = self.submission.submittedGene.totalLength() - (cCount + gCount + tCount + aCount)
+        otherCount = self.submission.submittedAllele.totalLength() - (cCount + gCount + tCount + aCount)
 
-        sequenceText += ('SQ   Sequence ' + str(self.submission.submittedGene.totalLength()) + ' BP; '
-            + str(aCount) + ' A; ' + str(cCount) + ' C; ' 
-            + str(gCount) + ' G; ' + str(tCount) + ' T; ' 
-            + str(otherCount) + ' other;\n')
+        sequenceText += ('SQ   Sequence ' + str(self.submission.submittedAllele.totalLength()) + ' BP; '
+                         + str(aCount) + ' A; ' + str(cCount) + ' C; '
+                         + str(gCount) + ' G; ' + str(tCount) + ' T; '
+                         + str(otherCount) + ' other;\n')
 
         # Here's some logic to print the sequence information in groups of 10.
         # This format is specified in the User manual specified by EMBL.
         currentSeqIndex = 0
 
-        while (currentSeqIndex < self.submission.submittedGene.totalLength()):
+        while (currentSeqIndex < self.submission.submittedAllele.totalLength()):
             # The character code for a sequence region is two blank spaces,
             # followed by three blank spaces, for a total of 5 blanks.
             sequenceText += '     '
-            sequenceRow = self.submission.submittedGene.getCompleteSequence()[currentSeqIndex : currentSeqIndex + 60]
+            sequenceRow = self.submission.submittedAllele.getAnnotatedSequence(includeLineBreaks=False)[currentSeqIndex: currentSeqIndex + 60]
 
             # A sequenceChunk is 10 nucleotides in this context.
             # Format specifies up to six "chunks" per line.
@@ -279,10 +273,8 @@ class EnaSubGenerator():
             
         return sequenceText
             
-        
-    # Create the text submission based on the ENA format.
-    def buildENASubmission(self):    
-        
+    def buildENASubmission(self):
+        # Create the text submission based on the ENA format.
         # ENA format is the preferred submission type for EMBL.  More information:
         # http://www.ebi.ac.uk/ena/submit/sequence-submission
         # http://www.ebi.ac.uk/ena/submit/entry-upload-templates
@@ -293,10 +285,19 @@ class EnaSubGenerator():
         try:
             documentBuffer = ''
     
-            totalLength = self.submission.submittedGene.totalLength()
-            logging.info('total calculated length = ' + str(totalLength))
-            
-            if(totalLength > 0 and self.validateInputs()):
+            totalLength = self.submission.submittedAllele.totalLength()
+            logging.info('Building submission of allele ' + str(self.submission.localAlleleName) + ' which has calculated length = ' + str(totalLength))
+
+            if(totalLength < 1):
+                logging.warning('Cannot generate a submission for an empty HLA sequence!')
+                return None
+
+            elif(not self.validateInputs()):
+                logging.warning('Inputs do not look valid to generate an ENA submission. Some necessary information is missing.')
+                logging.warning('The total length of sequence ' + str(self.submission.localAlleleName) + ' is:' + str(totalLength))
+                return None
+
+            else:
     
                 # These are the main sections of the ENA submission.
                 documentBuffer += self.printHeader()
@@ -307,19 +308,19 @@ class EnaSubGenerator():
         
                 # Print entry terminator.  The last line of an ENA entry.
                 documentBuffer += ('//\n')
-                
-            else: 
-                #tkMessageBox.showinfo('No HLA Sequence Found', 
-                #    'The HLA sequence is empty.\nPlease fill in an annotated HLA sequence\nbefore generating the submission.' )
-                # TODO: Make a specific exception type for this.
 
-                if(not totalLength > 0):
-                    raise Exception('The HLA sequence is empty.\nPlease fill in an annotated HLA sequence\nbefore generating the submission.' )
-                else:
-                    raise Exception ('Inputs do not look valid. The total length of sequence '
-                                     + str(self.submission.localAlleleName)
-                                     + ' is:' + str(totalLength))
-                return None
+            # TODO: Remove this old exception code, think i've covered it.
+            # else:
+            #     #tkMessageBox.showinfo('No HLA Sequence Found',
+            #     #    'The HLA sequence is empty.\nPlease fill in an annotated HLA sequence\nbefore generating the submission.' )
+            #     # TODO: Make a specific exception type for this.
+            #
+            #     if(not totalLength > 0):
+            #         raise Exception('The HLA sequence is empty.\nPlease fill in an annotated HLA sequence\nbefore generating the submission.' )
+            #     else:
+            #         raise Exception ('Inputs do not look valid. The total length of sequence ' + str(self.submission.localAlleleName)
+            #                          + ' is:' + str(totalLength))
+            #     return None
     
     
             return documentBuffer
@@ -327,35 +328,29 @@ class EnaSubGenerator():
             # Throw a fit.
             raise
     
-    # Return True if our input values are all present and accomodated for.
-    # If something is missing, then throw a fit and give up.
-    # TODO: I should probably not raise these exceptions actually.
-    # Instead, I should have the GUI Automatically open the choose options screen
-    
-    # TODO: Maybe I should delete this method, and add error handling to the generate methods.
     def validateInputs(self):
-        #raise Exception ('Validate Inputs Method is being used, after all.')
+        # TODO: Maybe I should delete this method, and add error handling to the generate methods.
 
         logging.debug('Checking inputs for sequence:' + str(self.submission.localAlleleName))
         
         if (self.submission.cellId is None or len(self.submission.cellId) < 1):
-            logging.error('Invalid Sequence ID:' + str(self.submission.cellId))
+            logging.warning('Invalid Sequence ID:' + str(self.submission.cellId))
             return False
         
-        elif (self.submission.submittedGene is None):
-            logging.error('Invalid Submitted Gene:' + str(self.submission.submittedGene))
+        elif (self.submission.submittedAllele is None):
+            logging.warning('Invalid Submitted Allele:' + str(self.submission.submittedAllele))
             return False
         
-        elif (self.submission.submittedGene.geneLocus is None or len(self.submission.submittedGene.geneLocus) < 1):
-            logging.error('Invalid Input Gene:' + str(self.submission.submittedGene.geneLocus))
+        elif (self.submission.submittedAllele.geneLocus is None or len(self.submission.submittedAllele.geneLocus) < 1):
+            logging.warning('Invalid Input Locus:' + str(self.submission.submittedAllele.geneLocus))
             return False
         
         elif (self.submission.localAlleleName is None or len(self.submission.localAlleleName) < 1):
-            logging.error('Invalid Input Allele:' + str(self.submission.localAlleleName))
+            logging.warning('Invalid Input Allele:' + str(self.submission.localAlleleName))
             return False
 
-        elif (self.submission.submittedGene.hlaClass is None or len(self.submission.submittedGene.hlaClass) < 1):
-            logging.error('Invalid Input Class:' + str(self.submission.submittedGene.hlaClass))
+        elif (self.submission.submittedAllele.hlaClass is None or len(self.submission.submittedAllele.hlaClass) < 1):
+            logging.warning('Invalid Input Class:' + str(self.submission.submittedAllele.hlaClass))
             return False
         
         else:

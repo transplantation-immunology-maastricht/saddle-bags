@@ -16,17 +16,37 @@
 
 import logging
 
-#from os.path import join
+from os.path import join, isfile
+
+from saddlebags.AlleleSubCommon import resourcePath
+from saddlebags.SaddlebagsConfig import getConfigurationValue
 
 # In this file we submit to EMBL/ENA using the webin .jar file.
 # ENA Submission manual can be found here:
 # https://ena-docs.readthedocs.io/en/latest/general-guide/webin-cli.html
 
 def findJarFile():
-    print ('Searching for a Jar File.')
-    # TODO: Put this in a config file. Hardcode the default value of just the file name, to be found inside the extracted directory.
-    # Allow user to change it to a full path in the config file.
-    return "/home/ben/Github/saddle-bags/jar/webin-cli-1.8.11.jar"
+    logging.debug('Searching for a Jar File.')
+
+    configJarFileLocation = getConfigurationValue('webin_jar_location')
+
+    if(configJarFileLocation == 'webin-cli.jar'):
+        # This is the default configuration value. Normal. Use the .jar file that I have in my resource path.
+        logging.debug('Using this jar file:' + str(resourcePath(join('jar', configJarFileLocation))))
+        return (resourcePath(join('jar', configJarFileLocation)))
+    else:
+        # User has a custom jar file location in the configuration file.
+        # In this case, it should be a full path to the file. Hopefully it is.
+        if(isfile(configJarFileLocation)):
+            logging.debug('Using this jar file:' + configJarFileLocation)
+            return configJarFileLocation
+        else:
+            errorText = ('Invalid configuration value for jar file location. ' +
+                'This is not a valid file: ' + str(configJarFileLocation))
+            logging.error(errorText)
+            raise Exception(errorText)
+
+
 
 
 

@@ -333,6 +333,7 @@ def validateAndSubmit(submission, submissionBatch, workingDirectory, dateTimeNow
 
     # TODO: they list an option to use a proxy. Maybe I need to use a proxy at some point, look at the ENA webin instructions. https://ena-docs.readthedocs.io/en/latest/general-guide/webin-cli.html
     # TODO: I'm not super familiar with subprocess.call. I create an array of parameters. Will it handle when my paths have a space? I hope it's smart enough to do that.
+    # Call returns the error code. Check_output returns the text output of the command. In this case the error code is valuable.
     validateCommand = [
         'java', '-jar', str(webinJarLocation)
         , '-validate'

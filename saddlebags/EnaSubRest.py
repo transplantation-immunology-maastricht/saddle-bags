@@ -87,7 +87,6 @@ def performSubmission(submissionFileName, POST_DATA, enaUserName, enaPassword):
 def interpretProjectSubmissionResults(responseText):
     
     logging.info('Parsing Project Submission Results:\n' + str(responseText) + '\n')
-     
        
     # Open XML to report results:
     root = fromstring(responseText)  

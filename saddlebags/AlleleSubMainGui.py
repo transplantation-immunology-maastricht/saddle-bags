@@ -18,7 +18,9 @@ from tkinter.constants import BOTH, DISABLED
 
 from saddlebags.EnaSubGui import EnaSubGui
 from saddlebags.IpdSubGui import IpdSubGui
-from saddlebags.AlleleSubCommon import loadConfigurationFile, writeConfigurationFile, assignIcon, initializeLog
+from saddlebags.AlleleSubCommon import assignIcon
+from saddlebags.Logging import initializeLog
+from saddlebags.SaddlebagsConfig import loadConfigurationFile, writeConfigurationFile
 
 import logging
 
@@ -27,21 +29,22 @@ class AlleleSubMainGui(Frame):
     # Initialize the GUI
     def __init__(self, root):
         Frame.__init__(self, root)
+        initializeLog()
+
         root.title("An HLA Allele Submission Generator")
         self.parent = root
-
         self.initialize()
 
     # Initialize GUI elements
     def initialize(self):
 
-        initializeLog()
         assignIcon(self.parent)
         
         button_opt = {'fill': BOTH, 'padx': 35, 'pady': 5}
         
         # Load configuration
-        loadConfigurationFile()
+        # No, i already did that in the main method. Remove it in the Main Method if I enable it here.https://www.facebook.com/atomicpolish/
+        # loadConfigurationFile()
         
         # To define the exit behavior
         self.parent.protocol('WM_DELETE_WINDOW', self.closeWindow)
@@ -80,7 +83,7 @@ class AlleleSubMainGui(Frame):
         self.pack()
         
         self.initializeWindowLocation()
-       
+
     # Put the GUI on the center of the screen. Doesn't make sense for it to start in a corner.
     # Well, lets divide by 4 instead of 2. Center is too...centered.
     def initializeWindowLocation(self):
@@ -134,7 +137,7 @@ class AlleleSubMainGui(Frame):
             + 'Transplantation Immunology\n'
             + 'Tissue Typing Laboratory.\n'
             + 'by Ben Matern:\n'
-            + 'ben.matern@mumc.nl\n\n'
+            + 'ben.matern@gmail.com\n\n'
             
             + 'Please send Ben your bioinformatics\n'
             + 'and data related questions.\n\n'
@@ -143,10 +146,9 @@ class AlleleSubMainGui(Frame):
             + 'to Marcel Tilanus:\n'
             + 'm.tilanus@mumc.nl\n\n'
             
-            + 'This code will be hosted at:\n'
-            + 'https://github.com/transplantation-\nimmunology-maastricht/saddle-bags\n'
-            + 'You will find more information on\n'
-            + 'EMBL\'s data format on that page.'
+            + 'Please cite the manuscript published\n'
+            + 'in HLA journal: \n'
+            + 'doi: 10.1111/tan.13179'
 
             )
         
@@ -187,10 +189,10 @@ class AlleleSubMainGui(Frame):
         self.alleleSubRoot.bind("<Destroy>", self.onCloseOtherFrame)
         
         if(submissionType=='IPD'):
-            logging.info ('Opening the IPD-IMGT/HLA Submission GUI', 'INFO')
+            logging.info ('Opening the IPD-IMGT/HLA Submission GUI')
             IpdSubGui(self.alleleSubRoot).pack()
         elif(submissionType=='ENA'):
-            logging.info ('Opening the EMBL-ENA Submission GUI', 'INFO')
+            logging.info ('Opening the EMBL-ENA Submission GUI')
             EnaSubGui(self.alleleSubRoot).pack()
         else:
             raise Exception('Unknown Submission Type.  I expected IPD or ENA:' + str(submissionType))

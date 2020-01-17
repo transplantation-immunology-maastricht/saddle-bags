@@ -18,7 +18,9 @@
 
 from tkinter import Frame, StringVar, IntVar, Label, Entry, Radiobutton, Button, messagebox
 
-from saddlebags.AlleleSubCommon import getConfigurationValue, assignConfigurationValue, assignIcon
+
+from saddlebags.AlleleSubCommon import assignIcon
+from saddlebags.SaddlebagsConfig import getConfigurationValue #,assignConfigurationValue,
 from saddlebags.ScrolledWindow import VerticalScrolledFrame
 
 import logging
@@ -40,7 +42,7 @@ class EnaSubOptionsForm(VerticalScrolledFrame):
         #button_opt = {'fill': Tkconstants.BOTH, 'padx': 35, 'pady': 5}
         
         # To define the exit behavior.  Save and exit.
-        self.parent.protocol('WM_DELETE_WINDOW', self.saveOptions)
+        self.parent.protocol('WM_DELETE_WINDOW', self.saveAndQuit)
         
         # Define the return behavior.  Same as "close window" etc
         root.bind('<Return>', self.returnFunction)
@@ -51,7 +53,8 @@ class EnaSubOptionsForm(VerticalScrolledFrame):
         #Standard Inputs widths for the form elements
         formInputWidth = 30
         labelInputWidth = 30
-        
+
+        """
         self.instructionsFrame = Frame(self.interior)  
         self.instructionText = StringVar()       
         self.instructionText.set('\nProvide this required sequence metadata, please.\n' 
@@ -60,35 +63,11 @@ class EnaSubOptionsForm(VerticalScrolledFrame):
                 + 'if you wish.')        
         Label(self.instructionsFrame, width=85, height=6, textvariable=self.instructionText).pack()
         self.instructionsFrame.pack()
+        """
         
-        self.submissionDetailsInputFrame2 = Frame(self.interior)
-  
-        self.sampleIDInstrText = StringVar()
-        self.sampleIDInstrText.set('Sample ID:')
-        self.sampleIDinstrLabel = Label(self.submissionDetailsInputFrame2, width=labelInputWidth, height=1, textvariable=self.sampleIDInstrText).grid(row=0, column=0)
-        self.inputSampleID = StringVar()
-        self.inputSampleIDEntry = Entry(self.submissionDetailsInputFrame2, width=formInputWidth, textvariable=self.inputSampleID).grid(row=0, column=1)
+        #self.submissionDetailsInputFrame2 = Frame(self.interior)
 
-        self.geneInstrStringVar = StringVar()
-        self.geneInstrStringVar.set('Gene:')
-        self.geneInstrLabel = Label(self.submissionDetailsInputFrame2, width=labelInputWidth, height=1, textvariable=self.geneInstrStringVar).grid(row=1, column=0)
-        self.inputGene = StringVar()        
-        self.inputGeneEntry = Entry(self.submissionDetailsInputFrame2, width=formInputWidth, textvariable=self.inputGene).grid(row=1, column=1)
 
-        self.chooseClassIntVar = IntVar()
-        self.chooseClassIntVar.set(1)
-        Radiobutton(self.submissionDetailsInputFrame2, text="HLA Class I ", variable=self.chooseClassIntVar, value=1).grid(row=2, column=0)
-        Radiobutton(self.submissionDetailsInputFrame2, text="HLA Class II", variable=self.chooseClassIntVar, value=2).grid(row=2, column=1)
-
-        self.alleleInstrText = StringVar()
-        self.alleleInstrText.set('Allele Local Name:')
-        self.alleleInstrLabel = Label(self.submissionDetailsInputFrame2, width=labelInputWidth, height=1, textvariable=self.alleleInstrText).grid(row=3, column=0)
-        self.inputAllele = StringVar() 
-        self.inputAlleleEntry = Entry(self.submissionDetailsInputFrame2, width=formInputWidth, textvariable=self.inputAllele).grid(row=3, column=1)
-
-        self.submissionDetailsInputFrame2.pack()
-                
-                
         # Make a frame to contain the Test/Production radio buttons.
         self.testProductionFrame = Frame(self.interior)
         
@@ -231,7 +210,7 @@ class EnaSubOptionsForm(VerticalScrolledFrame):
 
         # Make a frame for the save options button.
         self.saveOptionsFrame = Frame(self.interior)
-        Button(self.saveOptionsFrame, text='Save Options', command=self.saveOptions).grid(row=0, column=0)
+        Button(self.saveOptionsFrame, text='Save Options', command=self.saveAndQuit).grid(row=0, column=0)
         self.saveOptionsFrame.pack()
         
         # TODO: Should there be a cancel button, to close this window without saving?
@@ -241,11 +220,15 @@ class EnaSubOptionsForm(VerticalScrolledFrame):
     # I needed a function for the return keypress to latch onto.
     # It is just a wrapper for the saveOptions method.
     def returnFunction(self, event):
-        self.saveOptions()
+        self.saveAndQuit()
        
 
     # submissionOptions is a dictionary, passed by the parent.
     def loadOptions(self):
+        logging.error('loadOptions in EnaSubOptionsForm has not been implemented yet!')
+
+        #TODO: Rewrite this method.
+        """
         if getConfigurationValue('ena_username') is not None:
             self.inputUsername.set(getConfigurationValue('ena_username'))
             
@@ -299,9 +282,17 @@ class EnaSubOptionsForm(VerticalScrolledFrame):
             self.inputAnalysisTitle.set(getConfigurationValue('analysis_title'))
         if getConfigurationValue('analysis_description') is not None:
             self.inputAnalysisDescription.set(getConfigurationValue('analysis_description'))
+        """
+
+    def saveAndQuit(self):
+        logging.error('saveAndQuit in EnaSubOptionsForm has not been implemented yet!')
+
+        self.parent.destroy()
 
 
-    def saveOptions(self):
+        """
+        
+        
         # Close the window
         if (self.checkOptions()):
             logging.info ('Saving Options....')
@@ -329,6 +320,8 @@ class EnaSubOptionsForm(VerticalScrolledFrame):
         else:
             #logging.info('Not ready to save, you are missing options.')
             pass
+            
+        """
         
     def checkOptions(self):
         

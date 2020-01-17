@@ -14,12 +14,10 @@
 # along with saddle-bags. If not, see <http://www.gnu.org/licenses/>.
 
 from datetime import datetime
-# TODO: Get rid of the GUI / tk code from this file.  It belongs elsewhere.
-# Instead, raise an HlaSequenceException and catch it somewhere upstream.
-from tkinter import messagebox
 
-#from saddlebags.AlleleSubCommon import getConfigurationValue
-from saddlebags.AlleleSubmission import HlaGene, AlleleSubmission, SubmissionBatch
+from saddlebags.HlaSequence import HlaSequence
+from saddlebags.AlleleSubmission import  AlleleSubmission, SubmissionBatch
+
 #from saddlebags.AcademicCitation import AcademicCitation
 # TODO: I removed AcademicCitation because I'm pretty sure we don't actually need that in the submission. James and Dom agree this isn't necessary.
 
@@ -42,7 +40,7 @@ class IpdSubGenerator():
         
         documentBuffer = ''
 
-        totalLength = self.submission.submittedGene.totalLength()
+        totalLength = self.submission.submittedAllele.totalLength()
         logging.info('total calculated length = ' + str(totalLength))
         
         if(totalLength > 0):
@@ -86,7 +84,7 @@ class IpdSubGenerator():
         # TODO: I'm removing the IMGT/HLA identifier from the input file, because I think I don't need it.
         # Check my notes, i think I was going to just provide an ENA identifier. IMGT/HLA can give us an "HS" identifier, I shouldn't assign those.
         # It's assigned by IMGT/HLA?
-        headerText += 'ID   ' + str(ipdIdentifier) + '; Sequence Submission; Confidential; ' + str(self.submission.submittedGene.totalLength()) + ' BP.\n'
+        headerText += 'ID   ' + str(ipdIdentifier) + '; Sequence Submission; Confidential; ' + str(self.submission.submittedAllele.totalLength()) + ' BP.\n'
         headerText += 'XX\n'
         headerText += 'AC   ' + str(ipdIdentifier) + ';\n'
         headerText += 'XX\n'
@@ -197,7 +195,7 @@ class IpdSubGenerator():
         # Maybe I just need the submitter ID, and i can or can not get the rest?
         # I should be able to calculate the indices, at least.
 
-        submitterText += 'FT   submittor      1..' + str(self.submission.submittedGene.totalLength()) + '\n'
+        submitterText += 'FT   submittor      1..' + str(self.submission.submittedAllele.totalLength()) + '\n'
         submitterText += 'FT                  /ID="' + str(self.submissionBatch.ipdSubmitterId) + '"\n'
         submitterText += 'FT                  /name="' + str(self.submissionBatch.ipdSubmitterName) + '"\n'
         submitterText += 'FT                  /alt_contact="' + str(self.submissionBatch.ipdAltContact) + '"\n'
@@ -210,7 +208,7 @@ class IpdSubGenerator():
         
         # TODO: Submitting Laboratory Information. Can this be fetched from imgt, or use some sort of lookup
 
-        sourceText += 'FT   source         1..' + str(self.submission.submittedGene.totalLength()) + '\n'
+        sourceText += 'FT   source         1..' + str(self.submission.submittedAllele.totalLength()) + '\n'
         sourceText += 'FT                  /cell_id="' + str(self.submission.cellId) + '"\n'
         sourceText += 'FT                  /ethnic_origin="' + str(self.submission.ethnicOrigin) + '"\n'
         sourceText += 'FT                  /sex="' + str(self.submission.sex) + '"\n'
@@ -263,7 +261,7 @@ class IpdSubGenerator():
         
         # TODO: Get primer info from the form.  Make sure this all is correct        
         
-        methodsText += 'FT   method         1..' + str(self.submission.submittedGene.totalLength()) + '\n'
+        methodsText += 'FT   method         1..' + str(self.submission.submittedAllele.totalLength()) + '\n'
         
         # TODO: What are the options for sequencing methodology?
         # I can provide an open-text field.        
@@ -313,8 +311,6 @@ class IpdSubGenerator():
         
         return methodsText
 
-
-
     def printFeatures(self):
         featureText = ''
         
@@ -327,11 +323,11 @@ class IpdSubGenerator():
         # Coding sequence is just the exons.  Print out each exon.
         # Ignoring line-breaks for now, this might create a really wide line. Ok?
         featureText += ('FT   CDS            join(') 
-        for x in range(0, len(self.submission.submittedGene.features)):
-            geneLocus = self.submission.submittedGene.features[x]
+        for x in range(0, len(self.submission.submittedAllele.features)):
+            geneLocus = self.submission.submittedAllele.features[x]
             if (geneLocus.exon):
                 featureText += str(geneLocus.beginIndex) + '..' + str(geneLocus.endIndex)
-                if not x == len(self.submission.submittedGene.features) - 2:
+                if not x == len(self.submission.submittedAllele.features) - 2:
                     featureText += ','
                 else:
                     featureText += ')\n'
@@ -343,12 +339,12 @@ class IpdSubGenerator():
         geneHas3UTR = False
         geneHas5UTR = False
             
-        for x in range(0, len(self.submission.submittedGene.features)):
-            currentFeature = self.submission.submittedGene.features[x]
+        for x in range(0, len(self.submission.submittedAllele.features)):
+            currentFeature = self.submission.submittedAllele.features[x]
 
             # test, temp
             #print('this feature is named:' + currentFeature.name + '\n')
-            #print('Total of ' + str(len(self.submission.submittedGene.loci)) + ' features')
+            #print('Total of ' + str(len(self.submission.submittedAllele.loci)) + ' features')
 
             # 3' UTR
             if(currentFeature.name == '3UT'):
@@ -405,28 +401,28 @@ class IpdSubGenerator():
     def printSequence(self):
         sequenceText = ''
         
-        completeSequence = self.submission.submittedGene.getCompleteSequence().upper()
+        completeSequence = self.submission.submittedAllele.getAnnotatedSequence(includeLineBreaks=False).upper()
                 
         cCount = completeSequence.count('C')
         gCount = completeSequence.count('G')
         tCount = completeSequence.count('T')
         aCount = completeSequence.count('A')
-        otherCount = self.submission.submittedGene.totalLength() - (cCount + gCount + tCount + aCount)
+        otherCount = self.submission.submittedAllele.totalLength() - (cCount + gCount + tCount + aCount)
 
-        sequenceText += ('SQ   Sequence ' + str(self.submission.submittedGene.totalLength()) + ' BP; '
-            + str(aCount) + ' A; ' + str(cCount) + ' C; ' 
-            + str(gCount) + ' G; ' + str(tCount) + ' T; ' 
-            + str(otherCount) + ' other;\n')
+        sequenceText += ('SQ   Sequence ' + str(self.submission.submittedAllele.totalLength()) + ' BP; '
+                         + str(aCount) + ' A; ' + str(cCount) + ' C; '
+                         + str(gCount) + ' G; ' + str(tCount) + ' T; '
+                         + str(otherCount) + ' other;\n')
 
         # Here's some logic to print the sequence information in groups of 10.
         # This format is specified in the User manual specified by ENA.
         currentSeqIndex = 0
 
-        while (currentSeqIndex < self.submission.submittedGene.totalLength()):
+        while (currentSeqIndex < self.submission.submittedAllele.totalLength()):
             # The character code for a sequence region is two blank spaces,
             # followed by three blank spaces, for a total of 5 blanks.
             sequenceText += '     '
-            sequenceRow = self.submission.submittedGene.getCompleteSequence().upper()[currentSeqIndex : currentSeqIndex + 60]
+            sequenceRow = self.submission.submittedAllele.getAnnotatedSequence(includeLineBreaks=False).upper()[currentSeqIndex: currentSeqIndex + 60]
 
             # A sequenceChunk is 10 nucleotides in this context.
             # Format specifies up to six "chunks" per line.
@@ -450,7 +446,83 @@ class IpdSubGenerator():
 
         return sequenceText
 
-# TODO: This method is not being used?  Right, I should just delete this method
+
+# TODO: I suppose this method should be in an IPD SubGenerator file.
+def createIPDZipFile(zipFileName):
+    logging.debug('Saving Zip File:' + str(zipFileName))
+
+    # create a temp working directory in the current folder.
+    zipDirectory = getSaddlebagsDirectory()
+    workingDirectory = join(zipDirectory, 'submission_temp')
+    #makedirs(workingDirectory)
+
+
+    # Loop through my submission batch.
+    submissionBatch = getConfigurationValue('submission_batch')
+    if (submissionBatch == None):
+        logging.warning ('There is no submission batch, I cannot create a .zip file.')
+
+    submissionFileList = []
+
+    submissioncount =0
+    for submissionObject in submissionBatch.submissionBatch:
+
+        print ('Generating Submission #' + str(submissioncount))
+        submissioncount += 1
+
+        # Create a submission for each entry in the batch.
+        allGen = IpdSubGenerator()
+        allGen.submission = submissionObject
+        allGen.submissionBatch = submissionBatch
+        ipdSubmission = allGen.buildIpdSubmission()
+
+        submissionLocalFileName = str(submissionObject.localAlleleName) + '_submission.txt'
+        submissionFileName = join(workingDirectory, submissionLocalFileName)
+        submissionFileList.append(submissionLocalFileName)
+
+        submissionFileObject = createOutputFile(submissionFileName)
+        submissionFileObject.write(ipdSubmission)
+        submissionFileObject.close()
+
+        print ('I just saved this file: ' + submissionFileName)
+
+    # create a zip file from the list of files.
+    zipFileName = join(zipDirectory,zipFileName)
+
+    with ZipFile(zipFileName,'w') as zip:
+        # writing each file one by one
+        for fileName in submissionFileList:
+            fullPath = join(workingDirectory,fileName)
+            zip.write(fullPath,fileName)
+
+    # Delete the files.
+    # TODO: Report results and submission identifiers. I should create a report, maybe save our submitted sequence .zip.
+    # Give a report of what was submitted. It should be clear to the user what was submitted.
+    # At the very least, just tell the user where the .zip file is. I can check what was submitted myself.
+    try:
+        successfulDeletion = True
+        for fileName in submissionFileList:
+            fullPath = join(workingDirectory, fileName)
+            if isfile(fullPath):
+                remove(fullPath)
+            else:
+                successfulDeletion = False
+                raise Exception('ERROR when deleting file, it does not seem to exist:' + fullPath)
+
+        # delete the working directory
+        if(successfulDeletion):
+            if isdir(workingDirectory):
+                rmdir(workingDirectory)
+            else:
+                raise Exception('ERROR when deleting workign directory, it does not seem to exist:' + workingDirectory)
+
+    except Exception as error:
+        logging.error('ERROR when removing working directory and submission files:' + str(error))
+        raise()
+
+
+
+# TODO: This method is not being used?  Right, I should just delete this method, check if i need the logic anywhere.
 """
     # Return True if our input values are all present and accomodated for.
     # If something is missing, then throw a fit and give up.
@@ -471,12 +543,12 @@ class IpdSubGenerator():
             raise Exception ('Invalid Sequence ID:' + str(self.inputSampleID))
             return False
         
-        elif (self.submission.submittedGene is None):
-            raise Exception ('Invalid Sequence Annotation:' + str(self.submission.submittedGene))
+        elif (self.submission.submittedAllele is None):
+            raise Exception ('Invalid Sequence Annotation:' + str(self.submission.submittedAllele))
             return False
         
-        elif (self.submission.submittedGene.geneLocus is None or len(self.submission.submittedGene.geneLocus) < 1):
-            raise Exception ('Invalid Input Gene:' + str(self.submission.submittedGene.geneLocus))
+        elif (self.submission.submittedAllele.geneLocus is None or len(self.submission.submittedAllele.geneLocus) < 1):
+            raise Exception ('Invalid Input Gene:' + str(self.submission.submittedAllele.geneLocus))
             return False
         
         #elif (self.inputAllele is None or len(self.inputAllele) < 1):

@@ -5,6 +5,8 @@ A tool for generating allele submissions for the EMBL nucleotide database.
 Download an executable for Windows from the Release page.
 [Download Saddlebags for Windows Here](https://github.com/transplantation-immunology-maastricht/saddle-bags/releases)
 
+This executable requires java runtime in order to run. The EMBL ENA submission is performed using java.
+
 ## Run using Python
 Alternatively, you can run this program using Python 3.6. The required packages can be installed within a python virtual environment. This works for Mac and Linux users, or Windows. See Run_allele_submission.bat and Run_allele_submission.sh for an example of launching Saddlebags in Windows, or Linux/Mac, respectively..
 
@@ -37,16 +39,29 @@ C:\Users\ben\Envs\minionvenv\Scripts\activate
 
 Is your environment activated? Then use pip to install the packages that saddlebags needs:
 ```
-pip install biopython six pycurl pyinstaller packaging 
+pip install biopython six pywin32 pyinstaller packaging pycurl
 ```
 
-In Ubuntu, Installing pycurl was a bit difficult inside of virtualenv.
+I found that Installing pycurl was a bit difficult inside of virtualenv.
+
+In Ubuntu:
 
 https://stackoverflow.com/questions/37669428/error-in-installation-pycurl-7-19-0
 sudo apt-get install libgnutls-dev
 
 In linux, i needed Needed the "dev" verson of python 3.6
 sudo apt-get install python3.6-dev
+
+In windows:
+
+I downloaded the pip wheel file manually, and installed it. Wheel file can be found here:
+https://www.lfd.uci.edu/~gohlke/pythonlibs/
+and I installed manually using pip:
+
+```
+cd C:\Curl
+pip install pycurl-(...).whl
+```
 
 
 ## Run using a bash or .bat script using anaconda
