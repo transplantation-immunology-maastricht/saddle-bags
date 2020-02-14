@@ -17,7 +17,8 @@ from pycurl import Curl, FORM_FILE, HTTPHEADER, SSL_VERIFYHOST, SSL_VERIFYPEER
 from io import BytesIO
 from xml.etree.ElementTree import fromstring
 import logging
-from saddlebags.AlleleSubCommon import getConfigurationValue, createOutputFile
+from saddlebags.AlleleSubCommon import createOutputFile
+#getConfigurationValue,
 
 # Here we have methods to perform REST interactions necessary for ENA submission.
 # Some REST functionality was removed by ENA, but I must still perform a few things.

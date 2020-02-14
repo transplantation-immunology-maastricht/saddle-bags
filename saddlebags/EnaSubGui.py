@@ -252,7 +252,7 @@ class EnaSubGui(Frame):
 
     def importSubmissions(self):
         # Popup warning message: This will ADD the imported submissions to the batch.
-        # Figure out a way to either replace or add the submission files.
+        # TODO: Figure out a way to either replace or add the submission files.
 
         logging.error('Have not implemented import submission files yet.')
 

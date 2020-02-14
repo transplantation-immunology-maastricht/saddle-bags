@@ -157,3 +157,6 @@ http://www.ebi.ac.uk/ena/software/flat-file-validator
 More info on contributing to this project on the [MUMC Transplantation Immunology Wiki](https://github.com/transplantation-immunology-maastricht/General-information/wiki/Contributing-to-Github)
 
 
+## SeqAnn 
+This code uses the excellent SeqAnn package, developed by Mike Halagan with CIBMTR
+https://github.com/nmdp-bioinformatics/seq-ann/
