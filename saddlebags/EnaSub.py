@@ -46,7 +46,8 @@ from datetime import datetime
 from shutil import copyfileobj
 from gzip import open as gzipOpen
 
-from saddlebags.AlleleSubCommon import getSaddlebagsDirectory, showYesNoBox, showInfoBox, getInfoBox, createOutputFile, getConfigurationValue, assignConfigurationValue
+from saddlebags.AlleleSubCommon import getSaddlebagsDirectory, showYesNoBox, showInfoBox, getInfoBox, createOutputFile
+from saddlebags.SaddlebagsConfig import getConfigurationValue, assignConfigurationValue
 from saddlebags.EnaSubXml import createProjectXML, createProjectSubmissionXML
 from saddlebags.EnaSubRest import performProjectSubmission, interpretAnalysisSubmissionResults
 from saddlebags.EnaSubJar import findJarFile

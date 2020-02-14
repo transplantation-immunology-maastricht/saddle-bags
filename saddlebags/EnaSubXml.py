@@ -15,7 +15,9 @@
 
 
 
-from saddlebags.AlleleSubCommon import createOutputFile, getConfigurationValue
+from saddlebags.AlleleSubCommon import createOutputFile
+#from saddlebags.SaddlebagsConfig import getConfigurationValue
+
 
 # XML packages use very generic method names (like parse and tostring) so I will alias this reference.
 from xml.etree import ElementTree as ET
